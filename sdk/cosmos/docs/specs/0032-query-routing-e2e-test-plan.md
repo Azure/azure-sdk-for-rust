@@ -2,7 +2,7 @@
 # Query Routing E2E Test Plan
 
 **Status:** Draft
-**Date:** 2026-11-17
+**Date:** 2026-11-20
 **Crate:** `azure_data_cosmos`
 
 ## Purpose
@@ -40,9 +40,11 @@ carrier tests and Q2–Q4 are blocked until public partial-HPK query scope is
 projected to those wire carriers. This prerequisite is independent of
 distributed aggregate support.
 
-Malformed wire combinations and internal PK/PPK-plus-range combinations that
+Malformed wire combinations and internal scope-plus-range combinations that
 cannot be constructed through the public SDK belong in driver component or raw
-protocol tests. Public E2E tests continue to use only public
+protocol tests. PPK plus an EPK range is valid on HPK containers; complete PK
+plus backend start/end EPK is rejected by the backend, not a successful
+combined-scope case. Public E2E tests continue to use only public
 `azure_data_cosmos` APIs.
 
 ## Environment matrix
@@ -150,6 +152,24 @@ Each test must assert required **absence** as well as presence. In particular,
 a test that strips backend `StartEpk`/`EndEpk` must still assert the expected
 Gateway V2 routing hashes and outer range flags.
 
+Assert physical PKRID presence on every point-operation attempt and every
+feed-execution leaf, page, resume, and retry, including queries and change
+feed. Gateway V1 must
+carry `x-ms-documentdb-partitionkeyrangeid`; Gateway V2 must carry RNTBD
+`PartitionKeyRangeId` token `0x002C`. Include complete-PK cases even when the
+proxy EPK or backend PK would locate the data without PKRID. An otherwise
+successful response does not excuse a missing PKRID. This preserves client
+topology-cache correctness independently of backend presence validation.
+Query-plan requests remain the no-data-route exception below.
+
+Capture the proxy's backend-bound request as well as its incoming RNTBD frame.
+For SDK-originated and Compute-Gateway-originated requests, assert that the
+proxy forwards all supplied backend metadata without adding, removing, or
+rewriting it, including filters, page size, continuation, and consistency
+metadata. Routing hashes alone must not create backend start/end EPK filters;
+explicit PPK and EPK-R filters must survive unchanged. Consumed proxy-only
+routing metadata must not become backend filter metadata.
+
 The RNTBD oracle must decode raw frame bytes with an independent, test-owned
 token catalog rather than importing production token constants. Pin these IDs,
 types, and encodings:
@@ -170,14 +190,15 @@ Use the abbreviations from `0031-query-routing.md`.
 
 | Scenario                        | Backend semantic header | Backend EPK-R                  | PKRID             | Proxy EPK `0x005A` | Gateway V2 TC-R |
 | ------------------------------- | ----------------------- | ------------------------------ | ----------------- | ------------------ | --------------- |
-| Point with complete PK          | PK                      | Absent                         | As resolved       | Required           | Absent          |
-| Query with complete PK          | PK                      | Absent for planner-derived SQL | As resolved       | Required           | Absent          |
+| Point with complete PK          | PK                      | Absent                         | Required          | Required           | Absent          |
+| Query with complete PK          | PK                      | Absent                         | Required          | Required           | Absent          |
 | Query with partial HPK          | PPK                     | Absent for planner-derived SQL | Required per leaf | Absent             | Required        |
 | Query over whole physical range | None                    | Absent                         | Required          | Absent             | Required        |
 | Query over strict FeedRange     | None                    | Present                        | Required          | Absent             | Required        |
 | Query over one EPK              | None                    | Present                        | Required          | Absent             | Required        |
 | WHERE-only PK equality          | SQL                     | Absent                         | Required          | Absent             | Required        |
 | WHERE-only HPK prefix           | SQL                     | Absent                         | Required per leaf | Absent             | Required        |
+| Change feed with complete PK    | PK                      | Absent                         | Required          | Required           | Absent          |
 | Change feed over HPK prefix     | None                    | Present                        | Required per leaf | Absent             | Required        |
 | Change feed over whole PKRID    | None                    | Absent                         | Required          | Absent             | Required        |
 | QueryPlan request               | Input options only      | Absent                         | Absent            | Absent             | Absent          |
@@ -187,8 +208,8 @@ thin-client range flags, routing hashes, backend start/end, and key type. Then
 assert that the returned ranges affect only the subsequent data-leaf routing.
 
 Add a component test for simultaneous PK and PPK that asserts PK is emitted and
-PPK is omitted. Do not introduce new client-side rejection for incomplete
-range headers. Tier A raw-protocol tests assert that a missing start or end,
+PPK is omitted, with PKRID retained. Do not introduce new client-side rejection
+for incomplete range headers. Tier A raw-protocol tests assert that a missing start or end,
 absent key type, mismatched key type, and backend key type `2` combined with
 EPK-R filtering are serialized without a newly introduced client rejection.
 Tier B pins the corresponding live service outcomes.
@@ -202,23 +223,33 @@ the same HPK prefix to EPK-R and returns equivalent scoped results.
 
 ### Explicit semantic-scope and EPK-R component matrix
 
-WHERE-derived ranges are routing metadata and never add backend EPK-R. Test
+WHERE-derived ranges alone are routing metadata, not a reason to add backend
+EPK-R. Correctness-required independent work boundaries remain protected. Test
 the separate explicit `S` plus `F` relation rules at driver planning and
-serialization boundaries:
+serialization boundaries. PKRID is mandatory for every valid combination below:
 
 | Semantic scope `S` | Explicit `F` relation | Backend carriers | Proxy EPK `0x005A` | Gateway V2 TC-R |
 | ------------------ | --------------------- | ---------------- | ------------------ | --------------- |
 | PK                 | Equal or containing   | PK only          | Required           | Absent          |
 | PPK                | Equal or containing   | PPK only         | Absent             | Required        |
-| PK                 | Strict subset         | PK + EPK-R       | Absent             | Required        |
 | PPK                | Strict subset         | PPK + EPK-R      | Absent             | Required        |
-| PK                 | Partial overlap       | PK + EPK-R       | Absent             | Required        |
 | PPK                | Partial overlap       | PPK + EPK-R      | Absent             | Required        |
-| PK                 | Disjoint              | PK + EPK-R       | Absent             | Required        |
 | PPK                | Disjoint              | PPK + EPK-R      | Absent             | Required        |
 
-For disjoint cases, assert that physical routing follows `S` and the backend
-receives both constraints.
+For disjoint PPK-plus-range cases, assert that physical routing follows `S`
+and the backend receives both constraints. Do not substitute PK for PPK in
+these valid intersection cases.
+
+Test raw complete-PK-plus-EPK-R combinations separately for equal, containing,
+strict-subset, overlapping, and disjoint ranges. They must be rejected by the
+backend through both gateways, including when PKRID is present; do not assert
+a successful intersection or an empty aggregate result. Record the exact
+service status and substatus. This is coverage of existing backend validation,
+not a requirement for new client-side rejection or a feature flag.
+
+Add a raw PPK request against a non-HPK container and assert backend rejection
+through both gateways. Keep the corresponding positive HPK PPK and
+PPK-plus-EPK-R cases so this negative test cannot disable valid prefix scopes.
 
 ### One-EPK normalization cases
 
@@ -235,8 +266,11 @@ needs independent cases rather than one generic example.
 | Raw `[AA, AB)` with the wrong normalized width                     | Not sufficient evidence   |
 | HPK prefix `[P, P + FF)`                                           | EPK-R, never one EPK      |
 
-For every positive one-EPK case, assert start/end and key type `3` through
-Gateway V1 and Gateway V2. Assert that key type `2` is absent. Gateway V2 may
+For every positive one-EPK case, assert both backend start/end bounds through
+Gateway V1 and Gateway V2. Assert HTTP
+`x-ms-read-key-type: EffectivePartitionKeyRange` on Gateway V1 and byte `3`
+in Gateway V2 RNTBD token `0x0064`. Assert that HTTP value
+`EffectivePartitionKey` and RNTBD byte `2` are absent. Gateway V2 may
 independently emit proxy-routing hashes; those do not replace the backend
 range-filter tokens. For SQL-only or FeedRange-derived leaves, also assert that
 the PK-derived proxy EPK token `0x005A` is absent. A complete-PK request remains
@@ -271,6 +305,13 @@ continuation for each request leaf.
 
 The in-memory emulator is not the RU oracle. Its request capture validates the
 wire contract; live service runs validate the performance consequence.
+
+Include topology-validation cases for PK, PPK, and EPK-R data requests. Assert
+that the resolved PKRID accompanies each filter set, including on retry.
+Use a stale PKRID to verify routing feedback, including `410` where required
+by the topology transition. After refreshing topology, assert that the rebuilt
+request uses the refreshed PKRID and preserves the semantic scope. Do not
+mistake a rejected physical route for disjoint SQL or an empty logical scope.
 
 ## Tier B: live correctness and efficiency
 
@@ -323,10 +364,10 @@ leaf. Interior leaves that cover a whole physical partition must omit backend
 EPK-R filtering; strict edge leaves must retain it.
 
 Public PK/PPK plus WHERE scenarios cover planner-derived routing and verify
-that SQL ranges do not become backend EPK-R filters. Equal, containing,
-contained, partial-overlap, and disjoint explicit EPK-R combinations belong in
-the component matrix above because the public API cannot express arbitrary
-PK/PPK-plus-FeedRange pairs.
+that SQL ranges alone do not become backend EPK-R filters. Explicit EPK-R
+relationships belong in the component matrix above because the public API
+cannot express arbitrary PK/PPK-plus-FeedRange pairs. PPK-plus-range cases test
+valid scope intersections; raw PK-plus-range cases test backend rejection.
 
 ### Change-feed set
 
