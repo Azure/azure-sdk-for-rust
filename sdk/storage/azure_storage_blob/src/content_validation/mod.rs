@@ -137,7 +137,6 @@ mod tests {
     use super::*;
     use azure_core::stream::BytesStream;
     use bytes::Bytes;
-    use test_case::test_case;
 
     const DATA: &str = "Hello, world!";
     const DATA_CRC: [u8; 8] = [52, 61, 26, 0, 105, 85, 120, 159];
@@ -164,22 +163,231 @@ mod tests {
     }
 
     /// Test options combinations for Body::Bytes input.
-    #[test_case(Format::Bytes, None, None,                                                        Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + no options sets crc header")]
-    #[test_case(Format::Bytes, Some(UploadContentValidation::Auto), None,                         Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + auto sets crc header")]
-    #[test_case(Format::Bytes, Some(UploadContentValidation::Crc64Nvme(None)), None,              Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + crc sets crc header")]
-    #[test_case(Format::Bytes, Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))), None,    Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Bytes + crc64nvme precalculated sets crc header")]
-    #[test_case(Format::Bytes, Some(UploadContentValidation::None), None,                         Format::Bytes, Encoding::Plain, None ; "Bytes + explicit none sets nothing")]
-    #[test_case(Format::Bytes, None, Some(RawHeader::Crc(FAKE_CRC)),                              Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Bytes + raw crc header remains unchanged")]
-    #[test_case(Format::Bytes, None, Some(RawHeader::Md5(FAKE_MD5)),                              Format::Bytes, Encoding::Plain, Some(RawHeader::Md5(FAKE_MD5)) ; "Bytes + raw md5 header remains unchanged")]
-    #[test_case(Format::Stream, None, None,                                                       Format::Stream, Encoding::Structured, None ; "Stream + no options encodes body")]
-    #[test_case(Format::Stream, Some(UploadContentValidation::Auto), None,                        Format::Stream, Encoding::Structured, None ; "Stream + auto encodes body")]
-    #[test_case(Format::Stream, Some(UploadContentValidation::Crc64Nvme(None)), None,             Format::Stream, Encoding::Structured, None ; "Stream + crc encodes body")]
-    #[test_case(Format::Stream, Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))), None,   Format::Stream, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Stream + crc64nvme precalculated sets crc header")]
-    #[test_case(Format::Stream, Some(UploadContentValidation::None), None,                        Format::Stream, Encoding::Plain, None ; "Stream + explicit none sets nothing")]
-    #[test_case(Format::Stream, None, Some(RawHeader::Crc(FAKE_CRC)),                             Format::Stream, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Stream + raw crc header remains unchanged")]
-    #[test_case(Format::Stream, None, Some(RawHeader::Md5(FAKE_MD5)),                             Format::Stream, Encoding::Plain, Some(RawHeader::Md5(FAKE_MD5)) ; "Stream + raw md5 header remains unchanged")]
+    // #[test_case(Format::Bytes, None, None,                                                        Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + no options sets crc header")]
     #[tokio::test]
-    async fn test_apply_validation(
+    async fn test_bytes_w_no_options_sets_crc_header() {
+        apply_validation(
+            // inputs
+            Format::Bytes,
+            None,
+            None,
+            // expected outputs
+            Format::Bytes,
+            Encoding::Plain,
+            Some(RawHeader::Crc(DATA_CRC)),
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Bytes, Some(UploadContentValidation::Auto), None,                         Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + auto sets crc header")]
+    #[tokio::test]
+    async fn test_bytes_w_auto_options_sets_crc_header() {
+        apply_validation(
+            // inputs
+            Format::Bytes,
+            Some(UploadContentValidation::Auto),
+            None,
+            // expected outputs
+            Format::Bytes,
+            Encoding::Plain,
+            Some(RawHeader::Crc(DATA_CRC)),
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Bytes, Some(UploadContentValidation::Crc64Nvme(None)), None,              Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + crc sets crc header")]
+    #[tokio::test]
+    async fn test_bytes_w_crc_options_sets_crc_header() {
+        apply_validation(
+            // inputs
+            Format::Bytes,
+            Some(UploadContentValidation::Crc64Nvme(None)),
+            None,
+            // expected outputs
+            Format::Bytes,
+            Encoding::Plain,
+            Some(RawHeader::Crc(DATA_CRC)),
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Bytes, Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))), None,    Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Bytes + crc64nvme precalculated sets crc header")]
+    #[tokio::test]
+    async fn test_bytes_w_precalculated_crc_sets_crc_header() {
+        apply_validation(
+            // inputs
+            Format::Bytes,
+            Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))),
+            None,
+            // expected outputs
+            Format::Bytes,
+            Encoding::Plain,
+            Some(RawHeader::Crc(FAKE_CRC)),
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Bytes, Some(UploadContentValidation::None), None,                         Format::Bytes, Encoding::Plain, None ; "Bytes + explicit none sets nothing")]
+    #[tokio::test]
+    async fn test_bytes_w_disabled_sets_nothing() {
+        apply_validation(
+            // inputs
+            Format::Bytes,
+            Some(UploadContentValidation::None),
+            None,
+            // expected outputs
+            Format::Bytes,
+            Encoding::Plain,
+            None,
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Bytes, None, Some(RawHeader::Crc(FAKE_CRC)),                              Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Bytes + raw crc header remains unchanged")]
+    #[tokio::test]
+    async fn test_bytes_w_raw_crc_header_remains_unchanged() {
+        apply_validation(
+            // inputs
+            Format::Bytes,
+            None,
+            Some(RawHeader::Crc(FAKE_CRC)),
+            // expected outputs
+            Format::Bytes,
+            Encoding::Plain,
+            Some(RawHeader::Crc(FAKE_CRC)),
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Bytes, None, Some(RawHeader::Md5(FAKE_MD5)),                              Format::Bytes, Encoding::Plain, Some(RawHeader::Md5(FAKE_MD5)) ; "Bytes + raw md5 header remains unchanged")]
+    #[tokio::test]
+    async fn test_bytes_w_raw_md5_header_remains_unchanged() {
+        apply_validation(
+            // inputs
+            Format::Bytes,
+            None,
+            Some(RawHeader::Md5(FAKE_MD5)),
+            // expected outputs
+            Format::Bytes,
+            Encoding::Plain,
+            Some(RawHeader::Md5(FAKE_MD5)),
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Stream, None, None,                                                       Format::Stream, Encoding::Structured, None ; "Stream + no options encodes body")]
+    #[tokio::test]
+    async fn test_stream_w_no_options_encodes_body() {
+        apply_validation(
+            // inputs
+            Format::Stream,
+            None,
+            None,
+            // expected outputs
+            Format::Stream,
+            Encoding::Structured,
+            None,
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Stream, Some(UploadContentValidation::Auto), None,                        Format::Stream, Encoding::Structured, None ; "Stream + auto encodes body")]
+    #[tokio::test]
+    async fn test_stream_w_auto_options_encodes_body() {
+        apply_validation(
+            // inputs
+            Format::Stream,
+            Some(UploadContentValidation::Auto),
+            None,
+            // expected outputs
+            Format::Stream,
+            Encoding::Structured,
+            None,
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Stream, Some(UploadContentValidation::Crc64Nvme(None)), None,             Format::Stream, Encoding::Structured, None ; "Stream + crc encodes body")]
+    #[tokio::test]
+    async fn test_stream_w_crc_options_encodes_body() {
+        apply_validation(
+            // inputs
+            Format::Stream,
+            Some(UploadContentValidation::Crc64Nvme(None)),
+            None,
+            // expected outputs
+            Format::Stream,
+            Encoding::Structured,
+            None,
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Stream, Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))), None,   Format::Stream, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Stream + crc64nvme precalculated sets crc header")]
+    #[tokio::test]
+    async fn test_stream_w_precalculated_crc_sets_crc_header() {
+        apply_validation(
+            // inputs
+            Format::Stream,
+            Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))),
+            None,
+            // expected outputs
+            Format::Stream,
+            Encoding::Plain,
+            Some(RawHeader::Crc(FAKE_CRC)),
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Stream, Some(UploadContentValidation::None), None,                        Format::Stream, Encoding::Plain, None ; "Stream + explicit none sets nothing")]
+    #[tokio::test]
+    async fn test_stream_w_disabled_options_sets_nothing() {
+        apply_validation(
+            // inputs
+            Format::Stream,
+            Some(UploadContentValidation::None),
+            None,
+            // expected outputs
+            Format::Stream,
+            Encoding::Plain,
+            None,
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Stream, None, Some(RawHeader::Crc(FAKE_CRC)),                             Format::Stream, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Stream + raw crc header remains unchanged")]
+    #[tokio::test]
+    async fn test_stream_w_raw_crc_header_remains_unchanged() {
+        apply_validation(
+            // inputs
+            Format::Stream,
+            None,
+            Some(RawHeader::Crc(FAKE_CRC)),
+            // expected outputs
+            Format::Stream,
+            Encoding::Plain,
+            Some(RawHeader::Crc(FAKE_CRC)),
+        )
+        .await;
+    }
+
+    // #[test_case(Format::Stream, None, Some(RawHeader::Md5(FAKE_MD5)),                             Format::Stream, Encoding::Plain, Some(RawHeader::Md5(FAKE_MD5)) ; "Stream + raw md5 header remains unchanged")]
+    #[tokio::test]
+    async fn test_stream_w_raw_md5_header_remains_unchanged() {
+        apply_validation(
+            // inputs
+            Format::Stream,
+            None,
+            Some(RawHeader::Md5(FAKE_MD5)),
+            // expected outputs
+            Format::Stream,
+            Encoding::Plain,
+            Some(RawHeader::Md5(FAKE_MD5)),
+        )
+        .await;
+    }
+
+    async fn apply_validation(
         input_format: Format,
         input_options: Option<UploadContentValidation>,
         input_raw_header: Option<RawHeader>,
