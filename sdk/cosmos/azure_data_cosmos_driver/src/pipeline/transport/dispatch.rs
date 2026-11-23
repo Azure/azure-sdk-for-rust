@@ -266,6 +266,8 @@ mod tests {
                 timeout: None,
                 #[cfg(feature = "fault_injection")]
                 evaluation_collector: None,
+                #[cfg(feature = "__internal_transport_observer")]
+                observer_context: None,
             },
             mode,
             timeout: None,

@@ -8,6 +8,8 @@ documentation for the Azure Cosmos DB SDK for Rust.
 - Project overview (`Project.md`) explains the project's purpose and boundaries.
 - Architecture overview (`Architecture.md`) explains the SDK, driver, execution
   pipelines, and shared state at a high level.
+- Spec tests (`SpecTests.md`) explains how to write and review `cosspec` spec
+  tests.
 
 ## Directory layout
 
@@ -15,6 +17,7 @@ documentation for the Azure Cosmos DB SDK for Rust.
 docs/
 ├── Project.md
 ├── Architecture.md
+├── SpecTests.md
 ├── README.md
 ├── AGENTS.md
 ├── specs/       # Numbered, mutable feature specifications
@@ -63,6 +66,7 @@ directly by Rust source remain with their crates.
 | 0028 | Functional E2E testing (`specs/0028-functional-e2e-testing.md`) |
 | 0029 | Generic native feed cursor (`specs/0029-native-feed-cursor.md`) |
 | 0030 | Binary-aware ORDER BY envelopes (`specs/0030-binary-order-by-envelopes.md`) |
+| 0031 | Spec tests (`specs/0031-cosmos-spec-tests.md`) |
 
 ## Architecture decision records
 

@@ -14,6 +14,8 @@ use crate::{
 
 #[cfg(feature = "fault_injection")]
 use crate::fault_injection::FaultInjectionRule;
+#[cfg(feature = "__internal_transport_observer")]
+use crate::pipeline::transport::observer::TransportObserver;
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
@@ -78,6 +80,9 @@ pub struct DriverOptions {
     /// rules; they do not interact.
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
+    /// Observer notified of every HTTP exchange this driver dispatches.
+    #[cfg(feature = "__internal_transport_observer")]
+    transport_observer: Option<Arc<dyn TransportObserver>>,
     /// Driver-level partition-failover / PPCB tuning.
     ///
     /// These knobs are read once at driver construction time and govern the
@@ -135,6 +140,12 @@ impl DriverOptions {
         self.fault_injection_rules.as_deref()
     }
 
+    /// Returns the transport observer, if one was installed.
+    #[cfg(feature = "__internal_transport_observer")]
+    pub fn transport_observer(&self) -> Option<&Arc<dyn TransportObserver>> {
+        self.transport_observer.as_ref()
+    }
+
     /// Returns the driver-level partition-failover / PPCB tuning options.
     pub fn partition_failover_options(&self) -> &PartitionFailoverOptions {
         &self.partition_failover_options
@@ -176,6 +187,8 @@ pub struct DriverOptionsBuilder {
     user_agent_suffix: Option<UserAgentSuffix>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
+    #[cfg(feature = "__internal_transport_observer")]
+    transport_observer: Option<Arc<dyn TransportObserver>>,
     partition_failover_options: Option<PartitionFailoverOptions>,
     hedging_options: Option<HedgingOptions>,
     resource_name_validation_enabled: bool,
@@ -191,6 +204,8 @@ impl DriverOptionsBuilder {
             user_agent_suffix: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: None,
+            #[cfg(feature = "__internal_transport_observer")]
+            transport_observer: None,
             partition_failover_options: None,
             hedging_options: None,
             resource_name_validation_enabled: true,
@@ -272,6 +287,16 @@ impl DriverOptionsBuilder {
             None => self.fault_injection_rules = Some(rules),
         }
         Ok(self)
+    }
+
+    /// Installs an observer notified of every HTTP exchange this driver
+    /// dispatches after bootstrap.
+    ///
+    /// **Unsupported internal API** for test harnesses; no stability guarantees.
+    #[cfg(feature = "__internal_transport_observer")]
+    pub fn with_transport_observer(mut self, observer: Arc<dyn TransportObserver>) -> Self {
+        self.transport_observer = Some(observer);
+        self
     }
 
     /// Sets the partition-failover / PPCB tuning options for this driver.
@@ -357,6 +382,8 @@ impl DriverOptionsBuilder {
             user_agent_suffix: self.user_agent_suffix,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
+            #[cfg(feature = "__internal_transport_observer")]
+            transport_observer: self.transport_observer,
             partition_failover_options,
             hedging_options: self.hedging_options.unwrap_or_default(),
             resource_name_validation_enabled: self.resource_name_validation_enabled,

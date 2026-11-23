@@ -35,6 +35,8 @@ mod dispatch;
 mod fault_injection;
 mod gateway_v2;
 pub(crate) mod http_client_factory;
+#[cfg(feature = "__internal_transport_observer")]
+pub mod observer;
 pub(crate) mod recovery;
 mod request;
 pub(crate) mod request_signing;
@@ -104,6 +106,13 @@ pub(crate) async fn execute(
             }
         };
         diagnostics::start_transport(&mut request_diagnostics);
+
+        #[cfg(feature = "__internal_transport_observer")]
+        let prepared = observer::attach_context(
+            prepared,
+            &request,
+            progress.execution_context(request.execution_context),
+        );
 
         #[cfg(feature = "fault_injection")]
         let (prepared, collector) = fault_injection::attach_collector(

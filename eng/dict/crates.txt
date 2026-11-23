@@ -52,6 +52,8 @@ cbindgen
 clap
 console_subscriber
 console-subscriber
+cosspec
+cosspec_macros
 crc_fast
 crc-fast
 criterion
@@ -90,6 +92,10 @@ json-canon
 json-patch
 libfuzzer_sys
 libfuzzer-sys
+libtest
+libtest_mimic
+libtest-mimic
+linkme
 litemap
 mimalloc
 openssl

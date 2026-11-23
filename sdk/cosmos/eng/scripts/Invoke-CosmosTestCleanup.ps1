@@ -123,6 +123,7 @@ $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT = $null
 $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT = $null
 $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY = $null
 $env:AZURE_COSMOS_INMEMORY_RUN_ID = $null
+$env:AZURE_COSMOS_LEGACY_EMULATOR_READY = $null
 # Remove any --cfg=test_category="..." flag added by Test-Setup.ps1 or COSMOS_RUSTFLAGS.
 # The next package's setup will re-add the correct flag from COSMOS_RUSTFLAGS
 # (or from AZURE_COSMOS_EMULATOR_FLAVOR=vnext when running the vnext stage).

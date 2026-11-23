@@ -465,6 +465,8 @@ impl TransportClient for FaultClient {
                 body: request.body.clone(),
                 timeout: request.timeout,
                 evaluation_collector: None,
+                #[cfg(feature = "__internal_transport_observer")]
+                observer_context: request.observer_context.clone(),
             };
 
             // No pre-service fault injection: proceed with the actual request.
@@ -623,6 +625,8 @@ mod tests {
             body: None,
             timeout: None,
             evaluation_collector: Some(collector.clone()),
+            #[cfg(feature = "__internal_transport_observer")]
+            observer_context: None,
         };
         (request, collector)
     }

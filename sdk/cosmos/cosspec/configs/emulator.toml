@@ -1,0 +1,9 @@
+# Runs tests against both in-memory and public emulators.
+# Note that the public emulators are limited in their ability to provide topology control, so some tests will be ignored.
+
+[backends.inmemory]
+enabled = true
+
+[backends.emulator]
+enabled = true
+# endpoint = "https://localhost:8081/"

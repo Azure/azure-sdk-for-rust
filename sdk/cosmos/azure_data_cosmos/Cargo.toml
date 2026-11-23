@@ -126,6 +126,11 @@ __internal_in_memory_emulator = [
   "key_auth",
   "control_plane",
 ]
+# Exposes an unsupported transport observer hook for spec-test harnesses. NOT a stable API.
+__internal_transport_observer = [
+  "fault_injection",
+  "azure_data_cosmos_driver/__internal_transport_observer",
+]
 __tls = []
 
 [package.metadata.docs.rs]

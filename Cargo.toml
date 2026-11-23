@@ -21,6 +21,8 @@ members = [
   "sdk/cosmos/azure_data_cosmos_macros",
   "sdk/cosmos/azure_data_cosmos_observability_harness",
   "sdk/cosmos/azure_data_cosmos_perf",
+  "sdk/cosmos/cosspec",
+  "sdk/cosmos/cosspec_macros",
   "sdk/cosmos/azure_data_cosmos_test",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",
@@ -134,6 +136,8 @@ hostname = "0.4"
 hmac = { version = "0.12" }
 include-file = { version = "1.0.0", default-features = false }
 json-canon = "0.1"
+libtest-mimic = "0.8"
+linkme = "0.3.37"
 openssl = { version = "0.10.79" }
 opentelemetry = { version = "0.32", features = ["trace"] }
 opentelemetry-appender-tracing = { version = "0.32" }
@@ -177,7 +181,7 @@ tokio-metrics = "0.4"
 tokio-rustls = { version = "0.26", default-features = false }
 tokio-stream = "0.1"
 tokio-util = "0.7"
-toml = "0.8.20"
+toml = "0.9"
 tracing = "0.1.44"
 tracing-subscriber = "0.3"
 url = "2.5"

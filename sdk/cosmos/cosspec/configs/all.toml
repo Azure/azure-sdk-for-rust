@@ -1,0 +1,13 @@
+# Runs every backend: the in-memory emulator (on by default), then a running
+# Azure Cosmos DB Emulator, then live accounts. See emulator.toml and live.toml.
+
+[backends.emulator]
+enabled = true
+
+[backends.live]
+enabled = true
+
+[backends.live.profiles.SingleRegion]
+endpoint = "https://your-prefix-single-region.documents.azure.com:443/"
+auth = { kind = "key", key_env = "COSSPEC_SINGLE_REGION_KEY" }
+regions = { PrimaryReadWrite = "East US" }
