@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added local planning for `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, dotted-path `GROUP BY`, and `COUNT` over `DISTINCT` subqueries without a Gateway query-plan request.
+- Added local planning for `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, dotted-path `GROUP BY`, and `COUNT` over `DISTINCT` subqueries without a Gateway query-plan request. ([#5664](https://github.com/Azure/azure-sdk-for-rust/pull/5664))
 - Added in-memory emulator service-style aggregate, GROUP BY, and canonical distinct-count plans and split-safe partition partials for account-free testing of the production query pipeline. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
