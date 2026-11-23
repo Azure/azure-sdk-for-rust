@@ -1832,7 +1832,7 @@ typedef struct cosmos_driver_options_config_v3_t {
   const struct cosmos_string_view_t *backup_endpoints;
   uintptr_t backup_endpoints_len;
   /**
-   * NULL/0 inherits runtime identity; explicit empty is validated by UserAgentSuffix.
+   * NULL/0 inherits runtime identity; non-NULL/0 omits the suffix for this client.
    */
   struct cosmos_string_view_t user_agent_suffix;
   /**

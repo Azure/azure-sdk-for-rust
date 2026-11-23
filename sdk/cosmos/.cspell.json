@@ -3,6 +3,7 @@
     "../../.vscode/cspell.json"
   ],
   "ignoreWords": [
+    "AADSTS",
     "accountname",
     "acked",
     "adrs",
@@ -313,6 +314,7 @@
     "offlines",
     "offlining",
     "noretry",
+    "nonmatching",
     "nonpreferred",
     "normalises",
     "notneg",

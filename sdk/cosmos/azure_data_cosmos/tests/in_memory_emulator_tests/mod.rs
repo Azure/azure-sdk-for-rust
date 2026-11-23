@@ -7,6 +7,7 @@
 //! real Cosmos DB account.
 
 pub mod change_feed;
+use azure_data_cosmos_driver::options::{ConnectionPoolOptions, ServerCertificateValidation};
 use std::time::Duration;
 use tracing_subscriber::EnvFilter;
 
@@ -31,6 +32,26 @@ pub mod session_token;
 pub mod topology_parity;
 pub mod user_agent;
 pub mod validation;
+
+fn external_connection_pool(
+    endpoint: &str,
+) -> azure_data_cosmos_driver::error::Result<ConnectionPoolOptions> {
+    let mut builder = ConnectionPoolOptions::builder();
+    if endpoint.contains("localhost") || endpoint.contains("127.0.0.1") {
+        builder = builder.with_server_certificate_validation(
+            ServerCertificateValidation::RequiredUnlessEmulator,
+        );
+    }
+    // These parity checks use V1 headers/session behavior; vNext conformance verifies V2.
+    #[cfg(any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    ))]
+    {
+        builder = builder.with_gateway_v2_disabled(true);
+    }
+    builder.build()
+}
 
 /// Environment variable controlling the bounded live-account setup readiness window.
 const SETUP_TIMEOUT_SECONDS_ENV_VAR: &str = "AZURE_COSMOS_TEST_SETUP_TIMEOUT_SECONDS";

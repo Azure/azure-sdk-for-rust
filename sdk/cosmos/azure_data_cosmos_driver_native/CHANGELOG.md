@@ -4,11 +4,13 @@
 
 ### Features Added
 
-- Added flat versioned runtime and client construction, with one initializer per record, for transport, diagnostics retention, topology/failover, ordered backup endpoints, per-client identity, and nanosecond-precision operation-duration defaults. ([#5635](https://github.com/Azure/azure-sdk-for-rust/pull/5635))
+- Added flat versioned runtime and client construction, with one initializer per record, for transport, diagnostics retention, topology/failover, ordered backup endpoints, per-client identity, and nanosecond-precision operation-duration defaults. ([#5658](https://github.com/Azure/azure-sdk-for-rust/pull/5658))
 
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Fixed `cosmos_runtime_build` and `cosmos_runtime_build_v2` unwinding across the FFI boundary when driver runtime construction panics; they now fail with status 500 and sub-status `COSMOS_SUB_STATUS_CLIENT_FFI_RUNTIME_BUILD_FAILED` (20361). ([#5658](https://github.com/Azure/azure-sdk-for-rust/pull/5658))
 
 ### Other Changes
 
@@ -16,6 +18,7 @@
 
 ### Features Added
 
+- Added cross-partition aggregate, `GROUP BY`, and distinct-count queries to live query cursors; aggregate and grouped cursors reject external checkpoints until drained. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added `cosmos_read_many_request_init` and `cosmos_read_many_open_submit` with versioned request records for key/id or partition selections, including hierarchical prefixes and optional parameterized filters, returning paged results through the existing native cursor APIs without durable checkpoint/resume support. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added a driver option for disabling default-on resource-name validation, including item names supplied to Create and Upsert, when compatibility requires it. ([#5482](https://github.com/Azure/azure-sdk-for-rust/pull/5482))
 

@@ -272,7 +272,7 @@ pub struct CosmosDriverOptionsConfigV3 {
     /// NULL/0 inherits the account's backup endpoints; non-NULL/0 explicitly clears them.
     pub backup_endpoints: *const CosmosStringView,
     pub backup_endpoints_len: usize,
-    /// NULL/0 inherits runtime identity; explicit empty is validated by UserAgentSuffix.
+    /// NULL/0 inherits runtime identity; non-NULL/0 omits the suffix for this client.
     pub user_agent_suffix: CosmosStringView,
     /// 0 inherits; 1 eager; 2 lazy.
     pub topology_cache_mode: u32,

@@ -7,9 +7,9 @@ use super::{
     CosmosDuration, CosmosOptionalU64, CosmosRuntimeOptionsV2, INVALID,
 };
 use crate::{
-    account_ref::{cosmos_account_ref_free, cosmos_account_ref_with_master_key},
+    account_ref::{cosmos_account_ref_free, cosmos_account_ref_with_master_key, AccountRefHandle},
     driver_options::{cosmos_driver_options_free, DriverOptionsHandle},
-    error::COSMOS_STATUS_SUCCESS,
+    error::{CosmosError, CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS},
     fault_injection::{
         cosmos_fault_injection_condition_default, cosmos_fault_injection_result_default,
         cosmos_fault_injection_rule_default,
@@ -32,7 +32,7 @@ use azure_data_cosmos_driver::{
 };
 use std::{
     mem::MaybeUninit,
-    ptr,
+    ptr::{self, NonNull},
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc, Mutex,
@@ -237,7 +237,7 @@ fn client_configuration_copies_backups_preserves_identity_and_uses_native_topolo
     config.read_failure_threshold = integer(2);
     config.circuit_breaker_enabled = 1;
     let mut overrides = Vec::new();
-    for suffix in [Some("client-a"), Some("client-b"), None] {
+    for suffix in [Some("client-a"), Some("client-b"), None, Some("")] {
         let endpoint_text = [
             "https://backup-one.invalid".to_string(),
             "https://backup-two.invalid".to_string(),
@@ -621,6 +621,10 @@ fn assert_client_identity(overrides: Vec<Arc<DriverOptionsHandle>>) {
         ["backup-one.invalid", "backup-two.invalid"]
     );
     assert_eq!(
+        overrides[3].inner.user_agent_suffix().map(|s| s.as_str()),
+        Some("")
+    );
+    assert_eq!(
         overrides[0]
             .inner
             .partition_failover_options()
@@ -661,6 +665,105 @@ fn assert_client_identity(overrides: Vec<Arc<DriverOptionsHandle>>) {
         assert!(identities[1].contains("client-b") && !identities[1].contains("client-a"));
         assert!(identities[2].ends_with(" runtime"));
         assert!(!identities[2].contains("client-a") && !identities[2].contains("client-b"));
+        // Explicit empty overrides, rather than inherits, the runtime suffix.
+        assert!(!identities[3].contains("runtime") && !identities[3].contains("client-"));
         assert_eq!(runtime.user_agent().as_str(), original_identity);
     });
+}
+
+fn invalid_argument() -> CosmosStatusCode {
+    CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+}
+
+#[test]
+fn client_rejections_return_exact_codes_and_null_output() {
+    let account = Box::into_raw(Box::new(AccountRefHandle {
+        inner: azure_data_cosmos_driver::models::AccountReference::with_account_key(
+            "https://primary.invalid".parse().unwrap(),
+            "ZW11bGF0b3Ita2V5",
+        ),
+    }));
+    let bad_scheme = [view(b"ftp://backup.invalid")];
+    let no_host = [view(b"https://")];
+    type Edit<'a> = &'a dyn Fn(&mut CosmosDriverOptionsConfigV3);
+    let cases: [(Edit, CosmosStatusCode); 6] = [
+        (
+            &|c| {
+                c.backup_endpoints = bad_scheme.as_ptr();
+                c.backup_endpoints_len = 1;
+            },
+            INVALID.as_status_code(),
+        ),
+        (
+            &|c| {
+                c.backup_endpoints = no_host.as_ptr();
+                c.backup_endpoints_len = 1;
+            },
+            INVALID.as_status_code(),
+        ),
+        (&|c| c.backup_endpoints_len = 1, invalid_argument()),
+        (
+            &|c| {
+                c.backup_endpoints = bad_scheme.as_ptr();
+                c.backup_endpoints_len = usize::MAX;
+            },
+            invalid_argument(),
+        ),
+        (&|c| c.topology_cache_mode = 3, INVALID.as_status_code()),
+        (&|c| c.circuit_breaker_enabled = 3, INVALID.as_status_code()),
+    ];
+    for (edit, expected) in cases {
+        let mut input: CosmosDriverOptionsConfigV3 =
+            initialized(cosmos_driver_options_config_v3_init);
+        edit(&mut input);
+        let mut out = NonNull::dangling().as_ptr();
+        assert_eq!(
+            cosmos_driver_options_build_v3(account, &input, &mut out),
+            expected
+        );
+        assert!(out.is_null());
+    }
+    let input: CosmosDriverOptionsConfigV3 = initialized(cosmos_driver_options_config_v3_init);
+    let mut out = NonNull::dangling().as_ptr();
+    assert_eq!(
+        cosmos_driver_options_build_v3(account, ptr::null(), &mut out),
+        invalid_argument()
+    );
+    assert!(out.is_null());
+    assert_eq!(
+        cosmos_driver_options_build_v3(account, &input, ptr::null_mut()),
+        invalid_argument()
+    );
+    cosmos_account_ref_free(account);
+}
+
+#[test]
+fn runtime_rejections_return_exact_codes_and_null_outputs() {
+    let build = |input: *const CosmosRuntimeOptionsV2| {
+        let mut out: *mut RuntimeContext = NonNull::dangling().as_ptr();
+        let mut error: *mut CosmosError = NonNull::dangling().as_ptr();
+        let status = cosmos_runtime_build_v2(input, &mut out, &mut error);
+        assert!(out.is_null() && error.is_null());
+        status
+    };
+    for (edit, expected) in [
+        (
+            (|o| o.diagnostics_verbosity = 3) as fn(&mut CosmosRuntimeOptionsV2),
+            INVALID.as_status_code(),
+        ),
+        (
+            |o| o.server_certificate_validation = 3,
+            INVALID.as_status_code(),
+        ),
+    ] {
+        let mut input: CosmosRuntimeOptionsV2 = initialized(cosmos_runtime_options_v2_init);
+        edit(&mut input);
+        assert_eq!(build(&input), expected);
+    }
+    assert_eq!(build(ptr::null()), invalid_argument());
+    let input: CosmosRuntimeOptionsV2 = initialized(cosmos_runtime_options_v2_init);
+    assert_eq!(
+        cosmos_runtime_build_v2(&input, ptr::null_mut(), ptr::null_mut()),
+        invalid_argument()
+    );
 }

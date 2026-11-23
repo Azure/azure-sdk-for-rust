@@ -80,11 +80,12 @@ All borrowed strings, arrays, rules, and operation options are copied during
 construction. Initializers set the size/version prefix and unset sentinels;
 the client initializer also sets the fault-injection rule stride.
 Native builders retain environment/default precedence and validation.
-NULL/0 identity inherits; explicit empty goes through native suffix validation.
+NULL/0 client identity inherits the runtime identity; non-NULL/0 omits the suffix for that client.
 Backup endpoint NULL/0 inherits the account list; non-NULL/0 clears it.
 
 Exact operation-duration defaults are inline fields on both construction records.
-Seconds plus normalized nanoseconds preserve precision
+When set, they override the matching values in the optional
+`cosmos_operation_options_t`. Seconds plus normalized nanoseconds preserve precision
 for endpoint cooldown, throttle wait, and a positive hedge threshold. Unset
 payloads must be zero. Monotonic-clock overflow and native option bounds are
 rejected. Legacy records and entry points keep their published layouts and meanings.
