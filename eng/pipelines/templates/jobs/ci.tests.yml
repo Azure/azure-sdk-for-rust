@@ -43,12 +43,6 @@ jobs:
       image: $(OSVmImage)
     os: ${{ parameters.OSName }}
 
-  variables:
-    # Must not be named `TestFeatureSet`: a variable whose expression reads its
-    # own name is a cycle Azure DevOps cannot resolve, so it emits the literal
-    # `$[ ... ]` text instead of a value.
-    EffectiveTestFeatureSet: $[ coalesce(variables['TestFeatureSet'], 'All') ]
-
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
@@ -77,6 +71,16 @@ jobs:
 
   - ${{ if eq(parameters.TestProxy, true) }}:
     - template: /eng/common/testproxy/test-proxy-standalone-tool.yml
+
+  # Resolve the feature set in a step: a job-level `$[ ]` expression is
+  # evaluated before matrix variables are applied, so it never sees
+  # `TestFeatureSet` and every leg would fall back to `All`. Matrices that don't
+  # set `TestFeatureSet` still default to `All`.
+  - pwsh: |
+      $featureSet = if ($env:TESTFEATURESET) { $env:TESTFEATURESET } else { 'All' }
+      Write-Host "Test feature set: $featureSet"
+      Write-Host "##vso[task.setvariable variable=EffectiveTestFeatureSet]$featureSet"
+    displayName: Resolve test feature set
 
   - task: Powershell@2
     displayName: "Test Packages"

@@ -979,6 +979,7 @@ mod tests {
         let properties = ContainerProperties {
             id: container_name.to_owned().into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(
@@ -1000,6 +1001,7 @@ mod tests {
         let properties = ContainerProperties {
             id: "coll".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new_by_rid(account, "db_rid", "coll", "coll_rid", &properties)

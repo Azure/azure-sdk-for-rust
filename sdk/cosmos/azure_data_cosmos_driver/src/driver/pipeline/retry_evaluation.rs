@@ -1321,6 +1321,7 @@ mod tests {
         let props = ContainerProperties {
             id: "testcontainer".into(),
             partition_key: pk_def,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let container = ContainerReference::new(
@@ -1803,6 +1804,7 @@ mod tests {
             let props = ContainerProperties {
                 id: "testcontainer".into(),
                 partition_key: pk_def,
+                vector_embedding_policy: None,
                 system_properties: SystemProperties::default(),
             };
             let container = ContainerReference::new(
@@ -1902,6 +1904,7 @@ mod tests {
             let props = ContainerProperties {
                 id: "testcontainer".into(),
                 partition_key: pk_def,
+                vector_embedding_policy: None,
                 system_properties: SystemProperties::default(),
             };
             let container = ContainerReference::new(

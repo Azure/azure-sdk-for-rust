@@ -60,13 +60,16 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        let ctx = {
-            let mut ctx = ctx;
-            crate::clients::fake::with_backup_secret_context(&mut ctx, secret_name);
-            ctx
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_secret_client_backup_secret(
+                &mut options.method_options.context,
+                (*(secret_name)).to_owned(),
+            );
+            options
         };
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/backup");
         path = path.replace("{secret-name}", secret_name);
@@ -114,13 +117,16 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        let ctx = {
-            let mut ctx = ctx;
-            crate::clients::fake::with_delete_secret_context(&mut ctx, secret_name);
-            ctx
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_secret_client_delete_secret(
+                &mut options.method_options.context,
+                (*(secret_name)).to_owned(),
+            );
+            options
         };
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -168,13 +174,16 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        let ctx = {
-            let mut ctx = ctx;
-            crate::clients::fake::with_get_deleted_secret_context(&mut ctx, secret_name);
-            ctx
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_secret_client_get_deleted_secret(
+                &mut options.method_options.context,
+                (*(secret_name)).to_owned(),
+            );
+            options
         };
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -221,18 +230,18 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        let ctx = {
-            let mut ctx = ctx;
-            crate::clients::fake::with_get_secret_context(
-                &mut ctx,
-                secret_name,
-                options.secret_version.as_deref(),
-                options.out_content_type.as_ref(),
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_secret_client_get_secret(
+                &mut options.method_options.context,
+                (*(secret_name)).to_owned(),
+                (options.secret_version).clone(),
+                (options.out_content_type).clone(),
             );
-            ctx
+            options
         };
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
@@ -282,7 +291,7 @@ impl SecretClient {
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
         let options = {
             let mut options = options;
-            crate::clients::fake::with_list_deleted_secret_properties_context(
+            crate::clients::fake::capture_secret_client_list_deleted_secret_properties(
                 &mut options.method_options.context,
                 options.maxresults,
             );
@@ -372,7 +381,7 @@ impl SecretClient {
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
         let options = {
             let mut options = options;
-            crate::clients::fake::with_list_secret_properties_context(
+            crate::clients::fake::capture_secret_client_list_secret_properties(
                 &mut options.method_options.context,
                 options.maxresults,
             );
@@ -468,9 +477,9 @@ impl SecretClient {
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
         let options = {
             let mut options = options;
-            crate::clients::fake::with_list_secret_properties_versions_context(
+            crate::clients::fake::capture_secret_client_list_secret_properties_versions(
                 &mut options.method_options.context,
-                secret_name,
+                (*(secret_name)).to_owned(),
                 options.maxresults,
             );
             options
@@ -565,13 +574,16 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        let ctx = {
-            let mut ctx = ctx;
-            crate::clients::fake::with_purge_deleted_secret_context(&mut ctx, secret_name);
-            ctx
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_secret_client_purge_deleted_secret(
+                &mut options.method_options.context,
+                (*(secret_name)).to_owned(),
+            );
+            options
         };
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedsecrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -618,13 +630,16 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        let ctx = {
-            let mut ctx = ctx;
-            crate::clients::fake::with_recover_deleted_secret_context(&mut ctx, secret_name);
-            ctx
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_secret_client_recover_deleted_secret(
+                &mut options.method_options.context,
+                (*(secret_name)).to_owned(),
+            );
+            options
         };
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/deletedsecrets/{secret-name}/recover");
         path = path.replace("{secret-name}", secret_name);
@@ -716,13 +731,16 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        let ctx = {
-            let mut ctx = ctx;
-            crate::clients::fake::with_set_secret_context(&mut ctx, secret_name);
-            ctx
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_secret_client_set_secret(
+                &mut options.method_options.context,
+                (*(secret_name)).to_owned(),
+            );
+            options
         };
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}");
         path = path.replace("{secret-name}", secret_name);
@@ -774,17 +792,17 @@ impl SecretClient {
             ));
         }
         let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
         #[cfg(all(feature = "test", feature = "unstable_fake"))]
-        let ctx = {
-            let mut ctx = ctx;
-            crate::clients::fake::with_update_secret_properties_context(
-                &mut ctx,
-                secret_name,
-                options.secret_version.as_deref(),
+        let options = {
+            let mut options = options;
+            crate::clients::fake::capture_secret_client_update_secret_properties(
+                &mut options.method_options.context,
+                (*(secret_name)).to_owned(),
+                (options.secret_version).clone(),
             );
-            ctx
+            options
         };
+        let ctx = options.method_options.context.to_borrowed();
         let mut url = self.endpoint.clone();
         let mut path = String::from("/secrets/{secret-name}/{secret-version}");
         path = path.replace("{secret-name}", secret_name);
@@ -824,4 +842,4 @@ impl SecretClient {
 /// SDK author provides a custom options type and should reference this constant
 /// in their `Default` implementation rather than hardcoding the value.
 #[allow(dead_code)]
-pub(crate) const DEFAULT_API_VERSION: &str = "2026-03-01-preview";
+pub(crate) const DEFAULT_API_VERSION: &str = "2026-07-01-preview";

@@ -12,7 +12,7 @@ use azure_data_cosmos_driver::{
         ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
         VirtualRegion,
     },
-    models::{AccountReference, CosmosOperation, FeedRange, PartitionKeyDefinition},
+    models::{AccountReference, CosmosOperation, FeedRange, PartitionKeyDefinition, ResponseBody},
     options::{DriverOptions, OperationOptions, PlanOptions, QueryPlanMode},
 };
 
@@ -75,7 +75,6 @@ async fn per_request_gateway_only_mode_bypasses_local_query_planning() {
     assert_eq!(recorder.query_plan_count(), 1);
 }
 
-#[cfg(not(feature = "__internal_native_query_plan"))]
 #[tokio::test]
 async fn per_plan_mode_does_not_leak_to_subsequent_queries() {
     let (_emulator, recorder, driver) = setup().await;
@@ -129,7 +128,6 @@ fn query_with_parameters(
     )
 }
 
-#[cfg(not(feature = "__internal_native_query_plan"))]
 #[tokio::test]
 async fn eligible_query_skips_gateway_query_plan() {
     let (_emulator, recorder, driver) = setup().await;
@@ -165,6 +163,9 @@ async fn eligible_query_skips_gateway_query_plan() {
     assert_eq!(recorder.document_query_count(), 1);
 }
 
+// Native plans this query and runs it as-is; only the local planner
+// short-circuits contradictory filters.
+#[cfg(not(feature = "__internal_native_query_plan"))]
 #[tokio::test]
 async fn contradictory_query_short_circuits_all_query_io() {
     let (_emulator, recorder, driver) = setup().await;
@@ -270,43 +271,85 @@ enum FallbackOutcome {
     Error,
 }
 
+/// Whether the driver uses the native planner: the feature is enabled and
+/// `azure_cosmos_queryplan_sys` bundles a library for this target.
+const NATIVE_PLANNER: bool = cfg!(all(
+    feature = "__internal_native_query_plan",
+    any(
+        target_os = "windows",
+        target_os = "linux",
+        target_os = "macos"
+    ),
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    not(target_env = "musl")
+));
+
+/// Expected Gateway query-plan requests: one, unless the native planner
+/// handles the query without falling back.
+fn expected_gateway_plans(handled_by_native: bool) -> usize {
+    if NATIVE_PLANNER && handled_by_native {
+        0
+    } else {
+        1
+    }
+}
+
 #[tokio::test]
-async fn unsupported_families_fall_back_to_gateway_once() {
+async fn advanced_families_plan_natively_or_fall_back_once() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
 
+    // (name, query, expected outcome, handled by native planner)
     let scenarios = [
         (
             "aggregate",
             "SELECT VALUE COUNT(1) FROM c",
-            FallbackOutcome::Error,
+            if NATIVE_PLANNER {
+                FallbackOutcome::Plan
+            } else {
+                FallbackOutcome::Error
+            },
+            true,
         ),
         (
             "group_by",
             "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
-            FallbackOutcome::Error,
+            if NATIVE_PLANNER {
+                FallbackOutcome::Plan
+            } else {
+                FallbackOutcome::Error
+            },
+            true,
         ),
         (
             "dcount",
             "SELECT VALUE DCOUNT(c.pk) FROM c",
             FallbackOutcome::Plan,
+            false,
         ),
         (
             "hybrid",
             "SELECT VALUE RRF(c.score) FROM c",
             FallbackOutcome::Plan,
+            false,
         ),
         (
             "rewrite_unavailable",
             "SELECT VALUE 1 ORDER BY 1",
-            FallbackOutcome::Error,
+            // Native plans this query; without it, planning fails.
+            if NATIVE_PLANNER {
+                FallbackOutcome::Plan
+            } else {
+                FallbackOutcome::Error
+            },
+            true,
         ),
     ];
 
-    for (name, text, expected) in scenarios {
+    for (name, text, expected, handled_by_native) in scenarios {
         recorder.clear();
         let result = driver
             .plan_operation(
@@ -319,12 +362,12 @@ async fn unsupported_families_fall_back_to_gateway_once() {
 
         assert_eq!(
             recorder.query_plan_count(),
-            1,
-            "{name} must issue exactly one Gateway query-plan request"
+            expected_gateway_plans(handled_by_native),
+            "{name} must issue the expected number of Gateway query-plan requests"
         );
         match expected {
             FallbackOutcome::Plan => {
-                assert!(result.is_ok(), "{name} should produce a Gateway plan");
+                assert!(result.is_ok(), "{name} should produce a plan");
             }
 
             FallbackOutcome::Error => {
@@ -335,7 +378,7 @@ async fn unsupported_families_fall_back_to_gateway_once() {
 }
 
 #[tokio::test]
-async fn vector_queries_fall_back_to_gateway_once() {
+async fn vector_queries_plan_natively_or_fall_back_once() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
@@ -374,13 +417,102 @@ async fn vector_queries_fall_back_to_gateway_once() {
 
         assert_eq!(
             recorder.query_plan_count(),
-            1,
-            "vector query must issue exactly one Gateway query-plan request"
+            expected_gateway_plans(true),
+            "vector query must issue the expected number of Gateway query-plan requests"
         );
-        assert!(
-            result.is_err(),
-            "the in-memory Gateway cannot synthesize authoritative vector metadata"
-        );
+        if NATIVE_PLANNER {
+            assert!(result.is_ok(), "native should plan the vector query");
+        } else {
+            assert!(
+                result.is_err(),
+                "the in-memory Gateway cannot synthesize authoritative vector metadata"
+            );
+        }
+        assert_eq!(recorder.document_query_count(), 0);
+    }
+}
+
+/// Plans and drains `text`, returning every row or the first error.
+async fn run_query(
+    driver: &CosmosDriver,
+    container: &azure_data_cosmos_driver::models::ContainerReference,
+    text: &str,
+) -> azure_data_cosmos_driver::error::Result<Vec<serde_json::Value>> {
+    let mut plan = driver
+        .plan_operation(
+            query(container, text),
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
+        .await?;
+    let mut rows = Vec::new();
+    while let Some(response) = driver
+        .execute_plan(
+            &mut plan,
+            Some(container.clone()),
+            OperationOptions::default(),
+        )
+        .await?
+    {
+        match response.into_body() {
+            ResponseBody::NoPayload => {}
+            ResponseBody::Items(items) => rows.extend(
+                items
+                    .iter()
+                    .map(|item| super::parse_json_body(item).expect("item should parse")),
+            ),
+            ResponseBody::Bytes(bytes) => {
+                let page = super::parse_json_body(&bytes).expect("page should parse");
+                rows.extend(page["Documents"].as_array().cloned().unwrap_or_default());
+            }
+        }
+    }
+    Ok(rows)
+}
+
+#[tokio::test]
+async fn empty_range_plans_return_correct_rows() {
+    let (_emulator, recorder, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+
+    // Native returns the same empty range for all of these and the driver
+    // runs that plan as-is, like a Gateway plan; only the local planner
+    // short-circuits contradictory filters. The in-memory emulator returns no
+    // rows for `SELECT VALUE 1`, so assert it is executed.
+    recorder.clear();
+    run_query(&driver, &container, "SELECT VALUE 1")
+        .await
+        .unwrap();
+    assert!(
+        recorder.document_query_count() > 0,
+        "SELECT VALUE 1 must not be short-circuited"
+    );
+
+    for text in [
+        "SELECT VALUE COUNT(1) FROM c WHERE false",
+        "SELECT COUNT(1) AS n FROM c WHERE c.pk = 'a' AND c.pk = 'b'",
+    ] {
+        match run_query(&driver, &container, text).await {
+            Ok(rows) => assert!(!rows.is_empty(), "{text} must not return an empty success"),
+            Err(_) => {} // explicit unsupported-aggregate error
+        }
+    }
+
+    recorder.clear();
+    let rows = run_query(
+        &driver,
+        &container,
+        "SELECT * FROM c WHERE c.pk = 'a' AND c.pk = 'b'",
+    )
+    .await
+    .unwrap();
+    assert!(rows.is_empty());
+    assert_eq!(recorder.query_plan_count(), 0);
+    if !NATIVE_PLANNER {
         assert_eq!(recorder.document_query_count(), 0);
     }
 }

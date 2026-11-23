@@ -9,7 +9,8 @@
 
 use std::ffi::CString;
 
-use crate::driver::dataflow::query_plan::QueryPlan;
+use crate::driver::dataflow::query_plan::{QueryPlan, RawQueryPlan};
+use crate::models::{PartitionKeyDefinition, PartitionKeyKind};
 use crate::query_plan_native::error::QueryPlanError;
 use crate::query_plan_native::native::{
     self as query_plan_native, GeospatialType, PartitionKeyRangesApiOptions, PartitionKind, WChar,
@@ -74,15 +75,16 @@ impl QueryPlanProvider {
         Ok(())
     }
 
-    /// Generates a partitioned query execution plan.
+    /// Generates a partitioned query execution plan for a container with the
+    /// given partition key.
     ///
-    /// Returns the driver's [`QueryPlan`] type, which is the same JSON format
-    /// that the Cosmos DB Gateway returns. The native DLL serializes to
-    /// compatible JSON, so we deserialize directly into the driver's model.
+    /// The native library reports `queryRanges` as partition-key values; they
+    /// are hashed into EPK hex with the definition's kind and version, so the
+    /// returned [`QueryPlan`] matches what the Gateway path produces.
     pub fn get_partition_key_ranges(
         &self,
         query_spec_json: &str,
-        partition_key_paths: &[&str],
+        partition_key: &PartitionKeyDefinition,
         options: &QueryPlanOptions,
         vector_embedding_policy_json: Option<&str>,
     ) -> Result<QueryPlan, QueryPlanError> {
@@ -90,8 +92,13 @@ impl QueryPlanProvider {
 
         let query_spec_native = to_native_string(query_spec_json);
 
+        let partition_key_paths: Vec<&str> = partition_key
+            .paths()
+            .iter()
+            .map(|path| path.as_ref())
+            .collect();
         let (flat_tokens, token_offsets, token_counts) =
-            tokenize_partition_key_paths(partition_key_paths);
+            tokenize_partition_key_paths(&partition_key_paths);
         let all_token_ptrs: Vec<*const WChar> = token_offsets
             .iter()
             .map(|&off| unsafe { flat_tokens.as_ptr().add(off) })
@@ -103,7 +110,7 @@ impl QueryPlanProvider {
             None => (std::ptr::null(), 0),
         };
 
-        let native_options = PartitionKeyRangesApiOptions::from(options);
+        let native_options = options.to_native(partition_key.kind());
 
         let mut buffer = vec![0u8; INITIAL_BUFFER_SIZE as usize];
         let mut result_length: u32 = 0;
@@ -154,8 +161,9 @@ impl QueryPlanProvider {
             }
         })?;
 
-        let info: QueryPlan = serde_json::from_str(payload)?;
-        Ok(info)
+        let raw: RawQueryPlan = serde_json::from_str(payload)?;
+        raw.resolve(partition_key)
+            .map_err(|source| QueryPlanError::InvalidQueryRanges { source })
     }
 }
 
@@ -163,7 +171,8 @@ impl QueryPlanProvider {
 // Options
 // -------------------------------------------------------------------------
 
-/// High-level options for query plan generation.
+/// High-level options for query plan generation. The partition kind comes
+/// from the container's [`PartitionKeyDefinition`].
 #[derive(Debug, Clone)]
 pub struct QueryPlanOptions {
     pub require_formattable_order_by_query: bool,
@@ -172,7 +181,6 @@ pub struct QueryPlanOptions {
     pub has_logical_partition_key: bool,
     pub allow_dcount: bool,
     pub use_system_prefix: bool,
-    pub partition_kind: PartitionKind,
     pub geospatial_type: GeospatialType,
     pub hybrid_search_skip_order_by_rewrite: bool,
 }
@@ -186,25 +194,27 @@ impl Default for QueryPlanOptions {
             has_logical_partition_key: false,
             allow_dcount: false,
             use_system_prefix: false,
-            partition_kind: PartitionKind::Hash,
             geospatial_type: GeospatialType::Geography,
             hybrid_search_skip_order_by_rewrite: false,
         }
     }
 }
 
-impl From<&QueryPlanOptions> for PartitionKeyRangesApiOptions {
-    fn from(opts: &QueryPlanOptions) -> Self {
-        Self {
-            require_formattable_order_by_query: opts.require_formattable_order_by_query as i32,
-            is_continuation_expected: opts.is_continuation_expected as i32,
-            allow_non_value_aggregate_query: opts.allow_non_value_aggregate_query as i32,
-            has_logical_partition_key: opts.has_logical_partition_key as i32,
-            allow_dcount: opts.allow_dcount as i32,
-            use_system_prefix: opts.use_system_prefix as i32,
-            partition_kind: opts.partition_kind,
-            geospatial_type: opts.geospatial_type,
-            hybrid_search_skip_order_by_rewrite: opts.hybrid_search_skip_order_by_rewrite as i32,
+impl QueryPlanOptions {
+    fn to_native(&self, kind: PartitionKeyKind) -> PartitionKeyRangesApiOptions {
+        PartitionKeyRangesApiOptions {
+            require_formattable_order_by_query: self.require_formattable_order_by_query as i32,
+            is_continuation_expected: self.is_continuation_expected as i32,
+            allow_non_value_aggregate_query: self.allow_non_value_aggregate_query as i32,
+            has_logical_partition_key: self.has_logical_partition_key as i32,
+            allow_dcount: self.allow_dcount as i32,
+            use_system_prefix: self.use_system_prefix as i32,
+            partition_kind: match kind {
+                PartitionKeyKind::MultiHash => PartitionKind::MultiHash,
+                _ => PartitionKind::Hash,
+            },
+            geospatial_type: self.geospatial_type,
+            hybrid_search_skip_order_by_rewrite: self.hybrid_search_skip_order_by_rewrite as i32,
             reserved: [0u8; 28],
         }
     }

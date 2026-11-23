@@ -4,6 +4,7 @@
 mod common;
 
 use azure_core::{
+    error::ErrorKind,
     http::{StatusCode, Url},
     Result,
 };
@@ -81,6 +82,44 @@ async fn create_vault(ctx: &TestContext, client: &KeyVaultClient, name: &str) ->
     assert_eq!(vault.name.as_deref(), Some(name));
     assert_vault(&vault, &raw);
     Ok(())
+}
+
+async fn delete_recovery_vault(
+    client: &KeyVaultClient,
+    group: &str,
+    name: &str,
+    stage: &str,
+    mode: TestMode,
+) -> Result<()> {
+    const MAX_ATTEMPTS: usize = 10;
+
+    let vaults = client.get_key_vault_vaults_client();
+    let mut retry = match mode {
+        TestMode::Playback => Retry::immediate(),
+        _ => Retry::progressive(None),
+    };
+    for attempt in 1..=MAX_ATTEMPTS {
+        match vaults.delete(group, name, None).await {
+            Ok(_) => return Ok(()),
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    ErrorKind::HttpResponse {
+                        status: StatusCode::Conflict,
+                        error_code: Some(code),
+                        ..
+                    } if code == "ConflictError"
+                ) =>
+            {
+                eprintln!("Conflict deleting vault {name} during {stage} (attempt {attempt})");
+                if attempt == MAX_ATTEMPTS || retry.next().await.is_none() {
+                    return Err(error);
+                }
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!()
 }
 
 fn assert_key(
@@ -578,7 +617,14 @@ async fn vault_recovery(ctx: TestContext) -> Result<()> {
     let name = recording.random_string::<16>(Some("v"));
     create_vault(&ctx, &client, &name).await?;
     let vaults = client.get_key_vault_vaults_client();
-    vaults.delete(&group, &name, None).await?;
+    delete_recovery_vault(
+        &client,
+        &group,
+        &name,
+        "initial deletion",
+        recording.test_mode(),
+    )
+    .await?;
     let mut retry = match recording.test_mode() {
         TestMode::Playback => Retry::immediate(),
         _ => Retry::progressive(None),
@@ -608,7 +654,14 @@ async fn vault_recovery(ctx: TestContext) -> Result<()> {
     assert_vault(&vault, &raw);
     let (vault, raw) = model_and_json(vaults.get(&group, &name, None).await?)?;
     assert_vault(&vault, &raw);
-    vaults.delete(&group, &name, None).await?;
+    delete_recovery_vault(
+        &client,
+        &group,
+        &name,
+        "final deletion",
+        recording.test_mode(),
+    )
+    .await?;
     Ok(())
 }
 
@@ -721,4 +774,100 @@ async fn secret_lifecycle(ctx: TestContext) -> Result<()> {
         .delete(&resource_group, &vault_name, None)
         .await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{delete_recovery_vault, KeyVaultClient, Result, StatusCode, TestMode};
+    use azure_core::http::{
+        headers::{Headers, CONTENT_TYPE},
+        AsyncRawResponse, ClientOptions, Method, RetryOptions, Transport,
+    };
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use azure_resourcemanager_keyvault::KeyVaultClientOptions;
+    use futures::FutureExt as _;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+
+    fn client_with_responses(
+        responses: Vec<(StatusCode, &'static str)>,
+    ) -> Result<(KeyVaultClient, Arc<AtomicUsize>)> {
+        let count = Arc::new(AtomicUsize::new(0));
+        let calls = count.clone();
+        let mock = MockHttpClient::new(move |request| {
+            assert_eq!(request.method(), Method::Delete);
+            assert_eq!(
+                request.url().path(),
+                "/subscriptions/sub/resourceGroups/group/providers/Microsoft.KeyVault/vaults/vault"
+            );
+            let index = calls.fetch_add(1, Ordering::SeqCst);
+            let (status, code) = responses[index];
+            let body = format!(r#"{{"error":{{"code":"{code}","message":"test error"}}}}"#);
+            let mut headers = Headers::new();
+            headers.insert(CONTENT_TYPE, "application/json");
+            async move {
+                Ok(AsyncRawResponse::from_bytes(
+                    status,
+                    headers,
+                    body.into_bytes(),
+                ))
+            }
+            .boxed()
+        });
+        let client = KeyVaultClient::new(
+            "sub".into(),
+            MockCredential::new()?,
+            Some(KeyVaultClientOptions {
+                client_options: ClientOptions {
+                    transport: Some(Transport::new(Arc::new(mock))),
+                    retry: RetryOptions::none(),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }),
+        )?;
+        Ok((client, count))
+    }
+
+    #[tokio::test]
+    async fn delete_recovery_vault_retries_transient_conflict() -> Result<()> {
+        let (client, calls) = client_with_responses(vec![
+            (StatusCode::Conflict, "ConflictError"),
+            (StatusCode::NoContent, ""),
+        ])?;
+        delete_recovery_vault(&client, "group", "vault", "test", TestMode::Playback).await?;
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn delete_recovery_vault_stops_after_persistent_conflicts() -> Result<()> {
+        let (client, calls) =
+            client_with_responses(vec![(StatusCode::Conflict, "ConflictError"); 10])?;
+        let error = delete_recovery_vault(&client, "group", "vault", "test", TestMode::Playback)
+            .await
+            .expect_err("expected a persistent conflict");
+        assert_eq!(error.http_status(), Some(StatusCode::Conflict));
+        assert_eq!(calls.load(Ordering::SeqCst), 10);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn delete_recovery_vault_does_not_retry_other_errors() -> Result<()> {
+        for (status, code) in [
+            (StatusCode::Conflict, "OtherConflict"),
+            (StatusCode::Forbidden, "Forbidden"),
+        ] {
+            let (client, calls) = client_with_responses(vec![(status, code)])?;
+            let error =
+                delete_recovery_vault(&client, "group", "vault", "test", TestMode::Playback)
+                    .await
+                    .expect_err("expected a non-retryable error");
+            assert_eq!(error.http_status(), Some(status));
+            assert_eq!(calls.load(Ordering::SeqCst), 1);
+        }
+        Ok(())
+    }
 }

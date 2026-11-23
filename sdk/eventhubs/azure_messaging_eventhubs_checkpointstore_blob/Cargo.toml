@@ -21,7 +21,7 @@ exclude.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.3", default-features = false }
 azure_messaging_eventhubs = { path = "../azure_messaging_eventhubs", version = "0.17.0", default-features = false }
 # Unreleased: must resolve the same azure_core as azure_messaging_eventhubs, which
 # needs AmqpTransport (issue #3601). The registry build of azure_storage_blob pins

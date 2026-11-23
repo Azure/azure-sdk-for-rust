@@ -4,22 +4,30 @@
 //! Native FFI query plan provider using the QueryPlanInterop C++ library.
 //!
 //! This module provides a safe Rust wrapper around `Cosmos.QueryPlanInterop.dll`
-//! (Windows) / `libqueryplaninterop.so` (Linux), which generates partitioned
-//! query execution plans for Cosmos DB SQL queries.
+//! (Windows) / `libqueryplaninterop.so` (Linux) / `libqueryplaninterop.dylib`
+//! (macOS), which generates partitioned query execution plans for Cosmos DB SQL
+//! queries.
 //!
 //! Gated behind the `__internal_native_query_plan` feature flag. When disabled,
-//! the driver uses the Gateway for all query plans. The module itself always
-//! compiles so that tests can run independently of the feature flag.
+//! the driver uses the local Rust planner and the Gateway for query plans. The
+//! module itself always compiles so that tests can run independently of the
+//! feature flag.
+//!
+//! The library is bundled by the `azure_cosmos_queryplan_sys` crate, which
+//! selects the per-platform crate for the build target. On platforms without a
+//! prebuilt library, the driver falls back to the local Rust planner and then
+//! the Gateway.
 //!
 //! # Library loading
 //!
 //! The native library is loaded lazily on first query plan request.
 //! If the DLL/.so is not found, the result is cached and the driver
-//! falls back to the Gateway for all subsequent calls.
+//! falls back to the local Rust planner / Gateway for all subsequent calls.
 //!
 //! Search order:
 //! 1. `AZURE_COSMOS_QUERYPLANINTEROP_DIR` environment variable (absolute path)
-//! 2. OS default (`PATH` on Windows, `LD_LIBRARY_PATH` on Linux)
+//! 2. Directory of the current executable (and its parent for `deps/`)
+//! 3. OS default (`PATH` on Windows, `LD_LIBRARY_PATH` on Linux)
 //!
 //! | Platform | Library name |
 //! |----------|-------------|
@@ -35,21 +43,22 @@
 //!      -> OnceLock: cached QueryPlanProvider (created once, reused)
 //!         -> QueryPlanProvider::new(config)
 //!            -> query_plan_native_lib()  [OnceLock: loaded once per process]
-//!               -> platform::load_library(LIB_NAME) -> LoadLibraryA / dlopen
+//!               -> load_library(binary_name()) -> LoadLibraryW / dlopen
 //!               -> GetProcAddress / dlsym for each export
 //!            -> calls CreateServiceProvider(config)
-//!         -> provider.get_partition_key_ranges(query, pk_paths, options)
+//!         -> provider.get_partition_key_ranges(query, pk_definition, options)
 //!            -> calls GetPartitionKeyRangesFromQuery4(...)
-//!            -> deserialize JSON -> QueryPlan
-//!   -> if Err: fall through to gateway_query_plan()
+//!            -> deserialize JSON -> RawQueryPlan
+//!            -> RawQueryPlan::resolve(pk_definition) -> QueryPlan (EPK hex ranges)
+//!   -> if Err: fall through to the local Rust planner, then gateway_query_plan()
 //! ```
 //!
 //! # Reusing the driver's `QueryPlan` model
 //!
 //! The native DLL outputs the same JSON format as the Cosmos DB Gateway's
-//! query plan endpoint. The provider deserializes the DLL's output directly
-//! into `crate::driver::dataflow::query_plan::QueryPlan`, avoiding type
-//! duplication.
+//! query plan endpoint. The provider deserializes it into the driver's
+//! `RawQueryPlan` and resolves it into `QueryPlan` the same way as Gateway
+//! plans, avoiding type duplication.
 //!
 //! The following deserialization differences between Gateway JSON and native
 //! DLL JSON are handled in `query_plan.rs`:
@@ -59,21 +68,15 @@
 //! | `hasSelectValue`, `hasNonStreamingOrderBy`, `requiresGlobalStatistics`, `isMinInclusive`, `isMaxInclusive` | `true`/`false` | `0`/`1` integer | `bool_from_int_or_bool` custom deserializer |
 //! | `rewrittenQuery` | `"SELECT ..."` | `null` when absent | Changed from `String` to `Option<String>` |
 //! | `groupByAliasToAggregateType` values | `"Average"` | `""`, `null`, or `"Average"` | Changed from `HashMap<String, String>` to `HashMap<String, serde_json::Value>` |
-//! | `queryRanges[].min/max` | hex EPK strings (`"05C1..."`) | structured JSON values (arrays/objects) | `string_or_json` custom deserializer (converts non-strings to JSON text at deserialization time) |
+//! | `queryRanges[].min/max` | hex EPK strings (`"05C1..."`) | partition-key values (`[]`, `["a"]`, `[{"type":"Infinity"}]`) | `RawQueryPlan::resolve` hashes them into EPK hex |
 //! | `partitionedQueryExecutionInfoVersion` | always present | omitted by native DLL | Added `#[serde(default)]` on `QueryPlan` struct |
 //! | `aggregates` (non-VALUE queries) | populated | empty (info in `groupByAliasToAggregateType` instead) | Tests use `has_aggregates()` helper that checks both fields |
 //!
 //! # Running tests
 //!
 //! ```bash
-//! # Unit tests (no native DLL needed)
+//! # Unit and native DLL tests (the library is bundled on supported platforms)
 //! cargo test -p azure_data_cosmos_driver --lib query_plan_native
-//!
-//! # Integration tests (requires native DLL)
-//! AZURE_COSMOS_QUERYPLANINTEROP_DIR=/path/to/lib \
-//! RUSTFLAGS='--cfg test_category="native_query_plan"' \
-//!     cargo test -p azure_data_cosmos_driver --lib query_plan_native \
-//!         --features __internal_native_query_plan
 //! ```
 //!
 //! # Regenerating bindgen bindings
@@ -106,7 +109,13 @@ pub(crate) mod native;
 #[allow(dead_code)]
 pub(crate) mod provider;
 
-#[cfg(test)]
+// Runs only where `azure_cosmos_queryplan_sys` bundles a usable native library.
+#[cfg(all(
+    test,
+    any(target_os = "windows", target_os = "linux", target_os = "macos"),
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    not(target_env = "musl")
+))]
 mod native_dll_tests;
 
 // Re-export the driver's query plan model types for use by integration tests.
@@ -149,17 +158,32 @@ impl NativeQueryPlanProvider {
         }
     }
 
+    /// Creates a provider that behaves as if the native library failed to
+    /// load, so fallback paths can be tested on every platform.
+    #[cfg(test)]
+    pub(crate) fn unavailable() -> Self {
+        Self {
+            inner: std::sync::OnceLock::from(Err(error::QueryPlanError::LibraryNotAvailable {
+                message: "unavailable for test".to_string(),
+            })),
+            last_config: std::sync::Mutex::new(String::new()),
+        }
+    }
+
     /// Generates a query plan using the native FFI provider.
     ///
     /// On first call, lazily loads the native library and creates the
     /// service provider with the given `query_engine_config`. On subsequent
     /// calls, if the config has changed the provider is updated via
     /// `UpdateServiceProvider`.
+    ///
+    /// `vector_embedding_policy` is the container's vector embedding policy;
+    /// native uses it to plan `VectorDistance` ordering.
     pub fn get_query_plan(
         &self,
         query_spec_json: &str,
-        partition_key_paths: &[&str],
-        partition_key_kind: crate::models::PartitionKeyKind,
+        partition_key: &crate::models::PartitionKeyDefinition,
+        vector_embedding_policy: Option<&crate::models::VectorEmbeddingPolicy>,
         query_engine_config: &str,
     ) -> Result<crate::driver::dataflow::query_plan::QueryPlan, error::QueryPlanError> {
         let provider = self
@@ -183,25 +207,27 @@ impl NativeQueryPlanProvider {
             }
         }
 
-        let partition_kind = match partition_key_kind {
-            crate::models::PartitionKeyKind::MultiHash => native::PartitionKind::MultiHash,
-            _ => native::PartitionKind::Hash,
-        };
-
-        let options = query_plan_options(partition_kind);
-
-        provider.get_partition_key_ranges(query_spec_json, partition_key_paths, &options, None)
+        // Infallible: the policy holds only strings, numbers and string-keyed JSON maps.
+        let vector_embedding_policy_json = vector_embedding_policy
+            .map(|p| serde_json::to_string(p).expect("vector embedding policy serializes to JSON"));
+        provider.get_partition_key_ranges(
+            query_spec_json,
+            partition_key,
+            &query_plan_options(),
+            vector_embedding_policy_json.as_deref(),
+        )
     }
 }
 
-fn query_plan_options(partition_kind: native::PartitionKind) -> provider::QueryPlanOptions {
+fn query_plan_options() -> provider::QueryPlanOptions {
     provider::QueryPlanOptions {
-        partition_kind,
         // Match the .NET query-plan contract: the service decides whether the
         // resulting plan is streaming or non-streaming, and both pipelines can
         // consume the formattable ORDER BY rewrite.
         require_formattable_order_by_query: true,
         is_continuation_expected: false,
+        allow_non_value_aggregate_query: true,
+        allow_dcount: true,
         ..provider::QueryPlanOptions::default()
     }
 }
@@ -212,14 +238,26 @@ mod tests {
 
     #[test]
     fn query_plan_options_request_formattable_ordering() {
-        for partition_kind in [
-            native::PartitionKind::Hash,
-            native::PartitionKind::MultiHash,
-        ] {
-            let options = query_plan_options(partition_kind);
-            assert!(options.require_formattable_order_by_query);
-            assert!(!options.is_continuation_expected);
-            assert_eq!(options.partition_kind, partition_kind);
-        }
+        let options = query_plan_options();
+        assert!(options.require_formattable_order_by_query);
+        assert!(!options.is_continuation_expected);
+        assert!(options.allow_dcount);
+        assert!(options.allow_non_value_aggregate_query);
+    }
+
+    #[test]
+    fn unavailable_provider_reports_library_not_available() {
+        let pk: crate::models::PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap();
+        let result = NativeQueryPlanProvider::unavailable().get_query_plan(
+            r#"{"query":"SELECT * FROM c"}"#,
+            &pk,
+            None,
+            "{}",
+        );
+        assert!(matches!(
+            result,
+            Err(error::QueryPlanError::LibraryNotAvailable { .. })
+        ));
     }
 }

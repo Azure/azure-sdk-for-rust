@@ -256,6 +256,43 @@ Describe 'Release decisions' {
     { Get-ReleaseDecisions $plan @($fixture, $dependency) } | Should -Throw '*cannot depend on preview*'
   }
 
+  It 'rewrites an overridden changed dependency even when its version matches the release' {
+    $dependency = New-ReleaseFixture 'azure_dependency'
+    $fixture.Dependencies = @(@{ name = $dependency.Name; path = '/local'; kind = $null; req = '^1.1.0-beta.1' })
+    $plan.Packages += @{
+      Name = $dependency.Name; Version = $dependency.Version; Release = $false
+      BaselineVersion = $dependency.Version; BaselineTag = "azure_dependency@$($dependency.Version)"
+      Changes = @('src/lib.rs'); DecisionReason = 'Use the published version'
+    }
+    Mock Get-ReleaseBaseline {
+      param($Name)
+      if ($Name -eq 'azure_dependency') {
+        @{ Tag = 'azure_dependency@1.1.0-beta.1'; Version = '1.1.0-beta.1' }
+      }
+    }
+    (Get-ReleaseDecisions $plan @($fixture, $dependency)).RewriteVersions.azure_dependency |
+      Should -Be '1.1.0-beta.1'
+  }
+
+  It 'rejects preview requirements when a matching stable dependency remains local' {
+    $plan.ReleaseType = 'Stable'
+    $fixture.Version = $plan.Packages[0].Version = '1.2.0'
+    $dependency = New-ReleaseFixture 'azure_dependency'
+    $dependency.Version = '1.1.0'
+    $fixture.Dependencies = @(@{ name = $dependency.Name; path = '/local'; kind = $null; req = '^1.1.0-beta.1' })
+    $plan.Packages += @{
+      Name = $dependency.Name; Version = $dependency.Version; Release = $false
+      BaselineVersion = '1.1.0'; BaselineTag = 'azure_dependency@1.1.0'; Changes = @()
+    }
+    Mock Get-ReleaseBaseline {
+      param($Name)
+      if ($Name -eq 'azure_dependency') {
+        @{ Tag = 'azure_dependency@1.1.0'; Version = '1.1.0' }
+      }
+    }
+    { Get-ReleaseDecisions $plan @($fixture, $dependency) } | Should -Throw '*cannot depend on preview*'
+  }
+
   It 'orders dependencies before dependents' {
     $dependency = New-ReleaseFixture 'azure_dependency'
     $fixture.Dependencies = @(@{ name = $dependency.Name; path = '/local'; kind = $null; req = '^1.1.0-beta.1' })
@@ -337,6 +374,14 @@ azure_example = { path = "../azure_example", version = "1.0.0", features = [] }
       '-c', 'user.name=Release Test', '-c', 'user.email=release@example.invalid',
       'commit', '--quiet', '-m', 'Initial fixture') | Out-Null
     Invoke-ReleaseCommand @('git', '-c', 'tag.gpgsign=false', 'tag', 'azure_example@1.0.0') | Out-Null
+    $inventory = @(Get-ReleaseInventory)
+    $selected = Select-ReleasePackages $inventory @() @('azure_example')
+    $plan = Get-ReleaseAnalysis $inventory $selected 'Stable' '2026-11-05'
+    $decisions = Get-ReleaseDecisions $plan $inventory
+    $inputObject = @{ root = [string] $RepoRoot; versions = $decisions.RewriteVersions; apply = $true }
+    (Invoke-ReleaseToml 'release-dependencies' $inputObject).changed_manifests.Count | Should -Be 0
+    (Get-Content $consumerPath -Raw) | Should -Match 'path ='
+
     $manifestPath = [System.IO.Path]::Combine($RepoRoot, 'sdk', 'example', 'azure_example', 'Cargo.toml')
     (Get-Content $manifestPath -Raw).Replace('1.0.0', '1.1.0') | Set-Content $manifestPath
     (Get-Content $consumerPath -Raw).Replace('1.0.0', '1.1.0') | Set-Content $consumerPath
@@ -353,7 +398,7 @@ azure_example = { path = "../azure_example", version = "1.0.0", features = [] }
     $plan.Packages[0].Changes.Count | Should -Be 0
     $plan.Packages[0].LocalChanges.Count | Should -Be 0
     $decisions = Get-ReleaseDecisions $plan $inventory
-    $inputObject = @{ root = [string] $RepoRoot; versions = $decisions.Versions; apply = $false }
+    $inputObject = @{ root = [string] $RepoRoot; versions = $decisions.RewriteVersions; apply = $false }
     $preview = Invoke-ReleaseToml 'release-dependencies' $inputObject
     $preview.affected_packages | Should -Contain 'azure_consumer'
     (Get-Content $consumerPath -Raw) | Should -Match 'path ='

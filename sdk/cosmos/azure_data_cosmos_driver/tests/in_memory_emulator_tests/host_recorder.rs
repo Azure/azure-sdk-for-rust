@@ -71,12 +71,10 @@ impl HostRecorder {
         self.count(RequestKind::QueryPlan)
     }
 
-    #[cfg_attr(feature = "__internal_native_query_plan", allow(dead_code))]
     pub fn document_query_count(&self) -> usize {
         self.count(RequestKind::DocumentQuery)
     }
 
-    #[cfg_attr(feature = "__internal_native_query_plan", allow(dead_code))]
     pub fn routing_metadata_count(&self) -> usize {
         self.count(RequestKind::RoutingMetadata)
     }
