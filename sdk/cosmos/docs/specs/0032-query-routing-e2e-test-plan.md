@@ -37,8 +37,12 @@ be reported as prerequisites, not skipped and counted as passes.
 
 Rust also does not yet emit the PPK HTTP header or RNTBD token. Tier A PPK
 carrier tests and Q2–Q4 are blocked until public partial-HPK query scope is
-projected to those wire carriers. This prerequisite is independent of
-distributed aggregate support.
+projected to those wire carriers. Tier A PPK result tests additionally require
+hosted-emulator HTTP parsing, V2 token decoding, and backend HPK-prefix and
+PPK-plus-EPK-R intersection semantics. Verify prefix enforcement with
+`SELECT * FROM c` scoped only by PPK, with nonmatching prefixes on the same
+physical partition. These prerequisites are independent of distributed
+aggregate support.
 
 Malformed wire combinations and internal scope-plus-range combinations that
 cannot be constructed through the public SDK belong in driver component or raw
