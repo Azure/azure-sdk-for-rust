@@ -133,6 +133,99 @@ pub mod completion {
         CosmosOperationHandleStateCancelled = 3,
     }
 }
+pub mod configuration {
+    #[no_mangle]
+    pub extern "C" fn cosmos_driver_options_build_v3(account: *const crate::account_ref::AccountRefHandle, input: *const CosmosDriverOptionsConfigV3, out: *mut *mut crate::driver_options::DriverOptionsHandle) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_driver_options_config_v3_init(out: *mut CosmosDriverOptionsConfigV3);
+    #[no_mangle]
+    pub extern "C" fn cosmos_runtime_build_v2(input: *const CosmosRuntimeOptionsV2, out: *mut *mut crate::runtime::RuntimeContext, error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_runtime_options_v2_init(out: *mut CosmosRuntimeOptionsV2);
+    #[repr(C)]
+    pub struct CosmosDriverOptionsConfigV3 {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub preferred_regions: *const crate::string::CosmosStringView,
+        pub preferred_regions_len: usize,
+        pub operation_options: *const crate::op_request::CosmosOperationOptions,
+        pub fault_injection_rules: *const crate::fault_injection::CosmosFaultInjectionRule,
+        pub fault_injection_rules_len: usize,
+        pub fault_injection_rule_stride: usize,
+        pub resource_name_validation_enabled: i8,
+        pub backup_endpoints: *const crate::string::CosmosStringView,
+        pub backup_endpoints_len: usize,
+        pub user_agent_suffix: crate::string::CosmosStringView,
+        pub topology_cache_mode: u32,
+        pub circuit_breaker_enabled: i8,
+        pub read_failure_threshold: CosmosOptionalU64,
+        pub write_failure_threshold: CosmosOptionalU64,
+        pub consecutive_hedge_win_threshold: CosmosOptionalU64,
+        pub counter_reset_window: CosmosDuration,
+        pub partition_unavailability_duration: CosmosDuration,
+        pub failback_sweep_interval: CosmosDuration,
+        pub endpoint_unavailability_ttl: CosmosDuration,
+        pub max_throttle_retry_wait_time: CosmosDuration,
+        pub hedge_threshold: CosmosDuration,
+    }
+    #[derive(Clone, Copy, Default)]
+    #[repr(C)]
+    pub struct CosmosDuration {
+        pub is_set: u8,
+        pub seconds: u64,
+        pub nanoseconds: u32,
+    }
+    #[derive(Clone, Copy, Default)]
+    #[repr(C)]
+    pub struct CosmosOptionalU64 {
+        pub is_set: u8,
+        pub value: u64,
+    }
+    #[repr(C)]
+    pub struct CosmosRuntimeOptionsV2 {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub workload_id: u8,
+        pub correlation_id: crate::string::CosmosStringView,
+        pub user_agent_suffix: crate::string::CosmosStringView,
+        pub wrapping_sdk_identifier: crate::string::CosmosStringView,
+        pub cpu_refresh_interval_ms: u64,
+        pub operation_options: *const crate::op_request::CosmosOperationOptions,
+        pub endpoint_unavailability_ttl: CosmosDuration,
+        pub max_throttle_retry_wait_time: CosmosDuration,
+        pub hedge_threshold: CosmosDuration,
+        pub proxy_allowed: i8,
+        pub is_http2_allowed: i8,
+        pub gateway_v2_disabled: i8,
+        pub server_certificate_validation: u32,
+        pub tls_backend: u32,
+        pub local_address: crate::string::CosmosStringView,
+        pub min_connect_timeout: CosmosDuration,
+        pub max_connect_timeout: CosmosDuration,
+        pub min_dataplane_request_timeout: CosmosDuration,
+        pub max_dataplane_request_timeout: CosmosDuration,
+        pub min_metadata_request_timeout: CosmosDuration,
+        pub max_metadata_request_timeout: CosmosDuration,
+        pub idle_connection_timeout: CosmosDuration,
+        pub idle_http2_client_timeout: CosmosDuration,
+        pub http2_health_check_interval: CosmosDuration,
+        pub http2_eviction_grace_period: CosmosDuration,
+        pub http2_keep_alive_interval: CosmosDuration,
+        pub http2_keep_alive_timeout: CosmosDuration,
+        pub tcp_keepalive_time: CosmosDuration,
+        pub tcp_keepalive_interval: CosmosDuration,
+        pub max_idle_connections_per_endpoint: CosmosOptionalU64,
+        pub max_http2_streams_per_client: CosmosOptionalU64,
+        pub http2_fan_out_threshold_percent: CosmosOptionalU64,
+        pub max_http2_connections_per_endpoint: CosmosOptionalU64,
+        pub min_http2_connections_per_endpoint: CosmosOptionalU64,
+        pub http2_consecutive_failure_threshold: CosmosOptionalU64,
+        pub tcp_keepalive_retries: CosmosOptionalU64,
+        pub diagnostics_verbosity: u32,
+        pub max_summary_size_bytes: CosmosOptionalU64,
+        pub max_request_diagnostics: CosmosOptionalU64,
+    }
+}
 pub mod container_ref {
     #[no_mangle]
     pub extern "C" fn cosmos_container_ref_free(container: *mut ContainerRefHandle);

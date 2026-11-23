@@ -21,6 +21,7 @@ pub mod string;
 pub mod account_ref;
 pub mod bytes;
 pub mod completion;
+pub mod configuration;
 pub mod container_ref;
 pub mod credential;
 pub mod cursor;

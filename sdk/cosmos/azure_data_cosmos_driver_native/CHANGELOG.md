@@ -1,5 +1,17 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added flat versioned runtime and client construction, with one initializer per record, for transport, diagnostics retention, topology/failover, ordered backup endpoints, per-client identity, and nanosecond-precision operation-duration defaults. ([#5635](https://github.com/Azure/azure-sdk-for-rust/pull/5635))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added

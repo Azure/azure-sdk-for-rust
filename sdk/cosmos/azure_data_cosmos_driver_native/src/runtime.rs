@@ -93,9 +93,23 @@ impl RuntimeContext {
         // perform network I/O (per-account network probes happen lazily
         // inside `get_or_create_driver`) so blocking the FFI
         // thread here is bounded by local TLS + machine-ID work.
-        let driver = tokio
-            .block_on(async move { builder.build().await })
-            .map_err(RuntimeBuildError::Driver)?;
+        let driver = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            tokio.block_on(async move { builder.build().await })
+        }))
+        .map_err(|_| {
+            tracing::error!("driver runtime construction panicked");
+            RuntimeBuildError::Driver(
+                azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosErrorCode::CosmosErrorCodeRuntimeBuildFailed
+                            .to_status()
+                            .expect("non-success status"),
+                    )
+                    .with_message("driver runtime construction panicked")
+                    .build(),
+            )
+        })?
+        .map_err(RuntimeBuildError::Driver)?;
 
         Ok(Arc::into_raw(Arc::new(RuntimeContext {
             tokio: ManuallyDrop::new(tokio),
