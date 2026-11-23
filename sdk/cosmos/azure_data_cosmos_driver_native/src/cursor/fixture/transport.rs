@@ -10,12 +10,17 @@ use azure_data_cosmos_driver::test::{
     TransportClient, TransportError,
 };
 use std::sync::{
-    atomic::{AtomicU8, Ordering},
-    Arc,
+    atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering},
+    Arc, Mutex,
 };
 
 #[derive(Debug, Default)]
 pub(crate) struct Gate {
+    pub(crate) routing_reads: AtomicUsize,
+    pub(crate) routing_failure: AtomicBool,
+    pub(crate) empty_routing: AtomicBool,
+    pub(crate) expected_scope: Mutex<Option<(String, String)>>,
+    pub(crate) scoped_reads: AtomicUsize,
     pub(crate) entered: tokio::sync::Notify,
     pub(crate) release: tokio::sync::Notify,
     pub(crate) failure: AtomicU8,
@@ -250,8 +255,30 @@ impl TransportClient for ScriptedTransport {
             && header(request, "x-ms-cosmos-is-query-plan-request").is_none()
         {
             if let Some(gate) = &self.0 {
-                gate.entered.notify_one();
-                gate.release.notified().await;
+                let expected_scope = gate.expected_scope.lock().unwrap().clone();
+                if let Some((min, max)) = expected_scope {
+                    assert_eq!(header(request, "x-ms-start-epk"), Some(min.as_str()));
+                    assert_eq!(header(request, "x-ms-end-epk"), Some(max.as_str()));
+                    assert_eq!(
+                        header(request, "x-ms-read-key-type"),
+                        Some("EffectivePartitionKeyRange")
+                    );
+                    assert!(header(request, "x-ms-documentdb-partitionkey").is_none());
+                    gate.scoped_reads.fetch_add(1, Ordering::SeqCst);
+                    if header(request, "a-im").is_some() {
+                        let mut headers = Headers::new();
+                        headers.insert("x-ms-substatus", "1001");
+                        return Ok(HttpResponse {
+                            status: 400,
+                            headers,
+                            body: br#"{"code":"BadRequest","message":"unsupported EPK scope"}"#
+                                .to_vec(),
+                        });
+                    }
+                } else {
+                    gate.entered.notify_one();
+                    gate.release.notified().await;
+                }
                 match gate.failure.load(Ordering::Acquire) {
                     1 => panic!("scripted transport panic"),
                     2 => {
@@ -286,6 +313,37 @@ impl TransportClient for ScriptedTransport {
                 "partitionKey":{"paths":["/pk"],"kind":"Hash","version":2}
             }),
             path if path.ends_with("/pkranges") => {
+                if let Some(gate) = &self.0 {
+                    gate.routing_reads.fetch_add(1, Ordering::SeqCst);
+                    if gate.routing_failure.load(Ordering::Acquire) {
+                        headers.insert("x-ms-substatus", "1001");
+                        headers.insert("x-ms-request-charge", "3.5");
+                        return Ok(HttpResponse {
+                            status: 400,
+                            headers,
+                            body:
+                                br#"{"code":"BadRequest","message":"scripted discovery failure"}"#
+                                    .to_vec(),
+                        });
+                    }
+                }
+                if self
+                    .0
+                    .as_ref()
+                    .is_some_and(|gate| gate.empty_routing.load(Ordering::Acquire))
+                {
+                    headers.insert("etag", "\"empty\"");
+                    let status = if header(request, "if-none-match").is_some() {
+                        304
+                    } else {
+                        200
+                    };
+                    return Ok(HttpResponse {
+                        status,
+                        headers,
+                        body: br#"{"PartitionKeyRanges":[],"_count":0}"#.to_vec(),
+                    });
+                }
                 if header(request, "if-none-match").is_some() {
                     status = 304;
                 }

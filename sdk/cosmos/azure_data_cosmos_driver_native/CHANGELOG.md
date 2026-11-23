@@ -1,5 +1,17 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added native feed-range discovery, EPK construction, combined bounds/identity inspection, combined subset/overlap relations, and bounds-only serialization with explicit list, handle, and string ownership.
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added

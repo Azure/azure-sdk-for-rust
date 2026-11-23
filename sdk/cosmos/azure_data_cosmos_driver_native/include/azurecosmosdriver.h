@@ -1034,6 +1034,11 @@ typedef struct cosmos_driver_options_t cosmos_driver_options_t;
 typedef struct cosmos_feed_range_t cosmos_feed_range_t;
 
 /**
+ * Owned discovery result. Free with [`cosmos_feed_range_list_free()`].
+ */
+typedef struct cosmos_feed_range_list_t cosmos_feed_range_list_t;
+
+/**
  * The C ABI handle for an in-flight (or just-completed) operation
  * (`cosmos_operation_handle_t`).
  *
@@ -2097,6 +2102,41 @@ typedef struct cosmos_driver_options_config_v2_t {
 } cosmos_driver_options_config_v2_t;
 
 /**
+ * Owned feed-range bounds and logical partition-key identity.
+ *
+ * Free each string independently with `cosmos_string_free`. Neither string
+ * borrows from the range handle; no separate result-record free is needed.
+ */
+typedef struct cosmos_feed_range_info_t {
+  /**
+   * Owned hexadecimal inclusive minimum, including the empty minimum.
+   */
+  char *min_inclusive;
+  /**
+   * Owned hexadecimal exclusive maximum.
+   */
+  char *max_exclusive;
+  /**
+   * 1 if the handle retains logical partition-key identity; otherwise 0.
+   */
+  uint8_t is_logical_partition;
+} cosmos_feed_range_info_t;
+
+/**
+ * The driver's effective-bound subset and overlap results, encoded as 0 or 1.
+ */
+typedef struct cosmos_feed_range_relation_t {
+  /**
+   * Whether the first range is a subset of the second range.
+   */
+  uint8_t is_subset;
+  /**
+   * Whether the ranges overlap.
+   */
+  uint8_t overlaps;
+} cosmos_feed_range_relation_t;
+
+/**
  * One selected logical key, with an item id only for item selection.
  */
 typedef struct cosmos_read_many_identity_t {
@@ -2325,6 +2365,13 @@ void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
  * undefined behavior.
  */
 void cosmos_bytes_free(struct cosmos_bytes_t bytes);
+
+/**
+ * Detaches an owned discovery list once; returns NULL for other or already-detached completions.
+ *
+ * Free the result with `cosmos_feed_range_list_free`. The list outlives the completion.
+ */
+struct cosmos_feed_range_list_t *cosmos_completion_take_feed_ranges(struct cosmos_completion_t *completion);
 
 /**
  * Returns the effective PATCH tracking UUID carried by a completion.
@@ -2849,6 +2896,66 @@ struct cosmos_fault_injection_result_t cosmos_fault_injection_result_default(voi
 struct cosmos_fault_injection_rule_t cosmos_fault_injection_rule_default(void);
 
 /**
+ * Returns the number of ranges, or zero for NULL.
+ */
+uintptr_t cosmos_feed_range_list_len(const struct cosmos_feed_range_list_t *list);
+
+/**
+ * Copies one range into an independent handle; an invalid index returns an invalid-option status.
+ */
+cosmos_status_code_t cosmos_feed_range_list_get(const struct cosmos_feed_range_list_t *list,
+                                                uintptr_t index,
+                                                struct cosmos_feed_range_t **out);
+
+/**
+ * Frees a discovery list without invalidating previously copied range handles. NULL is a no-op.
+ */
+void cosmos_feed_range_list_free(struct cosmos_feed_range_list_t *list);
+
+/**
+ * Constructs a range from even-length hexadecimal EPK bounds, including the empty minimum.
+ *
+ * Inverted or malformed bounds fail. Equal bounds represent one EPK, matching the driver.
+ */
+cosmos_status_code_t cosmos_feed_range_from_epk(struct cosmos_string_view_t min,
+                                                struct cosmos_string_view_t max,
+                                                struct cosmos_feed_range_t **out);
+
+/**
+ * Parses the driver's base64-encoded JSON range representation, copying the input.
+ *
+ * Parsing restores effective bounds only, not logical partition identity.
+ */
+cosmos_status_code_t cosmos_feed_range_parse(struct cosmos_string_view_t serialized,
+                                             struct cosmos_feed_range_t **out);
+
+/**
+ * Serializes effective bounds as base64 JSON, setting `*out` to NULL on failure.
+ * Free the owned string with `cosmos_string_free`.
+ */
+cosmos_status_code_t cosmos_feed_range_serialize(const struct cosmos_feed_range_t *range,
+                                                 char **out);
+
+/**
+ * Returns owned bounds and logical identity. Zeroes the output on failure.
+ *
+ * `out` must point to writable, aligned storage for one [`CosmosFeedRangeInfo`].
+ * Free any previous strings before reusing the output storage.
+ */
+cosmos_status_code_t cosmos_feed_range_inspect(const struct cosmos_feed_range_t *range,
+                                               struct cosmos_feed_range_info_t *out);
+
+/**
+ * Compares effective bounds using the driver's existing subset and overlap semantics.
+ *
+ * `out` must point to writable, aligned storage for one [`CosmosFeedRangeRelation`].
+ * Failure zeroes the output; neither input handle is consumed.
+ */
+cosmos_status_code_t cosmos_feed_range_relate(const struct cosmos_feed_range_t *range,
+                                              const struct cosmos_feed_range_t *other,
+                                              struct cosmos_feed_range_relation_t *out);
+
+/**
  * Constructs a feed range covering the entire EPK key space. Mirrors
  * [`azure_data_cosmos_driver::models::FeedRange::full`].
  *
@@ -3102,6 +3209,19 @@ struct cosmos_runtime_options_t cosmos_runtime_options_default(void);
 cosmos_status_code_t cosmos_runtime_build(const struct cosmos_runtime_options_t *options,
                                           struct cosmos_runtime_t **out_runtime,
                                           struct cosmos_error_t **out_error);
+
+/**
+ * Discovers ranges using the driver's routing cache and an ordinary completion queue.
+ *
+ * `force_refresh` must be 0 or 1. Detach the result with
+ * `cosmos_completion_take_feed_ranges`; unresolved topology fails with HTTP 503 and sub-status 20305.
+ */
+struct cosmos_operation_handle_t *cosmos_container_read_feed_ranges_submit(const struct cosmos_driver_t *driver,
+                                                                           const struct cosmos_container_ref_t *container,
+                                                                           uint8_t force_refresh,
+                                                                           struct cosmos_completion_queue_t *queue,
+                                                                           intptr_t user_data,
+                                                                           cosmos_status_code_t *out_pre_error);
 
 /**
  * Submits a feed-capable operation for asynchronous execution, binding to

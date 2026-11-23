@@ -64,6 +64,8 @@ pub mod completion {
     #[no_mangle]
     pub extern "C" fn cosmos_completion_take_driver(c: *mut CosmosCompletion) -> *mut crate::driver::DriverHandle;
     #[no_mangle]
+    pub extern "C" fn cosmos_completion_take_feed_ranges(completion: *mut CosmosCompletion) -> *mut crate::feed_range::FeedRangeListHandle;
+    #[no_mangle]
     pub extern "C" fn cosmos_operation_handle_free(op: *mut OperationHandle);
     #[no_mangle]
     pub extern "C" fn cosmos_operation_handle_state(op: *const OperationHandle) -> CosmosOperationHandleState;
@@ -495,8 +497,39 @@ pub mod feed_range {
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_free(fr: *mut FeedRangeHandle);
     #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_from_epk(min: crate::string::CosmosStringView, max: crate::string::CosmosStringView, out: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
     pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_inspect(range: *const FeedRangeHandle, out: *mut CosmosFeedRangeInfo) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_list_free(list: *mut FeedRangeListHandle);
+    #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_list_get(list: *const FeedRangeListHandle, index: usize, out: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_list_len(list: *const FeedRangeListHandle) -> usize;
+    #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_parse(serialized: crate::string::CosmosStringView, out: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_relate(range: *const FeedRangeHandle, other: *const FeedRangeHandle, out: *mut CosmosFeedRangeRelation) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_feed_range_serialize(range: *const FeedRangeHandle, out: *mut *mut std::ffi::c_char) -> crate::error::CosmosStatusCode;
+    #[derive(Default)]
+    #[repr(C)]
+    pub struct CosmosFeedRangeInfo {
+        pub min_inclusive: *mut std::ffi::c_char,
+        pub max_exclusive: *mut std::ffi::c_char,
+        pub is_logical_partition: u8,
+    }
+    #[derive(Default)]
+    #[repr(C)]
+    pub struct CosmosFeedRangeRelation {
+        pub is_subset: u8,
+        pub overlaps: u8,
+    }
     pub struct FeedRangeHandle {
+    }
+    pub struct FeedRangeListHandle {
     }
 }
 pub mod op_request {
@@ -810,6 +843,8 @@ pub mod string {
     }
 }
 pub mod submit {
+    #[no_mangle]
+    pub extern "C" fn cosmos_container_read_feed_ranges_submit(driver: *const crate::driver::DriverHandle, container: *const crate::container_ref::ContainerRefHandle, force_refresh: u8, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
     pub extern "C" fn cosmos_driver_get_or_create_submit(runtime: *const crate::runtime::RuntimeContext, account: *const crate::account_ref::AccountRefHandle, options: *const crate::driver_options::DriverOptionsHandle, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]

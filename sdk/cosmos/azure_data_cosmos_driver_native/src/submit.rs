@@ -78,6 +78,7 @@ unsafe impl Send for SpawnContext {}
 
 /// The success payload a submit task produces, mapped into a completion.
 enum SuccessKind {
+    FeedRanges(Vec<azure_data_cosmos_driver::models::FeedRange>),
     /// A CRUD / feed response page (or a degenerate end-of-feed shell when
     /// `response` is `None`) plus an optional planner next-page token. The
     /// response is boxed to keep this enum small (it is otherwise dominated by
@@ -184,6 +185,9 @@ fn spawn_oneshot<Fut, R>(
         let user_data = ctx.user_data.as_isize();
         let completion = match done {
             Ok(Ok(success)) => match success {
+                SuccessKind::FeedRanges(ranges) => {
+                    PendingCompletion::ok_feed_ranges(user_data, ctx.op_inner.clone(), ranges)
+                }
                 SuccessKind::Response {
                     response,
                     next_continuation,
@@ -270,6 +274,73 @@ fn spawn_oneshot<Fut, R>(
 // + `OperationOptions` internally and dispatches to the matching driver
 // method. These supersede the per-operation factory / mutator surface.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Discovers ranges using the driver's routing cache and an ordinary completion queue.
+///
+/// `force_refresh` must be 0 or 1. Detach the result with
+/// `cosmos_completion_take_feed_ranges`; unresolved topology fails with HTTP 503 and sub-status 20305.
+#[no_mangle]
+pub extern "C" fn cosmos_container_read_feed_ranges_submit(
+    driver: *const DriverHandle,
+    container: *const crate::container_ref::ContainerRefHandle,
+    force_refresh: u8,
+    queue: *mut CompletionQueue,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    let prepare = || {
+        let driver = DriverHandle::inner_arc(driver)
+            .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
+        let container = crate::container_ref::ContainerRefHandle::from_ptr(container)
+            .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?
+            .inner
+            .clone();
+        if force_refresh > 1 {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+        }
+        let (ctx, handle) = pre_flight_spawn(queue, user_data)?;
+        Ok((driver, container, ctx, handle))
+    };
+    let (driver, container, ctx, handle) = match prepare() {
+        Ok(prepared) => prepared,
+        Err(code) => {
+            if !out_pre_error.is_null() {
+                // SAFETY: caller supplies a writable status slot.
+                unsafe { *out_pre_error = code.as_status_code() };
+            }
+            return std::ptr::null_mut();
+        }
+    };
+    if !out_pre_error.is_null() {
+        // SAFETY: caller supplies a writable status slot.
+        unsafe { *out_pre_error = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code() };
+    }
+    let runtime = Arc::clone(ctx.queue.runtime());
+    spawn_oneshot(
+        ctx,
+        runtime,
+        async move {
+            let ranges = driver
+                .inner
+                .resolve_all_partition_key_ranges(&container, force_refresh == 1)
+                .await?
+                .ok_or_else(|| {
+                    azure_data_cosmos_driver::error::CosmosError::builder()
+                        .with_status(
+                            azure_data_cosmos_driver::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED,
+                        )
+                        .with_message("container routing map could not be resolved")
+                        .build()
+                })?;
+            ranges
+                .iter()
+                .map(azure_data_cosmos_driver::models::FeedRange::try_from)
+                .collect()
+        },
+        SuccessKind::FeedRanges,
+    );
+    handle
+}
 
 /// Submits a feed-capable operation for asynchronous execution, binding to
 /// the driver's planner so a single page is produced per call.
