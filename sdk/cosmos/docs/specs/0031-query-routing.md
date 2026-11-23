@@ -14,8 +14,9 @@ queries, and change feed requests without redundant backend EPK range filtering.
    over a redundant EPK range filter.
 - Complete PK and backend EPK filtering are mutually exclusive. PPK may
    accompany start/end EPK filtering.
-- Physical PKRID is required on every point and feed-execution request,
-   independently of backend filters or Gateway V2 proxy-routing metadata.
+- Complete-PK requests SHOULD include physical PKRID when the partition-range
+   cache is available; only these requests may omit it when the cache is
+   unavailable. All other data requests MUST include PKRID.
 - Queries can rely on SQL for filtering; change feed has no SQL and still needs
    EPK range filtering for a partial hierarchical key.
 - Keep range boundaries that prevent duplicate results or preserve independent
@@ -75,18 +76,30 @@ The RNTBD frame has its own request metadata and payload. The header/token
 reference and transport projection below distinguish that metadata from
 outer HTTP headers and from the backend filters.
 
-Every point-operation request and every feed-execution request, including
-queries and change feed, must include the resolved physical PKRID. This applies to every leaf, page,
-resume, and retry, including complete-PK requests and requests with Gateway V2
-proxy-routing EPKs or hashes. It preserves existing SDK behavior: the physical
-partition selected from the client's topology must remain explicit so stale
-topology produces routing feedback, such as a `410`, and triggers a refresh.
-The SDK must include PKRID even if the gateway or backend could route without
-it or would not reject its omission. This is a client topology-cache correctness
-requirement, not a claim that the backend always enforces PKRID presence.
-After topology refresh, use the newly resolved PKRID. PKRID does not replace
-the PK, PPK, or necessary EPK range filter. Query-plan requests are the separate
-exception; they do not carry a data-partition route.
+For requests carrying a complete logical PK, the driver SHOULD include the
+resolved physical PKRID whenever usable topology is available in the
+partition-range cache. Only complete-PK requests can route without PKRID;
+all other data requests MUST include it. These rules apply to every leaf,
+page, resume, and retry, including requests with Gateway V2 proxy-routing
+EPKs or hashes.
+Explicit physical routing helps stale topology produce feedback, such as a
+`410`, so the driver can refresh its cache. This is recommended even if the
+gateway or backend could route without PKRID or would not reject its omission;
+it is not a backend presence-validation requirement.
+
+When the partition-range cache is unavailable, PKRID MAY be omitted only if
+the request carries the complete logical PK. A SQL predicate equating all PK
+components, a one-EPK FeedRange, a partial HPK, or proxy-routing hashes alone
+does not qualify for this exception. In particular, a cold `Lazy`-mode
+complete-key operation must not fetch topology or wait for an in-progress
+fetch solely to populate this header. Use a cache-only lookup as described in
+`0007-partition-key-range-cache.md`. Operations and active features that already
+require topology retain their existing fetch and failure behavior; this
+exception does not remove routing required by fan-out or explicit ranges.
+
+After topology refresh, use the newly resolved PKRID. PKRID
+does not replace the PK, PPK, or necessary EPK range filter. Query-plan requests
+remain a separate exception; they do not carry a data-partition route.
 
 ```mermaid
 sequenceDiagram
@@ -121,8 +134,10 @@ and the exceptions; protocol encodings are at the end.
 
 Point operations require a complete PK and do not fan out. Partial PK,
 FeedRange, and WHERE scope are not supported for their routing. The request
-must contain PK and physical PKRID, and must not contain PPK, backend EPK range
-filtering, or its read-key-type selector. For Gateway V2 the
+must contain PK and must not contain PPK, backend EPK range filtering, or its
+read-key-type selector. It SHOULD also contain physical PKRID when the
+partition-range cache is available; the cold-cache exception above applies.
+For Gateway V2 the
 client independently derives the complete-PK routing EPK and sends it in the
 `x-ms-effective-partition-key` to the Gateway V2 Proxy. This header is
 mandatory in Gateway V2 for performance reasons.
@@ -132,8 +147,11 @@ mandatory in Gateway V2 for performance reasons.
 Queries support optional full PK, partial HPK, or FeedRange scopes via request
 options; physical PKRID and full-container targeting are also covered.
 They support WHERE filtering and cross-partition fan-out. The backend applies
-SQL together with the selected scope. Every executed query leaf must carry
-physical PKRID, including complete-PK and full-container queries:
+SQL together with the selected scope. Every executed query leaf MUST carry
+physical PKRID unless the request carries a complete logical PK and the
+partition-range cache is unavailable. Complete-PK queries SHOULD include it
+when cached topology is available. Full-container, partial-HPK, and
+range-scoped queries still load the topology needed to include PKRID:
 
 - **No scope or full container:** SQL alone supplies document filtering.
 - **Complete PK or partial HPK:** emit PK or PPK respectively, alongside SQL.
@@ -160,7 +178,12 @@ The Change feed API supports complete PK, partial HPK scope, explicit FeedRange,
 whole physical partition, or full container, with fan-out when needed. It has
 no SQL predicate (yet).
 
-- A complete PK uses the PK filter and the resolved PKRID.
+Only complete-PK requests may use the cache-unavailable omission above.
+All other change-feed requests MUST carry PKRID; fan-out and range-dependent
+reads retain their existing topology requirements.
+
+- A complete PK uses the PK filter and SHOULD include PKRID when cached
+   topology is available.
 - Currently, a partial HPK must become an EPK range, not a PPK header. Assert
    equivalent scoped results and the range headers; query PPK use instead
    asserts the query scope and PPK header. There is ongoing work to also
@@ -199,9 +222,11 @@ The backend rejects `x-ms-documentdb-partitionkey` together with
 `x-ms-start-epk` / `x-ms-end-epk`, regardless of their range relationship.
 This is different from the Gateway V2 PK-derived proxy-routing EPK, which
 accompanies PK but is not a backend EPK filter. PPK may coexist with backend
-start/end EPK filters. PKRID is required alongside PK, PPK, an EPK range, PPK
-plus an EPK range, and requests without a backend filter. Its presence does
-not depend on whether the service needs it to locate the logical scope.
+start/end EPK filters. PKRID MUST accompany PPK, an EPK range, PPK plus an EPK
+range, and requests without a backend filter. Complete-PK requests SHOULD
+include PKRID whenever the partition-range cache is available and MAY omit
+it only when that cache is unavailable. The recommendation for complete PK
+does not depend on whether the service needs PKRID to locate the logical scope.
 
 For the comparison below, `S` is a backend-enforced PK, PPK, or PKRID;
 `F` is an additional explicit EPK range filter. A query-plan range used only
@@ -288,8 +313,11 @@ applies to queries):
     independently in routing.
 3. Intersect compatible ranges for routing. For disjoint option/SQL scopes,
     retain request-option routing and service evaluation as specified above.
-4. Resolve each point request or feed leaf to one physical partition and include
-   its PKRID on every execution attempt. Re-resolve it after topology refresh.
+4. For complete-PK requests, use available cached topology to resolve PKRID;
+   it SHOULD be included, but MAY be omitted if the cache is unavailable.
+   Do not fetch topology solely for this header on a cold `Lazy`-mode
+   complete-PK request. All other data requests MUST resolve and include PKRID.
+   Preserve existing required topology loads and re-resolve after refresh.
 5. Select the semantic filter: PK, then PPK, then EPK range.
 6. Preserve correctness-required boundaries of independent fresh/resumed leaves.
 7. Remove other EPK filters only when another backend constraint fully enforces
@@ -325,23 +353,23 @@ filtering. RNTBD IDs below are the Gateway V2 projection of the named headers;
 `String`, `Bytes`, and `Byte` are wire types. HTTP values are textual; an
 RNTBD `Byte` value is not a numeric string in an HTTP header.
 
-The use columns describe the data-request contract above, including the
-resolved PKRID. **Use** means interpreting metadata to route a request,
+The use columns describe the data-request contract above, including PKRID
+when available. **Use** means interpreting metadata to route a request,
 validate its destination, or filter documents. Receiving or forwarding a
 backend header unchanged does not make the gateway/proxy a consumer of that
 filter. Query-plan requests retain their separate no-data-route rules.
 
-| Header or token                                          | Wire form                   | Gateway / Proxy use          | Backend use                             | Function and constraint                                                               |
-| -------------------------------------------------------- | --------------------------- | ---------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------- |
-| `x-ms-documentdb-partitionkey`                           | HTTP; RNTBD `0x002B` String | No: forward unchanged        | Yes: complete-PK filter                 | Prefer over PPK. Backend rejects combination with start/end EPK.                      |
-| `x-ms-documentdb-partialpartitionkey`                    | HTTP; RNTBD `0x0108` String | No: forward unchanged        | Yes: HPK-prefix query filter            | Backend rejects non-HPK use. May accompany start/end EPK.                             |
-| `x-ms-documentdb-partitionkeyrangeid`                    | HTTP; RNTBD `0x002C` String | Yes: V1/V2 physical routing  | Yes: validate target physical partition | Required on every point/feed execution request, independent of backend enforcement.   |
-| `x-ms-effective-partition-key`                           | HTTP; RNTBD `0x005A` Bytes  | Yes: V2 proxy point routing  | No, in this contract                    | Complete-PK routing EPK; accompanies PK, not a backend EPK filter.                    |
-| `x-ms-start-epk`, `x-ms-end-epk`                         | HTTP                        | No: forward unchanged        | Yes: EPK range filter                   | SDK-generated EPK-R filters use both bounds and range key type.                       |
-| RNTBD `StartEpk`, `EndEpk`                               | `0x0062`, `0x0063` Bytes    | No: forward unchanged        | Yes: EPK range filter                   | UTF-8 EPK hex filter text, derived only from public start/end headers.                |
-| `x-ms-read-key-type`                                     | HTTP; RNTBD `0x0064` Byte   | No: forward unchanged        | Yes: select EPK filtering mode          | HTTP value `EffectivePartitionKeyRange`; RNTBD byte value `3`.                        |
-| `x-ms-thinclient-range-min`, `x-ms-thinclient-range-max` | Outer Gateway V2 HTTP       | Yes: V2 proxy range dispatch | No                                      | Literal `true` flags announcing TC-R in the frame; not EPK values or backend filters. |
-| RNTBD `StartEpkHash`, `EndEpkHash`                       | `0x00D2`, `0x00D3` Bytes    | Yes: V2 proxy range routing  | No                                      | Hex-decoded routing bounds; may use physical-range fallback.                          |
+| Header or token                                          | Wire form                   | Gateway / Proxy use          | Backend use                             | Function and constraint                                                                   |
+| -------------------------------------------------------- | --------------------------- | ---------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `x-ms-documentdb-partitionkey`                           | HTTP; RNTBD `0x002B` String | No: forward unchanged        | Yes: complete-PK filter                 | Prefer over PPK. Backend rejects combination with start/end EPK.                          |
+| `x-ms-documentdb-partialpartitionkey`                    | HTTP; RNTBD `0x0108` String | No: forward unchanged        | Yes: HPK-prefix query filter            | Backend rejects non-HPK use. May accompany start/end EPK.                                 |
+| `x-ms-documentdb-partitionkeyrangeid`                    | HTTP; RNTBD `0x002C` String | Yes: V1/V2 physical routing  | Yes: validate target physical partition | Required except complete PK: SHOULD send when cached; MAY omit only if cache unavailable. |
+| `x-ms-effective-partition-key`                           | HTTP; RNTBD `0x005A` Bytes  | Yes: V2 proxy point routing  | No, in this contract                    | Complete-PK routing EPK; accompanies PK, not a backend EPK filter.                        |
+| `x-ms-start-epk`, `x-ms-end-epk`                         | HTTP                        | No: forward unchanged        | Yes: EPK range filter                   | SDK-generated EPK-R filters use both bounds and range key type.                           |
+| RNTBD `StartEpk`, `EndEpk`                               | `0x0062`, `0x0063` Bytes    | No: forward unchanged        | Yes: EPK range filter                   | UTF-8 EPK hex filter text, derived only from public start/end headers.                    |
+| `x-ms-read-key-type`                                     | HTTP; RNTBD `0x0064` Byte   | No: forward unchanged        | Yes: select EPK filtering mode          | HTTP value `EffectivePartitionKeyRange`; RNTBD byte value `3`.                            |
+| `x-ms-thinclient-range-min`, `x-ms-thinclient-range-max` | Outer Gateway V2 HTTP       | Yes: V2 proxy range dispatch | No                                      | Literal `true` flags announcing TC-R in the frame; not EPK values or backend filters.     |
+| RNTBD `StartEpkHash`, `EndEpkHash`                       | `0x00D2`, `0x00D3` Bytes    | Yes: V2 proxy range routing  | No                                      | Hex-decoded routing bounds; may use physical-range fallback.                              |
 
 `x-ms-thinclient-pkrange-min` / `x-ms-thinclient-pkrange-max` are Rust SDK
 staging inputs, not service wire headers in this contract. Neither a gateway/
@@ -350,10 +378,11 @@ them to fallback `StartEpkHash`/`EndEpkHash` routing tokens, whose consumer is
 the proxy as listed above. They must not become backend `StartEpk`/`EndEpk`
 filter tokens.
 
-The backend filter combinations are explicit below. Every valid set must also
-include `x-ms-documentdb-partitionkeyrangeid` for the selected physical
-partition, including the set with no backend filter. Proxy-routing metadata
-is selected separately and never replaces PKRID.
+The backend filter combinations are explicit below. Every valid set MUST
+also include `x-ms-documentdb-partitionkeyrangeid`, except complete PK when
+the partition-range cache is unavailable. Complete-PK requests SHOULD include
+PKRID when the cache is available. The set with no backend filter still
+requires PKRID. Proxy-routing metadata never broadens the omission exception.
 
 | Backend header set                                                     | Contract                                                                                  |
 | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
@@ -376,9 +405,11 @@ backend equality-by-EPK filtering is not used by this contract.
 Gateway V1 sends the selected backend HTTP headers using the common Routing
 Gateway / Compute Gateway HTTP contract. Gateway V2 retains existing outer
 proxy headers and independently emits routing and backend tokens in the RNTBD
-frame. Both paths must carry physical PKRID on every point and feed-execution
-request: the HTTP header on Gateway V1 and RNTBD token `0x002C` on Gateway V2.
-The requirements below supplement, rather than replace, that mandatory carrier:
+frame. Both paths MUST carry physical PKRID except on complete-PK requests
+when the partition-range cache is unavailable. Complete-PK requests SHOULD
+include it whenever cached topology is available. Use the HTTP header on
+Gateway V1 and RNTBD token `0x002C` on Gateway V2. Only the complete-PK case
+below can use this omission exception; other routing metadata remains required:
 
 - **Complete PK without EPK-R:** use proxy `EffectivePartitionKey` and backend
    `PartitionKey` plus PKRID, not TC-R or backend start/end. The client computes
@@ -422,6 +453,10 @@ omission must not be rejected as an incomplete logical range.
 
 This contract remains normative where current Rust differs:
 
+- Rust's complete-key path can resolve physical identity internally without
+   emitting a wire PKRID. Emitting an available cached PKRID is recommended
+   follow-up work, not a description of behavior already implemented on every
+   path. Cold `Lazy`-mode omission remains permitted as specified above.
 - Rust does not yet emit the PPK HTTP header or RNTBD token `0x0108`.
 - Query leaves currently emit narrow start/end filters for many planner-derived
    ranges.

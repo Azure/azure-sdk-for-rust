@@ -152,14 +152,27 @@ Each test must assert required **absence** as well as presence. In particular,
 a test that strips backend `StartEpk`/`EndEpk` must still assert the expected
 Gateway V2 routing hashes and outer range flags.
 
-Assert physical PKRID presence on every point-operation attempt and every
-feed-execution leaf, page, resume, and retry, including queries and change
-feed. Gateway V1 must
-carry `x-ms-documentdb-partitionkeyrangeid`; Gateway V2 must carry RNTBD
-`PartitionKeyRangeId` token `0x002C`. Include complete-PK cases even when the
-proxy EPK or backend PK would locate the data without PKRID. An otherwise
-successful response does not excuse a missing PKRID. This preserves client
-topology-cache correctness independently of backend presence validation.
+Record partition-range cache availability and whether the request carries a
+complete logical PK. Only complete-PK requests may omit PKRID when cached
+topology is unavailable; they SHOULD include it when the cache is available.
+All other data requests MUST include PKRID on every leaf, page, resume, and
+retry. Warm-cache tests assert
+`x-ms-documentdb-partitionkeyrangeid` on Gateway V1 and RNTBD
+`PartitionKeyRangeId` token `0x002C` on Gateway V2, including complete-PK cases
+where proxy EPK or backend PK could route without it. These assertions qualify
+the recommended behavior; current Rust paths that suppress a cached PKRID
+remain implementation gaps, not passing evidence of that recommendation.
+
+Add cold `Lazy`-mode point and complete-PK query cases without other
+topology-dependent features. Permit omitted PKRID, and assert correct results,
+the required logical/proxy routing metadata, no topology fetch solely for the
+header, and no wait for an in-progress optional fetch. Then warm the same
+cache and verify the recommended PKRID emission on subsequent requests.
+Operations or active features that require topology must retain their existing
+loads and failure behavior; do not extend the exception to bypass them.
+Add cold-cache partial-HPK, FeedRange, and full-container query cases that
+assert required topology resolution and PKRID emission. A WHERE-only full-PK
+equality and a one-EPK FeedRange do not qualify as complete-PK routing requests.
 Query-plan requests remain the no-data-route exception below.
 
 Capture the proxy's backend-bound request as well as its incoming RNTBD frame.
@@ -188,17 +201,24 @@ types, and encodings:
 
 Use the abbreviations from `0031-query-routing.md`.
 
+In the PKRID column, **SHOULD** applies only to requests carrying a complete
+logical PK: include PKRID when the partition-range cache is available; omission
+is permitted only when that cache is unavailable. **Required** applies to all
+other data requests, including every fan-out leaf. A WHERE-only equality is
+not a supplied complete-PK routing header. Other required routing metadata and
+topology loads remain unchanged.
+
 | Scenario                        | Backend semantic header | Backend EPK-R                  | PKRID             | Proxy EPK `0x005A` | Gateway V2 TC-R |
 | ------------------------------- | ----------------------- | ------------------------------ | ----------------- | ------------------ | --------------- |
-| Point with complete PK          | PK                      | Absent                         | Required          | Required           | Absent          |
-| Query with complete PK          | PK                      | Absent                         | Required          | Required           | Absent          |
+| Point with complete PK          | PK                      | Absent                         | SHOULD            | Required           | Absent          |
+| Query with complete PK          | PK                      | Absent                         | SHOULD            | Required           | Absent          |
 | Query with partial HPK          | PPK                     | Absent for planner-derived SQL | Required per leaf | Absent             | Required        |
 | Query over whole physical range | None                    | Absent                         | Required          | Absent             | Required        |
 | Query over strict FeedRange     | None                    | Present                        | Required          | Absent             | Required        |
 | Query over one EPK              | None                    | Present                        | Required          | Absent             | Required        |
 | WHERE-only PK equality          | SQL                     | Absent                         | Required          | Absent             | Required        |
 | WHERE-only HPK prefix           | SQL                     | Absent                         | Required per leaf | Absent             | Required        |
-| Change feed with complete PK    | PK                      | Absent                         | Required          | Required           | Absent          |
+| Change feed with complete PK    | PK                      | Absent                         | SHOULD            | Required           | Absent          |
 | Change feed over HPK prefix     | None                    | Present                        | Required per leaf | Absent             | Required        |
 | Change feed over whole PKRID    | None                    | Absent                         | Required          | Absent             | Required        |
 | QueryPlan request               | Input options only      | Absent                         | Absent            | Absent             | Absent          |
@@ -208,7 +228,7 @@ thin-client range flags, routing hashes, backend start/end, and key type. Then
 assert that the returned ranges affect only the subsequent data-leaf routing.
 
 Add a component test for simultaneous PK and PPK that asserts PK is emitted and
-PPK is omitted, with PKRID retained. Do not introduce new client-side rejection
+PPK is omitted, with PKRID emitted when cached topology is available. Do not introduce new client-side rejection
 for incomplete range headers. Tier A raw-protocol tests assert that a missing start or end,
 absent key type, mismatched key type, and backend key type `2` combined with
 EPK-R filtering are serialized without a newly introduced client rejection.
@@ -226,7 +246,8 @@ the same HPK prefix to EPK-R and returns equivalent scoped results.
 WHERE-derived ranges alone are routing metadata, not a reason to add backend
 EPK-R. Correctness-required independent work boundaries remain protected. Test
 the separate explicit `S` plus `F` relation rules at driver planning and
-serialization boundaries. PKRID is mandatory for every valid combination below:
+serialization boundaries. PKRID is required for every PPK combination below.
+Only the complete-PK row uses SHOULD with the cache-unavailable exception:
 
 | Semantic scope `S` | Explicit `F` relation | Backend carriers | Proxy EPK `0x005A` | Gateway V2 TC-R |
 | ------------------ | --------------------- | ---------------- | ------------------ | --------------- |
@@ -307,7 +328,9 @@ The in-memory emulator is not the RU oracle. Its request capture validates the
 wire contract; live service runs validate the performance consequence.
 
 Include topology-validation cases for PK, PPK, and EPK-R data requests. Assert
-that the resolved PKRID accompanies each filter set, including on retry.
+with a warm partition-range cache that the resolved PKRID accompanies each
+filter set, including on retry. Cover cache-unavailable logical-key requests
+separately as described above; do not force a topology fetch just for PKRID.
 Use a stale PKRID to verify routing feedback, including `410` where required
 by the topology transition. After refreshing topology, assert that the rebuilt
 request uses the refreshed PKRID and preserves the semantic scope. Do not
