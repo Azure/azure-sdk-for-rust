@@ -63,6 +63,8 @@ directly by Rust source remain with their crates.
 | 0028 | Functional E2E testing (`specs/0028-functional-e2e-testing.md`) |
 | 0029 | Generic native feed cursor (`specs/0029-native-feed-cursor.md`) |
 | 0030 | Binary-aware ORDER BY envelopes (`specs/0030-binary-order-by-envelopes.md`) |
+| 0031 | Query routing and backend filtering (`specs/0031-query-routing.md`) |
+| 0032 | Query routing E2E test plan (`specs/0032-query-routing-e2e-test-plan.md`) |
 
 ## Architecture decision records
 

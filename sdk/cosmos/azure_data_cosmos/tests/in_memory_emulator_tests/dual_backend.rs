@@ -25,8 +25,7 @@ use azure_data_cosmos_driver::{
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, OperationOptions,
-        OperationOptionsBuilder, Region, ServerCertificateValidation,
+        AvailabilityStrategy, DriverOptions, OperationOptions, OperationOptionsBuilder, Region,
     },
     CosmosDriver,
 };
@@ -537,14 +536,7 @@ async fn resolve_real_account(
     let key = conn_str.account_key().secret().to_string();
     let account = AccountReference::with_account_key(endpoint, key);
 
-    let mut pool_builder = ConnectionPoolOptions::builder();
-    // If connecting to the local emulator, disable cert validation
-    if conn_str.account_endpoint().contains("localhost") {
-        pool_builder = pool_builder.with_server_certificate_validation(
-            ServerCertificateValidation::RequiredUnlessEmulator,
-        );
-    }
-    let pool = pool_builder.build()?;
+    let pool = super::external_connection_pool(conn_str.account_endpoint())?;
 
     let runtime = CosmosDriverRuntime::builder()
         .with_connection_pool(pool)
