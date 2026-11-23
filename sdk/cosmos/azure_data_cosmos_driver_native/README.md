@@ -67,52 +67,22 @@ for the full design.
 
 ## Feed ranges
 
-`cosmos_container_read_feed_ranges_submit` discovers ranges using native routing.
-Use an ordinary completion queue, with `force_refresh` set to 0 or 1. Detach the
-result with `cosmos_completion_take_feed_ranges`; unresolved routing returns 503 with sub-status 20305.
-Discovery retains the driver's cache-refresh behavior: a failed refresh can return
-previously cached ranges instead of an error
-([#5637](https://github.com/Azure/azure-sdk-for-rust/issues/5637)).
-The detached list outlives its completion. `cosmos_feed_range_list_get` copies an
-independently owned handle; free each handle and the list with their matching
-`cosmos_feed_range_free` and `cosmos_feed_range_list_free` functions.
+Discover ranges with `cosmos_container_read_feed_ranges_submit` on an ordinary
+completion queue. A failed refresh can return cached ranges. Detach the list with
+`cosmos_completion_take_feed_ranges`; each `cosmos_feed_range_list_get` handle
+outlives the list. Free each handle with `cosmos_feed_range_free`, the list with
+`cosmos_feed_range_list_free`, and each inspected or serialized string with
+`cosmos_string_free`.
 
-Construct explicit bounds with `cosmos_feed_range_from_epk`. Bounds use even-length
-hexadecimal strings; the minimum may be an empty string (a non-NULL view with length
-0), and equal bounds denote one EPK.
-`cosmos_feed_range_inspect` returns `cosmos_feed_range_info_t`: owned
-`min_inclusive` and `max_exclusive` strings, plus an `is_logical_partition` flag.
-Free both strings independently with `cosmos_string_free`; they outlive the range
-handle. The caller owns the result record and must free its previous strings
-before reusing it. Serialization also returns an owned string and sets a non-NULL
-output slot to NULL on failure.
-Serialization uses the driver's base64 JSON format and preserves bounds only.
-Parsing does not restore logical partition-key identity. Preserve a partition key
-separately when logical routing is required. A range string is not a checkpoint.
-`cosmos_feed_range_relate(range, other, &relation)` returns both `is_subset`
-(the first range is a subset of the second) and `overlaps` in
-`cosmos_feed_range_relation_t`, without consuming either handle. Inspection and
-relation flags are 0 or 1. Both calls zero a non-NULL output record on failure.
-Comparisons use the driver's effective-bound semantics.
-Equal-bound comparisons retain the driver's existing boundary limitations
-([#5638](https://github.com/Azure/azure-sdk-for-rust/issues/5638)).
+For a query or change feed, set `operation.feed_range` to a discovered range or
+one built with `cosmos_feed_range_from_epk`. Submit copies the range. Point
+ranges can give incorrect overlap or subset results at boundaries. Queries and
+change feeds reject explicit equal-bound EPK ranges, not ranges created from a
+complete logical partition key. Do not widen a rejected range. To resume, use a
+checkpoint with the same container and scope. A serialized range preserves only
+bounds, not progress or the logical partition key.
 
-Retained query and change-feed requests copy `operation.feed_range` before submit
-returns. Range scoping, checkpoint validation, and split/merge recovery stay in
-the driver; hosts must not widen a range after a service rejects its scope.
-Service errors, including unsupported change-feed scopes, remain errors.
-Equal-bound EPK scopes currently fail planning with native substatus 20302 for
-queries or 20305 for change feeds, before issuing a data request. They aren't
-widened to a physical range. Other narrowed scopes carry explicit EPK filters;
-unsupported service scopes preserve the service's status and diagnostics.
-
-Checkpoints retain the scoped EPK bounds, per-range positions, and change-feed
-start. Resume with the same container and scope. Driver topology recovery
-replaces split parents with intersecting children and handles merges without
-discarding the original scope. A range string alone carries none of this progress.
-
-These exports require a matching newly built native library and
-header; the published v0.3.0 platform modules do not contain them.
+Use a matching header and native library; these APIs are not in v0.3.0.
 
 ## Read-many cursors
 
