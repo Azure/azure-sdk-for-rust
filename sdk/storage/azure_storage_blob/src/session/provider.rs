@@ -22,7 +22,7 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     fmt::SafeDebug,
-    http::{headers::HeaderName, Method, Request, StatusCode, Url},
+    http::{StatusCode, Url},
     time::{Duration, OffsetDateTime},
     Error, Result,
 };
@@ -140,23 +140,47 @@ mod sealed {
     pub trait Sealed {}
 }
 
+/// Information used to select and invalidate a cached session.
+#[derive(Clone, SafeDebug)]
+pub struct SessionContext {
+    url: Url,
+}
+
+impl SessionContext {
+    /// Creates a session context for the resource at `url`.
+    pub fn new(url: Url) -> Self {
+        Self { url }
+    }
+
+    /// Returns the URL of the resource to authenticate.
+    pub fn url(&self) -> &Url {
+        &self.url
+    }
+}
+
 /// Provides and caches session tokens used to authenticate eligible blob download requests.
 ///
 /// This trait is sealed and cannot be implemented outside this crate. Construct a
-/// provider with [`ContainerSessionProvider::new`], wrap it in an [`Arc`], and assign it to
+/// provider with [`ContainerSessionProvider::new()`], wrap it in an [`Arc`], and assign it to
 /// [`SessionOptions::session_provider`](crate::SessionOptions) to share one
 /// session cache across multiple clients.
 #[async_trait]
 pub trait SessionProvider: sealed::Sealed + fmt::Debug + Send + Sync {
-    /// Returns a cached session for `request`, acquiring one on first access.
-    async fn get_session(&self, request: &Request) -> Result<SessionTokenInfo>;
+    /// Returns a cached session for `context`, acquiring one on first access.
+    ///
+    /// Returns `None` when the URL does not identify a blob download or session
+    /// acquisition has entered a fallback cooldown. The caller should use bearer
+    /// authentication in either case.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when session acquisition fails for a reason that does not
+    /// permit bearer fallback or the service returns invalid session credentials.
+    async fn get_session(&self, context: &SessionContext) -> Result<Option<SessionTokenInfo>>;
 
-    /// Invalidates the cached session for `request`, but only if it still holds
+    /// Invalidates the cached session for `context`, but only if it still holds
     /// `current`, so a newer concurrently-refreshed session is not clobbered.
-    async fn invalidate_session(&self, request: &Request, current: &SessionTokenInfo);
-
-    /// Whether `request` is eligible for session-token authentication.
-    fn is_request_eligible(&self, request: &Request) -> bool;
+    async fn invalidate_session(&self, context: &SessionContext, current: &SessionTokenInfo);
 }
 
 /// A [`SessionProvider`] that mints sessions with a [`TokenCredential`] and
@@ -207,43 +231,26 @@ impl ContainerSessionProvider {
 
 #[async_trait]
 impl SessionProvider for ContainerSessionProvider {
-    async fn get_session(&self, request: &Request) -> Result<SessionTokenInfo> {
-        let container = container_name(request.url()).ok_or_else(|| {
-            Error::with_message(
-                ErrorKind::Other,
-                "Could not determine the container name from the request URL.",
-            )
-        })?;
-        self.sessions.get(&container).await
+    async fn get_session(&self, context: &SessionContext) -> Result<Option<SessionTokenInfo>> {
+        let url = context.url();
+        let mut segments = resource_segments(url);
+        let Some(container) = segments.next() else {
+            return Ok(None);
+        };
+        if segments.next().is_none() || has_operation_query(url) {
+            return Ok(None);
+        }
+
+        let session = self.sessions.get(&container.to_string()).await?;
+        Ok((!session.is_fallback_to_bearer()).then_some(session))
     }
 
-    async fn invalidate_session(&self, request: &Request, current: &SessionTokenInfo) {
-        if let Some(container) = container_name(request.url()) {
+    async fn invalidate_session(&self, context: &SessionContext, current: &SessionTokenInfo) {
+        if let Some(container) = container_name(context.url()) {
             self.sessions
                 .invalidate_if_current(&container, current)
                 .await;
         }
-    }
-
-    fn is_request_eligible(&self, request: &Request) -> bool {
-        if request.method() != Method::Get {
-            return false;
-        }
-        // Structured-message downloads are authenticated with bearer, not sessions.
-        if request
-            .headers()
-            .get_optional_str(&STRUCTURED_MESSAGE_HEADER)
-            .is_some()
-        {
-            return false;
-        }
-        let url = request.url();
-        let mut segments = resource_segments(url);
-        let has_container = segments.next().is_some();
-        let has_blob = segments.next().is_some();
-        // Eligible only for blob-level GET downloads, not sub-resource operations
-        // (`comp`/`restype`).
-        has_container && has_blob && !has_operation_query(url)
     }
 }
 
@@ -329,9 +336,6 @@ fn container_name(url: &Url) -> Option<String> {
     resource_segments(url).next().map(str::to_string)
 }
 
-/// The header set on structured-message downloads, which are not session-eligible.
-const STRUCTURED_MESSAGE_HEADER: HeaderName = HeaderName::from_static("x-ms-structured-body");
-
 /// Whether `url` carries a `comp` or `restype` query parameter, which denote a
 /// sub-resource operation rather than a blob download.
 fn has_operation_query(url: &Url) -> bool {
@@ -351,11 +355,6 @@ impl SessionTokenInfo {
             is_fallback_to_bearer: false,
         }
     }
-
-    /// Builds a fallback-to-bearer sentinel for tests.
-    pub(crate) fn fallback_for_test(expires_on: OffsetDateTime) -> Self {
-        Self::fallback_to_bearer(Duration::seconds(0), expires_on)
-    }
 }
 
 /// A configurable [`SessionProvider`] test double, shared by the policy and
@@ -363,18 +362,16 @@ impl SessionTokenInfo {
 #[cfg(test)]
 #[derive(Debug)]
 pub(crate) struct StubSessionProvider {
-    session: SessionTokenInfo,
-    eligible: bool,
+    session: Option<SessionTokenInfo>,
     get_calls: AtomicUsize,
     invalidate_calls: AtomicUsize,
 }
 
 #[cfg(test)]
 impl StubSessionProvider {
-    pub(crate) fn new(session: SessionTokenInfo, eligible: bool) -> Self {
+    pub(crate) fn new(session: Option<SessionTokenInfo>) -> Self {
         Self {
             session,
-            eligible,
             get_calls: AtomicUsize::new(0),
             invalidate_calls: AtomicUsize::new(0),
         }
@@ -392,15 +389,12 @@ impl StubSessionProvider {
 #[cfg(test)]
 #[async_trait]
 impl SessionProvider for StubSessionProvider {
-    async fn get_session(&self, _request: &Request) -> Result<SessionTokenInfo> {
+    async fn get_session(&self, _context: &SessionContext) -> Result<Option<SessionTokenInfo>> {
         self.get_calls.fetch_add(1, Ordering::SeqCst);
         Ok(self.session.clone())
     }
-    async fn invalidate_session(&self, _request: &Request, _current: &SessionTokenInfo) {
+    async fn invalidate_session(&self, _context: &SessionContext, _current: &SessionTokenInfo) {
         self.invalidate_calls.fetch_add(1, Ordering::SeqCst);
-    }
-    fn is_request_eligible(&self, _request: &Request) -> bool {
-        self.eligible
     }
 }
 
@@ -411,10 +405,7 @@ impl sealed::Sealed for StubSessionProvider {}
 mod tests {
     use super::*;
     use azure_core::{
-        http::{
-            headers::Headers, AsyncRawResponse, ClientOptions, Method, Request, StatusCode,
-            Transport, Url,
-        },
+        http::{headers::Headers, AsyncRawResponse, ClientOptions, StatusCode, Transport, Url},
         Bytes,
     };
     use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
@@ -432,8 +423,8 @@ mod tests {
   <Id>session-id</Id>
 </CreateSessionResult>"#;
 
-    fn get_request(url: &str) -> Request {
-        Request::new(Url::parse(url).unwrap(), Method::Get)
+    fn session_context(url: &str) -> SessionContext {
+        SessionContext::new(Url::parse(url).unwrap())
     }
 
     /// A provider for `service_url` that answers every request with `status` and `body`,
@@ -532,37 +523,55 @@ mod tests {
         assert!(fallback_cooldown(&Error::with_message(ErrorKind::Other, "boom")).is_none());
     }
 
-    #[test]
-    fn eligibility_matrix() {
-        let provider = provider_returning(StatusCode::Created, SESSION_XML.as_bytes());
-
-        // GET blob download is eligible.
-        assert!(provider.is_request_eligible(&get_request("https://a.blob.core.windows.net/c/b")));
-        // Virtual-directory blob names remain eligible.
-        assert!(
-            provider.is_request_eligible(&get_request("https://a.blob.core.windows.net/c/d/e/b"))
+    #[tokio::test]
+    async fn ineligible_urls_do_not_acquire_sessions() {
+        let (provider, requests) = recording_provider(
+            "https://a.blob.core.windows.net/",
+            StatusCode::Created,
+            SESSION_XML.as_bytes(),
         );
+        for url in [
+            "https://a.blob.core.windows.net/",
+            "https://a.blob.core.windows.net/c",
+            "https://a.blob.core.windows.net/c/b?comp=blocklist",
+            "https://a.blob.core.windows.net/c/b?restype=container",
+            "https://a.blob.core.windows.net/c/b?COMP=metadata",
+            "https://a.blob.core.windows.net/c/b?RESTYPE=container",
+        ] {
+            assert!(
+                provider
+                    .get_session(&session_context(url))
+                    .await
+                    .unwrap()
+                    .is_none(),
+                "{url}"
+            );
+        }
+        assert!(requests.lock().unwrap().is_empty());
+    }
 
-        // Non-GET is ineligible.
-        assert!(!provider.is_request_eligible(&Request::new(
-            Url::parse("https://a.blob.core.windows.net/c/b").unwrap(),
-            Method::Put,
-        )));
-        // Service-level and container-level requests are ineligible.
-        assert!(!provider.is_request_eligible(&get_request("https://a.blob.core.windows.net/")));
-        assert!(!provider.is_request_eligible(&get_request("https://a.blob.core.windows.net/c")));
-        // `comp` operations are ineligible.
-        assert!(!provider.is_request_eligible(&get_request(
-            "https://a.blob.core.windows.net/c/b?comp=blocklist"
-        )));
-        // `restype` operations are ineligible.
-        assert!(!provider.is_request_eligible(&get_request(
-            "https://a.blob.core.windows.net/c/b?restype=container"
-        )));
-        // Structured-message downloads are ineligible.
-        let mut structured = get_request("https://a.blob.core.windows.net/c/b");
-        structured.insert_header(STRUCTURED_MESSAGE_HEADER, "XSM/1.0");
-        assert!(!provider.is_request_eligible(&structured));
+    #[tokio::test]
+    async fn blob_urls_share_the_container_session() {
+        let (provider, requests) = recording_provider(
+            "https://a.blob.core.windows.net/",
+            StatusCode::Created,
+            SESSION_XML.as_bytes(),
+        );
+        for url in [
+            "https://a.blob.core.windows.net/c/b",
+            "https://a.blob.core.windows.net/c/d/e/b",
+            "https://a.blob.core.windows.net/c/b?snapshot=2026-01-01",
+        ] {
+            assert!(
+                provider
+                    .get_session(&session_context(url))
+                    .await
+                    .unwrap()
+                    .is_some(),
+                "{url}"
+            );
+        }
+        assert_eq!(requests.lock().unwrap().len(), 1);
     }
 
     #[test]
@@ -615,24 +624,62 @@ mod tests {
     #[tokio::test]
     async fn get_session_returns_credentials_on_success() {
         let provider = provider_returning(StatusCode::Created, SESSION_XML.as_bytes());
-        let request = get_request("https://myaccount.blob.core.windows.net/mycontainer/myblob");
+        let context = session_context("https://myaccount.blob.core.windows.net/mycontainer/myblob");
 
-        let info = provider.get_session(&request).await.unwrap();
+        let info = provider.get_session(&context).await.unwrap().unwrap();
         assert_eq!(info.credentials(), Some(("token-abc", "c2Vzc2lvbi1rZXk=")));
         assert!(!info.is_fallback_to_bearer());
     }
 
     #[tokio::test]
     async fn get_session_falls_back_to_bearer_on_forbidden() {
-        let provider = provider_returning(
+        let (provider, requests) = recording_provider(
+            "https://myaccount.blob.core.windows.net/",
             StatusCode::Forbidden,
             b"<Error><Code>AuthorizationFailure</Code></Error>",
         );
-        let request = get_request("https://myaccount.blob.core.windows.net/mycontainer/myblob");
+        let context = session_context("https://myaccount.blob.core.windows.net/mycontainer/myblob");
 
-        let info = provider.get_session(&request).await.unwrap();
-        assert!(info.is_fallback_to_bearer());
-        assert_eq!(info.credentials(), None);
+        for _ in 0..2 {
+            assert!(provider.get_session(&context).await.unwrap().is_none());
+        }
+        assert_eq!(requests.lock().unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn get_session_propagates_non_fallback_errors() {
+        let provider = provider_returning(
+            StatusCode::BadRequest,
+            b"<Error><Code>InvalidQueryParameterValue</Code></Error>",
+        );
+        let context = session_context("https://myaccount.blob.core.windows.net/mycontainer/myblob");
+
+        let error = provider.get_session(&context).await.unwrap_err();
+        assert_eq!(error.http_status(), Some(StatusCode::BadRequest));
+    }
+
+    #[tokio::test]
+    async fn invalidation_reacquires_only_the_current_session() {
+        let (provider, requests) = recording_provider(
+            "https://a.blob.core.windows.net/",
+            StatusCode::Created,
+            SESSION_XML.as_bytes(),
+        );
+        let context = session_context("https://a.blob.core.windows.net/c/b");
+        let current = provider.get_session(&context).await.unwrap().unwrap();
+        let other = SessionTokenInfo::for_test(
+            "other-token",
+            "c2Vzc2lvbi1rZXk=",
+            OffsetDateTime::from_unix_timestamp(4_000_000_000).unwrap(),
+        );
+
+        provider.invalidate_session(&context, &other).await;
+        assert!(provider.get_session(&context).await.unwrap().is_some());
+        assert_eq!(requests.lock().unwrap().len(), 1);
+
+        provider.invalidate_session(&context, &current).await;
+        assert!(provider.get_session(&context).await.unwrap().is_some());
+        assert_eq!(requests.lock().unwrap().len(), 2);
     }
 
     #[tokio::test]
@@ -642,10 +689,8 @@ mod tests {
             StatusCode::Created,
             SESSION_XML.as_bytes(),
         );
-        let request = get_request("https://10.0.0.1/devstoreaccount1/mycontainer/myblob");
-
-        assert!(provider.is_request_eligible(&request));
-        provider.get_session(&request).await.unwrap();
+        let context = session_context("https://10.0.0.1/devstoreaccount1/mycontainer/myblob");
+        assert!(provider.get_session(&context).await.unwrap().is_some());
 
         let requests = requests.lock().unwrap();
         assert_eq!(requests.len(), 1);
@@ -656,8 +701,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn path_style_urls_skip_the_account_segment() {
+    #[tokio::test]
+    async fn path_style_urls_skip_the_account_segment() {
         let url = Url::parse("https://10.0.0.1:10000/devstoreaccount1/mycontainer/myblob?comp=x")
             .unwrap();
         assert_eq!(
@@ -667,12 +712,20 @@ mod tests {
         assert_eq!(container_name(&url).as_deref(), Some("mycontainer"));
 
         let provider = provider_returning(StatusCode::Created, SESSION_XML.as_bytes());
-        assert!(provider.is_request_eligible(&get_request(
-            "https://localhost:10000/devstoreaccount1/mycontainer/myblob"
-        )));
+        assert!(provider
+            .get_session(&session_context(
+                "https://localhost:10000/devstoreaccount1/mycontainer/myblob"
+            ))
+            .await
+            .unwrap()
+            .is_some());
         // A container-level request is not a blob download.
-        assert!(!provider.is_request_eligible(&get_request(
-            "https://localhost:10000/devstoreaccount1/mycontainer"
-        )));
+        assert!(provider
+            .get_session(&session_context(
+                "https://localhost:10000/devstoreaccount1/mycontainer"
+            ))
+            .await
+            .unwrap()
+            .is_none());
     }
 }

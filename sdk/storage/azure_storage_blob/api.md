@@ -31,9 +31,15 @@ impl Debug for ContainerSessionProvider {
 }
 #[async_trait]
 impl SessionProvider for ContainerSessionProvider {
-    async fn get_session(&self, request: &Request) -> Result<SessionTokenInfo>;
-    async fn invalidate_session(&self, request: &Request, current: &SessionTokenInfo);
-    fn is_request_eligible(&self, request: &Request) -> bool;
+    async fn get_session(&self, context: &SessionContext) -> Result<Option<SessionTokenInfo>>;
+    async fn invalidate_session(&self, context: &SessionContext, current: &SessionTokenInfo);
+}
+#[derive(Clone, Debug)]
+pub struct SessionContext {
+}
+impl SessionContext {
+    pub fn new(url: Url) -> Self;
+    pub fn url(&self) -> &Url;
 }
 #[derive(Clone, Debug, Default)]
 pub struct SessionOptions {
@@ -71,9 +77,8 @@ pub enum SessionMode {
 }
 #[async_trait]
 pub trait SessionProvider: sealed::Sealed + fmt::Debug + Send + Sync {
-    async fn get_session(&self, request: &Request) -> Result<SessionTokenInfo>;
-    async fn invalidate_session(&self, request: &Request, current: &SessionTokenInfo);
-    fn is_request_eligible(&self, request: &Request) -> bool;
+    async fn get_session(&self, context: &SessionContext) -> Result<Option<SessionTokenInfo>>;
+    async fn invalidate_session(&self, context: &SessionContext, current: &SessionTokenInfo);
 }
 pub type Result<T> = std::result::Result<T, StorageError>;
 pub mod clients {

@@ -4,7 +4,7 @@
 //! The pipeline policy that selects between session token and bearer token authentication.
 
 use crate::session::{
-    provider::{SessionProvider, SessionTokenInfo},
+    provider::{SessionContext, SessionProvider, SessionTokenInfo},
     signer,
 };
 use async_trait::async_trait;
@@ -13,7 +13,7 @@ use azure_core::{
     http::{
         headers::{AUTHORIZATION, MS_DATE},
         policies::{Policy, PolicyResult},
-        Context, Request, StatusCode,
+        Context, Method, Request, StatusCode,
     },
     time::{to_rfc7231, OffsetDateTime},
     Error, Result,
@@ -74,15 +74,14 @@ impl Policy for SessionAuthenticationPolicy {
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
         // Bearer authentication enforces TLS, including explicit local test exceptions.
-        if request.url().scheme() != "https" || !self.provider.is_request_eligible(request) {
+        if request.url().scheme() != "https" || request.method() != Method::Get {
             return self.fallback.send(ctx, request, next).await;
         }
 
-        // A fallback-to-bearer sentinel means a session could not be acquired.
-        let session = self.provider.get_session(request).await?;
-        if session.is_fallback_to_bearer() {
+        let context = SessionContext::new(request.url().clone());
+        let Some(session) = self.provider.get_session(&context).await? else {
             return self.fallback.send(ctx, request, next).await;
-        }
+        };
 
         self.sign_request(request, &session)?;
         let response = next[0].send(ctx, request, &next[1..]).await?;
@@ -92,7 +91,7 @@ impl Policy for SessionAuthenticationPolicy {
             // Read the error body so the connection can be reused.
             let _ = response.into_body().collect().await;
             clear_session_headers(request);
-            self.provider.invalidate_session(request, &session).await;
+            self.provider.invalidate_session(&context, &session).await;
             request.body_mut().reset().await?;
             return self.fallback.send(ctx, request, next).await;
         }
@@ -110,17 +109,21 @@ fn clear_session_headers(request: &mut Request) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{clients::STORAGE_SCOPE, session::provider::StubSessionProvider};
+    use crate::{
+        clients::STORAGE_SCOPE,
+        session::provider::{ContainerSessionProvider, StubSessionProvider},
+        BlobServiceClientOptions,
+    };
     use azure_core::{
         credentials::TokenCredential,
         http::{
-            headers::Headers,
+            headers::{HeaderName, Headers},
             policies::auth::{BearerTokenAuthorizationOptions, BearerTokenAuthorizationPolicy},
-            AsyncRawResponse, ClientOptions, Method, Pipeline, Url,
+            AsyncRawResponse, ClientOptions, Method, Pipeline, Transport, Url,
         },
         Bytes,
     };
-    use azure_core_test::credentials::MockCredential;
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
     use std::sync::Mutex;
 
     /// A terminal policy that records each request's Authorization header and
@@ -223,7 +226,7 @@ mod tests {
 
     #[tokio::test]
     async fn eligible_request_is_signed_with_session_scheme() {
-        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
+        let provider = Arc::new(StubSessionProvider::new(Some(valid_session())));
         let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
 
         let (status, seen, invalidated) = run(provider, transport).await;
@@ -237,7 +240,7 @@ mod tests {
 
     #[tokio::test]
     async fn per_call_http_downgrade_is_rejected_before_session_acquisition() {
-        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
+        let provider = Arc::new(StubSessionProvider::new(Some(valid_session())));
         let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
         let policy = Arc::new(SessionAuthenticationPolicy::new(
             provider.clone(),
@@ -273,7 +276,7 @@ mod tests {
 
     #[tokio::test]
     async fn explicitly_allowed_local_http_uses_bearer_without_acquiring_session() {
-        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
+        let provider = Arc::new(StubSessionProvider::new(Some(valid_session())));
         let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
         let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
         let bearer = Arc::new(
@@ -306,7 +309,7 @@ mod tests {
 
     #[tokio::test]
     async fn ineligible_request_uses_bearer() {
-        let provider = Arc::new(StubSessionProvider::new(valid_session(), false));
+        let provider = Arc::new(StubSessionProvider::new(None));
         let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
 
         let (_status, seen, _) = run(provider, transport).await;
@@ -315,22 +318,94 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn fallback_sentinel_uses_bearer() {
-        let sentinel = SessionTokenInfo::fallback_for_test(
-            OffsetDateTime::from_unix_timestamp(4_000_000_000).unwrap(),
+    async fn non_get_requests_use_bearer_without_acquiring_session() {
+        let provider = Arc::new(StubSessionProvider::new(Some(valid_session())));
+        let transport = CapturingTransport::new(
+            [Method::Head, Method::Put, Method::Post, Method::Delete]
+                .iter()
+                .map(|_| response(StatusCode::Ok))
+                .collect(),
         );
-        let provider = Arc::new(StubSessionProvider::new(sentinel, true));
+        let policy = SessionAuthenticationPolicy::new(
+            provider.clone(),
+            bearer_policy(),
+            "myaccount".to_string(),
+        );
+        let next: [Arc<dyn Policy>; 1] = [transport.clone()];
+        for method in [Method::Head, Method::Put, Method::Post, Method::Delete] {
+            let mut request = Request::new(request().url().clone(), method);
+            policy
+                .send(&Context::new(), &mut request, &next)
+                .await
+                .unwrap();
+            assert!(request.headers().get_optional_str(&MS_DATE).is_none());
+        }
+        assert_eq!(provider.get_calls(), 0);
+        assert_eq!(provider.invalidate_calls(), 0);
+        assert!(transport
+            .seen_auth
+            .lock()
+            .unwrap()
+            .iter()
+            .all(|auth| { auth.as_deref().unwrap().starts_with("Bearer ") }));
+    }
+
+    #[tokio::test]
+    async fn structured_message_download_uses_session() {
+        let client = Arc::new(MockHttpClient::new(|_| {
+            Box::pin(async {
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Created,
+                    Headers::new(),
+                    Bytes::from_static(
+                        b"<CreateSessionResult>\
+                        <Credentials>\
+                        <SessionToken>token-abc</SessionToken>\
+                        <SessionKey>c2Vzc2lvbi1rZXk=</SessionKey>\
+                        </Credentials>\
+                        <Expiration>Wed, 01 Jan 2031 00:00:00 GMT</Expiration>\
+                        </CreateSessionResult>",
+                    ),
+                ))
+            })
+        }));
+        let provider = Arc::new(
+            ContainerSessionProvider::new(
+                &Url::parse("https://myaccount.blob.core.windows.net/").unwrap(),
+                MockCredential::new().unwrap(),
+                Some(BlobServiceClientOptions {
+                    client_options: ClientOptions {
+                        transport: Some(Transport::new(client)),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }),
+            )
+            .unwrap(),
+        );
         let transport = CapturingTransport::new(vec![response(StatusCode::Ok)]);
+        let policy =
+            SessionAuthenticationPolicy::new(provider, bearer_policy(), "myaccount".to_string());
+        let next: [Arc<dyn Policy>; 1] = [transport.clone()];
+        let mut request = request();
+        request.insert_header(HeaderName::from_static("x-ms-structured-body"), "XSM/1.0");
 
-        let (_status, seen, _) = run(provider, transport).await;
+        policy
+            .send(&Context::new(), &mut request, &next)
+            .await
+            .unwrap();
 
+        let seen = transport.seen_auth.lock().unwrap();
         assert_eq!(seen.len(), 1);
-        assert!(seen[0].as_deref().unwrap().starts_with("Bearer "));
+        assert!(seen[0]
+            .as_deref()
+            .unwrap()
+            .starts_with("Session token-abc:"));
     }
 
     #[tokio::test]
     async fn unauthorized_invalidates_and_falls_back_to_bearer() {
-        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
+        let provider = Arc::new(StubSessionProvider::new(Some(valid_session())));
         let transport = CapturingTransport::new(vec![
             response(StatusCode::Unauthorized),
             response(StatusCode::Ok),
@@ -354,7 +429,7 @@ mod tests {
 
     #[tokio::test]
     async fn unauthorized_bearer_retry_is_not_retried_again() {
-        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
+        let provider = Arc::new(StubSessionProvider::new(Some(valid_session())));
         let transport = CapturingTransport::new(vec![
             response(StatusCode::Unauthorized),
             response(StatusCode::Unauthorized),

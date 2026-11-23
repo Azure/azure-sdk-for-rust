@@ -619,14 +619,11 @@ mod tests {
 
     #[tokio::test]
     async fn injected_provider_is_used() {
-        let provider = Arc::new(StubSessionProvider::new(
-            SessionTokenInfo::for_test(
-                "injected-token",
-                "c2Vzc2lvbi1rZXk=",
-                OffsetDateTime::from_unix_timestamp(4_000_000_000).unwrap(),
-            ),
-            true,
-        ));
+        let provider = Arc::new(StubSessionProvider::new(Some(SessionTokenInfo::for_test(
+            "injected-token",
+            "c2Vzc2lvbi1rZXk=",
+            OffsetDateTime::from_unix_timestamp(4_000_000_000).unwrap(),
+        ))));
         let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
         let session_options = SessionOptions {
             mode: SessionMode::Enabled,
