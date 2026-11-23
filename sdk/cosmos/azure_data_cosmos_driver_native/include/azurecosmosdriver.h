@@ -1866,6 +1866,42 @@ typedef struct cosmos_cursor_request_t {
 } cosmos_cursor_request_t;
 
 /**
+ * Additive retained-feed options. Initialize with [`cosmos_feed_options_init()`].
+ *
+ * Unused payloads must be zero. All values are copied before submit returns.
+ */
+typedef struct cosmos_feed_options_t {
+  /**
+   * Readable record size, including zero-filled future extension bytes.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * Must be 1.
+   */
+  uint32_t abi_version;
+  /**
+   * 0 inherits the planner default; 1 applies the full `u64` value, including zero.
+   */
+  uint8_t has_max_buffered_query_window;
+  /**
+   * Maximum finite buffered query window. Ignored only when unset and zero.
+   */
+  uint64_t max_buffered_query_window;
+  /**
+   * 0 preserves the legacy hint; 1 is ServerDecides; 2 is a positive limit.
+   */
+  uint32_t max_item_count_kind;
+  /**
+   * 1..=u32::MAX for kind 2, otherwise zero. Explicit kinds require a negative legacy hint.
+   *
+   * Sent as a decimal `x-ms-max-item-count` header. Values above `i32::MAX` are forwarded
+   * as-is, but transports may treat them as server-decided or unset: Gateway 2.0 encodes
+   * `u32::MAX` as its -1 sentinel, and the in-memory emulator pages them as unset.
+   */
+  uint32_t max_item_count_limit;
+} cosmos_feed_options_t;
+
+/**
  * Borrowed item bytes; zero-length members retain their position.
  */
 typedef struct cosmos_cursor_bytes_t {
@@ -2531,6 +2567,18 @@ struct cosmos_operation_handle_t *cosmos_cursor_open_submit(const struct cosmos_
                                                             cosmos_status_code_t *out_pre_error);
 
 /**
+ * Opens a retained cursor with additive query-window and page-hint options.
+ *
+ * NULL `options` preserves the legacy contract. All borrowed inputs may be freed on return.
+ */
+struct cosmos_operation_handle_t *cosmos_cursor_open_submit_v2(const struct cosmos_driver_t *driver,
+                                                               const struct cosmos_cursor_request_t *request,
+                                                               const struct cosmos_feed_options_t *options,
+                                                               struct cosmos_completion_queue_t *queue,
+                                                               intptr_t user_data,
+                                                               cosmos_status_code_t *out_pre_error);
+
+/**
  * Request one page. Busy lasts until transfer, not until the prior page is freed.
  */
 struct cosmos_operation_handle_t *cosmos_cursor_next_submit(const struct cosmos_cursor_t *cursor,
@@ -2573,6 +2621,11 @@ struct cosmos_cursor_t *cosmos_cursor_completion_take_cursor(struct cosmos_curso
  * Free one V2 completion and all its borrowed views, plus any undetached cursor.
  */
 void cosmos_cursor_completion_free(struct cosmos_cursor_completion_t *completion);
+
+/**
+ * Initializes additive feed options to inherited defaults.
+ */
+void cosmos_feed_options_init(struct cosmos_feed_options_t *out);
 
 /**
  * Initialize a caller-owned full-size cursor request.

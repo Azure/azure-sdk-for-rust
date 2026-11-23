@@ -11,8 +11,11 @@ use azure_data_cosmos_driver::test::{
 };
 use std::sync::{
     atomic::{AtomicU8, Ordering},
-    Arc,
+    Arc, Mutex,
 };
+
+/// Records the `x-ms-max-item-count` header of each non-plan document request.
+pub(crate) type PageHints = Arc<Mutex<Vec<Option<String>>>>;
 
 #[derive(Debug, Default)]
 pub(crate) struct Gate {
@@ -22,7 +25,11 @@ pub(crate) struct Gate {
 }
 
 #[derive(Debug)]
-pub(super) struct Factory(pub(crate) Option<Arc<Gate>>, pub(crate) bool);
+pub(super) struct Factory(
+    pub(crate) Option<Arc<Gate>>,
+    pub(crate) bool,
+    pub(crate) Option<PageHints>,
+);
 
 impl HttpClientFactory for Factory {
     fn build(
@@ -30,12 +37,16 @@ impl HttpClientFactory for Factory {
         _: &ConnectionPoolOptions,
         _: HttpClientConfig,
     ) -> azure_data_cosmos_driver::error::Result<Arc<dyn TransportClient>> {
-        Ok(Arc::new(ScriptedTransport(self.0.clone(), self.1)))
+        Ok(Arc::new(ScriptedTransport(
+            self.0.clone(),
+            self.1,
+            self.2.clone(),
+        )))
     }
 }
 
 #[derive(Debug)]
-struct ScriptedTransport(Option<Arc<Gate>>, bool);
+struct ScriptedTransport(Option<Arc<Gate>>, bool, Option<PageHints>);
 
 fn hpk_prefix() -> FeedRange {
     FeedRange::for_partition(
@@ -249,6 +260,12 @@ impl TransportClient for ScriptedTransport {
         if request.url.path().ends_with("/docs")
             && header(request, "x-ms-cosmos-is-query-plan-request").is_none()
         {
+            if let Some(hints) = &self.2 {
+                hints
+                    .lock()
+                    .unwrap()
+                    .push(header(request, "x-ms-max-item-count").map(str::to_owned));
+            }
             if let Some(gate) = &self.0 {
                 gate.entered.notify_one();
                 gate.release.notified().await;
@@ -318,9 +335,16 @@ impl TransportClient for ScriptedTransport {
                             "queryRanges":[{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":false}]
                         })
                     } else {
+                        let top = if sql.contains("TOP 1001") { 1001 } else { 6 };
+                        let mut info = serde_json::json!({"hasNonStreamingOrderBy":true,"orderBy":["Ascending"],"orderByExpressions":["c.rank"],"top":top,"rewrittenQuery":sql});
+                        if sql.contains("OFFSET 1000 LIMIT 1") {
+                            info.as_object_mut().unwrap().remove("top");
+                            info["offset"] = 1000.into();
+                            info["limit"] = 1.into();
+                        }
                         serde_json::json!({
                             "partitionedQueryExecutionInfoVersion":1,
-                            "queryInfo":{"hasNonStreamingOrderBy":true,"orderBy":["Ascending"],"orderByExpressions":["c.rank"],"top":6,"rewrittenQuery":"SELECT TOP 6 * FROM c ORDER BY c.rank"},
+                            "queryInfo":info,
                             "queryRanges":[{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":false}]
                         })
                     }
@@ -394,10 +418,11 @@ impl TransportClient for ScriptedTransport {
                         .unwrap_or("0")
                         .parse()
                         .unwrap();
-                    let count: usize = header(request, "x-ms-max-item-count")
+                    let count: i64 = header(request, "x-ms-max-item-count")
                         .unwrap_or("2")
                         .parse()
                         .unwrap();
+                    let count = if count == -1 { 2 } else { count as usize };
                     let end = (start + count).min(ranks.len());
                     if end < ranks.len() {
                         headers.insert("x-ms-continuation", end.to_string());

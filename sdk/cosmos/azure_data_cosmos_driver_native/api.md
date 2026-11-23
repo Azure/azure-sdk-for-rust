@@ -173,6 +173,8 @@ pub mod cursor {
     #[no_mangle]
     pub extern "C" fn cosmos_cursor_open_submit(driver: *const crate::driver::DriverHandle, request: *const crate::cursor_request::CosmosCursorRequest, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
+    pub extern "C" fn cosmos_cursor_open_submit_v2(driver: *const crate::driver::DriverHandle, request: *const crate::cursor_request::CosmosCursorRequest, options: *const crate::cursor_request::CosmosFeedOptions, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
     pub extern "C" fn cosmos_cursor_queue_create(runtime: *const crate::runtime::RuntimeContext, max_capacity: u32) -> *mut crate::completion::CompletionQueue;
     #[no_mangle]
     pub extern "C" fn cosmos_cursor_queue_wait(queue: *mut crate::completion::CompletionQueue, out: *mut *mut CosmosCursorCompletion, max: usize, timeout_ms: u32, out_count: *mut usize) -> crate::error::CosmosStatusCode;
@@ -204,6 +206,8 @@ pub mod cursor {
 pub mod cursor_request {
     #[no_mangle]
     pub extern "C" fn cosmos_cursor_request_init(out: *mut CosmosCursorRequest);
+    #[no_mangle]
+    pub extern "C" fn cosmos_feed_options_init(out: *mut CosmosFeedOptions);
     #[repr(C)]
     pub struct CosmosCursorRequest {
         pub struct_size_bytes: u32,
@@ -213,6 +217,15 @@ pub mod cursor_request {
         pub start_from: u32,
         pub start_time: crate::string::CosmosStringView,
         pub reserved: [u32; 4],
+    }
+    #[repr(C)]
+    pub struct CosmosFeedOptions {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub has_max_buffered_query_window: u8,
+        pub max_buffered_query_window: u64,
+        pub max_item_count_kind: u32,
+        pub max_item_count_limit: u32,
     }
 }
 pub mod database_ref {

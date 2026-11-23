@@ -17,6 +17,8 @@ use url::Url;
 
 mod transport;
 pub(super) use transport::Gate;
+#[cfg(test)]
+pub(super) use transport::PageHints;
 
 pub(super) fn scripted(current_thread: bool) -> (*mut RuntimeContext, *mut DriverHandle) {
     scripted_gated(current_thread, None)
@@ -26,17 +28,26 @@ pub(super) fn scripted_gated(
     current_thread: bool,
     gate: Option<Arc<Gate>>,
 ) -> (*mut RuntimeContext, *mut DriverHandle) {
-    scripted_with_options(current_thread, gate, false)
+    scripted_with_options(current_thread, gate, false, None)
 }
 
 pub(super) fn scripted_hpk(current_thread: bool) -> (*mut RuntimeContext, *mut DriverHandle) {
-    scripted_with_options(current_thread, None, true)
+    scripted_with_options(current_thread, None, true, None)
+}
+
+#[cfg(test)]
+pub(super) fn scripted_recording(
+    current_thread: bool,
+    hints: PageHints,
+) -> (*mut RuntimeContext, *mut DriverHandle) {
+    scripted_with_options(current_thread, None, false, Some(hints))
 }
 
 fn scripted_with_options(
     current_thread: bool,
     gate: Option<Arc<Gate>>,
     hierarchical: bool,
+    hints: Option<transport::PageHints>,
 ) -> (*mut RuntimeContext, *mut DriverHandle) {
     let tokio = if current_thread {
         tokio::runtime::Builder::new_current_thread()
@@ -53,7 +64,11 @@ fn scripted_with_options(
     let runtime = tokio
         .block_on(
             azure_data_cosmos_driver::CosmosDriverRuntimeBuilder::new()
-                .with_mock_http_client_factory(Arc::new(transport::Factory(gate, hierarchical)))
+                .with_mock_http_client_factory(Arc::new(transport::Factory(
+                    gate,
+                    hierarchical,
+                    hints,
+                )))
                 .build(),
         )
         .unwrap();

@@ -65,6 +65,29 @@ for the full design.
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 | Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
+## Retained-feed options
+
+`cosmos_cursor_open_submit_v2` accepts an optional `cosmos_feed_options_t` initialized
+with `cosmos_feed_options_init`. A set buffered window forwards the full `uint64_t`
+value, including zero, into fresh and resumed planning. Unset retains the native
+default of 1000. Finite buffered TOP and OFFSET-plus-take windows must fit the
+configured limit. Checkpoint support is independent: an unsupported checkpoint
+does not stop a retained buffered cursor.
+
+Page-hint kind 0 preserves the legacy field, kind 1 selects `ServerDecides`, and
+kind 2 accepts a positive limit through `UINT32_MAX`. Explicit kinds require a
+negative legacy page hint. Unused payloads, unknown kinds, and invalid versions
+are rejected rather than narrowed or silently ignored. Inputs are copied before
+submit returns. These exports require a matching newly built native library and
+header; the published v0.3.0 platform modules do not contain them.
+
+Kind 2 is sent as a decimal `x-ms-max-item-count` header, so limits above
+`INT32_MAX` are forwarded as-is, but transports may treat them as server-decided or
+unset. Gateway 2.0 encodes `UINT32_MAX` as its `-1` (server decides) page-size
+sentinel, and the in-memory emulator parses the header as a signed 32-bit value and
+pages larger limits as unset. Gateway 1.0 forwards the header verbatim; the
+service's handling of such values is not specified here.
+
 ## Read-many cursors
 
 Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,
