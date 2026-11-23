@@ -407,6 +407,7 @@ mod tests {
         let container_props = ContainerProperties {
             id: std::borrow::Cow::Borrowed("c"),
             partition_key: PartitionKeyDefinition::new(vec![std::borrow::Cow::Borrowed("/pk")]),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(account, "db", "db_rid", "c", "c_rid", &container_props)

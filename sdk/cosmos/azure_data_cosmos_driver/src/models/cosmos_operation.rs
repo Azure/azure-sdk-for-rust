@@ -1491,6 +1491,7 @@ mod tests {
         ContainerProperties {
             id: "testcontainer".into(),
             partition_key: test_partition_key_definition("/pk"),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         }
     }
@@ -1933,6 +1934,7 @@ mod tests {
         let properties = ContainerProperties {
             id: "hpk".into(),
             partition_key: ("/tenant", "/user", "/device").into(),
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         let container = ContainerReference::new(

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added in-memory emulator service-style aggregate, GROUP BY, and canonical distinct-count plans and split-safe partition partials for account-free testing of the production query pipeline. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
+- Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added non-resumable read-many plans with `ItemSelector`, `ItemScope`, and `ItemFilter` for key/id, partition, or feed-range selections, including hierarchical prefixes, parameterized selector filters, and bounded query batches. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
@@ -15,6 +17,11 @@
 
 ### Bugs Fixed
 
+- Retain partition-key-range pages across 429 retries regardless of throttling caps, until success, a non-429 result, deadline, or cancellation; persistent throttling can wait indefinitely without a deadline or cancellation. ([#5595](https://github.com/Azure/azure-sdk-for-rust/pull/5595))
+- Preserve complete single-partition emulator aggregate, GROUP BY, and DISTINCT results across pages, and retain quoted aliases and floating-point literals in query rewrites. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
+- Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Preserve session tokens from query pages suppressed by `DISTINCT` or `OFFSET`, including terminal distinct-count results and empty-page flushes. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
+- Normalize native query-plan partition bounds using the container's partition key kind and version, preventing malformed EPK errors during cross-partition queries. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Gateway V2 now loads lazy partition topology on demand to scope explicit compound session tokens; topology-loading failures propagate, while unavailable safe scoping omits the token and downgrades Session consistency to Eventual for that attempt, without a read-your-writes guarantee. ([#5585](https://github.com/Azure/azure-sdk-for-rust/pull/5585))
 - Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
@@ -22,6 +29,7 @@
 ### Other Changes
 
 - New query and change-feed checkpoints use `c2.` and cannot be read by SDKs that only support `c1.`. Query checkpoint payloads are unchanged, and supported legacy `c1.` checkpoints remain readable. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- The native QueryPlanInterop library used by the `__internal_native_query_plan` feature now comes from the public `azure_cosmos_queryplan_sys` crate on crates.io, with bundled libraries for Windows, Linux (glibc), and macOS (x64/arm64); other targets fall back to the local planner or Gateway.
 - Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Preserve binary `ORDER BY` source pages internally through merges, DISTINCT, and pagination windows, materializing only final output items into the existing standalone response buffers. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
 

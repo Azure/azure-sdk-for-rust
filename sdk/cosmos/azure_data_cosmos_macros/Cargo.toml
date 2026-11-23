@@ -23,6 +23,7 @@ quote.workspace = true
 syn.workspace = true
 
 [dev-dependencies]
+toml.workspace = true
 tracing.workspace = true
 
 [package.metadata.docs.rs]

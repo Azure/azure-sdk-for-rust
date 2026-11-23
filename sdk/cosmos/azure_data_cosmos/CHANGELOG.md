@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added cross-partition `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, and distinct-count queries using `COUNT` over a `DISTINCT` subquery; grouped results support live paging, but aggregates and groups do not support external continuation tokens. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added SQL filter predicates to unstable PATCH instruction payloads for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added paged `ContainerClient::read_many` with shared `ItemSelector`, `ItemScope`, and `ItemFilter` types for key/id, partition, or feed-range selections, optional selector filters, and result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
@@ -15,6 +16,7 @@
 
 ### Bugs Fixed
 
+- Retain partition-key-range pages across HTTP 429 retries, bypassing configured throttle caps until success, a non-429 result, deadline, or cancellation; persistent throttling without a deadline or cancellation can wait indefinitely, while joined callers keep independent deadlines. ([#5595](https://github.com/Azure/azure-sdk-for-rust/pull/5595))
 - Report query-page deserialization failures in operation-level diagnostics while preserving request statuses and charges. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))

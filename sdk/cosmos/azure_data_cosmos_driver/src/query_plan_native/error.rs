@@ -28,6 +28,8 @@ pub enum QueryPlanError {
     /// into the expected Rust model.
     Deserialization { source: serde_json::Error },
 
+    /// The plan's `queryRanges` could not be converted into EPK bounds.
+    InvalidQueryRanges { source: crate::error::CosmosError },
     /// The native library could not be loaded (DLL/so not found on PATH).
     LibraryNotAvailable {
         /// The loading error message.
@@ -56,6 +58,9 @@ impl std::fmt::Display for QueryPlanError {
             Self::Deserialization { source } => {
                 write!(f, "failed to deserialize query plan: {source}")
             }
+            Self::InvalidQueryRanges { source } => {
+                write!(f, "invalid query plan ranges: {source}")
+            }
             Self::LibraryNotAvailable { message } => {
                 write!(f, "native query plan library not available: {message}")
             }
@@ -73,6 +78,7 @@ impl std::error::Error for QueryPlanError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Deserialization { source } => Some(source),
+            Self::InvalidQueryRanges { source } => Some(source),
             _ => None,
         }
     }
@@ -91,6 +97,7 @@ impl QueryPlanError {
             Self::Unexpected { .. } => "unexpected_hresult",
             Self::Expected { .. } => "expected_query_error",
             Self::Deserialization { .. } => "deserialization",
+            Self::InvalidQueryRanges { .. } => "invalid_query_ranges",
             Self::LibraryNotAvailable { .. } => "library_not_available",
             Self::ConfigContainsNull => "config_contains_null",
             Self::InvalidUtf8 { .. } => "invalid_utf8",
@@ -140,7 +147,7 @@ mod tests {
     #[test]
     fn deserialization_error_from_serde() {
         let err: QueryPlanError =
-            serde_json::from_str::<crate::driver::dataflow::query_plan::QueryPlan>("invalid")
+            serde_json::from_str::<crate::driver::dataflow::query_plan::RawQueryPlan>("invalid")
                 .unwrap_err()
                 .into();
         assert!(matches!(err, QueryPlanError::Deserialization { .. }));
@@ -158,5 +165,18 @@ mod tests {
         assert_eq!(err.diagnostic_code(), "expected_query_error");
         assert_eq!(err.hresult(), Some(u32::MAX));
         assert!(!err.diagnostic_code().contains("secret"));
+    }
+
+    #[test]
+    fn range_resolution_preserves_source_without_logging_partition_values() {
+        let source = crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("private partition value")
+            .build();
+        let error = QueryPlanError::InvalidQueryRanges { source };
+        assert_eq!(error.diagnostic_code(), "invalid_query_ranges");
+        assert_eq!(error.hresult(), None);
+        assert!(std::error::Error::source(&error).is_some());
+        assert!(!error.diagnostic_code().contains("private"));
     }
 }

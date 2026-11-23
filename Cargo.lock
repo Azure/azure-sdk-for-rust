@@ -472,7 +472,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "1.2.0-beta.2"
+version = "1.2.0-beta.3"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -497,8 +497,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.2",
- "typespec_client_core 1.2.0-beta.2",
+ "typespec 1.2.0-beta.3",
+ "typespec_client_core 1.2.0-beta.3",
  "ureq",
 ]
 
@@ -526,10 +526,10 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.2.0-beta.3"
+version = "1.2.0-beta.4"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "fe2o3-amqp 0.18.3",
  "fe2o3-amqp-cbs 0.18.0",
  "fe2o3-amqp-ext 0.18.0",
@@ -545,7 +545,7 @@ dependencies = [
  "tokio-rustls",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.2",
+ "typespec 1.2.0-beta.3",
  "typespec_macros 1.0.0",
 ]
 
@@ -554,7 +554,7 @@ name = "azure_core_examples"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "base64",
  "futures",
  "serde",
@@ -587,12 +587,12 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "1.1.0-beta.2"
+version = "1.1.0-beta.3"
 dependencies = [
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
  "azure_core_test_macros 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "opentelemetry",
  "opentelemetry_sdk",
  "tokio",
@@ -605,10 +605,10 @@ name = "azure_core_test"
 version = "0.2.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_examples",
  "azure_core_test_macros 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "clap",
  "dotenvy",
  "flate2",
@@ -677,6 +677,56 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_cosmos_queryplan_linux_arm64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84703891cde635debec49b66dc90b8af16079ffc1a6c8b6d7043927a0b5e4313"
+
+[[package]]
+name = "azure_cosmos_queryplan_linux_x64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de2167df63d12de5456ad569c3380a03946829e6f799b7fd7d66d4b051cab548"
+
+[[package]]
+name = "azure_cosmos_queryplan_macos_arm64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a86a88b259f8eacd95c5227c5c5ac98e8f73bf74bcd42b7db04867fdcd5e204e"
+
+[[package]]
+name = "azure_cosmos_queryplan_macos_x64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd510ac0de2090ad41506e1ba3a8cbd13917dd22852ddb03b23dfb52e5d67d80"
+
+[[package]]
+name = "azure_cosmos_queryplan_sys"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc2cd8a37999914f66a6f143087d3d317763b095ff12e5bb56dc6c49a0c18619"
+dependencies = [
+ "azure_cosmos_queryplan_linux_arm64",
+ "azure_cosmos_queryplan_linux_x64",
+ "azure_cosmos_queryplan_macos_arm64",
+ "azure_cosmos_queryplan_macos_x64",
+ "azure_cosmos_queryplan_win_arm64",
+ "azure_cosmos_queryplan_win_x64",
+]
+
+[[package]]
+name = "azure_cosmos_queryplan_win_arm64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6201b0649e3110016a1dcbd5fa30cbb9416c91c5191cd781cd1edc275fb778c3"
+
+[[package]]
+name = "azure_cosmos_queryplan_win_x64"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "faf54882c19904c70df88db5b346ae80b2cbad49cf37ea76bc43f318cbeacb2e"
+
+[[package]]
 name = "azure_data_cosmos"
 version = "1.1.0-beta.3"
 dependencies = [
@@ -702,6 +752,7 @@ dependencies = [
  "sha2",
  "time",
  "tokio",
+ "toml 0.8.23",
  "tracing",
  "tracing-subscriber",
  "url",
@@ -731,6 +782,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.1.0",
  "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "azure_cosmos_queryplan_sys",
  "azure_data_cosmos_macros",
  "azure_data_cosmos_test",
  "azure_identity 1.0.0",
@@ -750,6 +802,7 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
+ "toml 0.8.23",
  "tracing",
  "tracing-subscriber",
  "url",
@@ -797,6 +850,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+ "toml 0.8.23",
  "tracing",
 ]
 
@@ -880,11 +934,11 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "1.1.0-beta.2"
+version = "1.1.0-beta.3"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_examples",
  "azure_core_test 0.2.0",
  "clap",
@@ -912,11 +966,11 @@ dependencies = [
  "async-lock",
  "async-stream",
  "async-trait",
- "azure_core 1.2.0-beta.2",
- "azure_core_amqp 1.2.0-beta.3",
+ "azure_core 1.2.0-beta.3",
+ "azure_core_amqp 1.2.0-beta.4",
  "azure_core_opentelemetry",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_messaging_eventhubs",
  "azure_messaging_eventhubs_checkpointstore_blob",
  "azure_storage_blob",
@@ -946,10 +1000,10 @@ name = "azure_messaging_eventhubs_checkpointstore_blob"
 version = "0.11.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_opentelemetry",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_messaging_eventhubs",
  "azure_storage_blob",
  "futures",
@@ -989,12 +1043,12 @@ dependencies = [
 
 [[package]]
 name = "azure_resourcemanager_keyvault"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_security_keyvault_test",
  "futures",
  "include-file",
@@ -1005,13 +1059,13 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "1.1.0-beta.3"
+version = "1.1.0-beta.4"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -1027,13 +1081,13 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_keys"
-version = "1.1.0-beta.2"
+version = "1.1.0-beta.3"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_security_keyvault_test",
  "criterion",
  "futures",
@@ -1050,13 +1104,13 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_secrets"
-version = "1.1.0-beta.2"
+version = "1.1.0-beta.3"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_security_keyvault_test",
  "futures",
  "include-file",
@@ -1074,7 +1128,7 @@ name = "azure_security_keyvault_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "tokio",
 ]
 
@@ -1087,9 +1141,9 @@ dependencies = [
  "arrow-schema",
  "async-stream",
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_storage_common",
  "azure_storage_sas",
  "bytes",
@@ -1114,7 +1168,7 @@ dependencies = [
 name = "azure_storage_common"
 version = "1.1.0-beta.2"
 dependencies = [
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "serde",
  "serde_json",
  "time",
@@ -1125,9 +1179,9 @@ name = "azure_storage_queue"
 version = "1.2.0-beta.1"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_storage_common",
  "azure_storage_sas",
  "futures",
@@ -1141,7 +1195,7 @@ dependencies = [
 name = "azure_storage_sas"
 version = "1.1.0-beta.2"
 dependencies = [
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_storage_common",
  "base64",
  "hmac",
@@ -1156,7 +1210,7 @@ name = "azure_storage_stress"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
  "bytes",
  "clap",
@@ -1175,9 +1229,9 @@ name = "azure_storage_stress_blob"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.3",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.2",
+ "azure_identity 1.1.0-beta.3",
  "azure_storage_blob",
  "azure_storage_stress",
  "bytes",
@@ -1333,7 +1387,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.119",
  "tempfile",
- "toml",
+ "toml 0.9.12+spec-1.1.0",
 ]
 
 [[package]]
@@ -1827,7 +1881,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2457,7 +2511,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.6.5",
+ "socket2 0.5.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -3327,7 +3381,7 @@ version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e67ba7e9b2b56446f1d419b1d807906278ffa1a658a8a5d8a39dcb1f5a78614f"
 dependencies = [
- "toml_edit",
+ "toml_edit 0.25.13+spec-1.1.0",
 ]
 
 [[package]]
@@ -3446,7 +3500,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash",
  "rustls",
- "socket2 0.6.5",
+ "socket2 0.5.10",
  "thiserror",
  "tokio",
  "tracing",
@@ -3478,16 +3532,16 @@ dependencies = [
 
 [[package]]
 name = "quinn-udp"
-version = "0.5.15"
+version = "0.5.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35a133f956daabe89a61a685c2649f13d82d5aa4bd5d12d1277e1072a21c0694"
+checksum = "af66907df18639dcf4db56ca65490cabc4b27a97dbadd96f2926cca73298f016"
 dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
- "socket2 0.6.5",
+ "socket2 0.5.10",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3815,7 +3869,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3873,7 +3927,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4089,6 +4143,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.2",
+]
+
+[[package]]
+name = "serde_spanned"
+version = "0.6.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -4353,7 +4416,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4546,17 +4609,38 @@ dependencies = [
 
 [[package]]
 name = "toml"
+version = "0.8.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc1beb996b9d83529a9e75c17a1686767d148d70663143c7854d8b4a09ced362"
+dependencies = [
+ "serde",
+ "serde_spanned 0.6.9",
+ "toml_datetime 0.6.11",
+ "toml_edit 0.22.27",
+]
+
+[[package]]
+name = "toml"
 version = "0.9.12+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf92845e79fc2e2def6a5d828f0801e29a2f8acc037becc5ab08595c7d5e9863"
 dependencies = [
  "indexmap 2.14.0",
  "serde_core",
- "serde_spanned",
+ "serde_spanned 1.1.1",
  "toml_datetime 0.7.5+spec-1.1.0",
  "toml_parser",
  "toml_writer",
  "winnow 0.7.15",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "0.6.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -4579,6 +4663,20 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
+version = "0.22.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a"
+dependencies = [
+ "indexmap 2.14.0",
+ "serde",
+ "serde_spanned 0.6.9",
+ "toml_datetime 0.6.11",
+ "toml_write",
+ "winnow 0.7.15",
+]
+
+[[package]]
+name = "toml_edit"
 version = "0.25.13+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6975367e4d2ef766d86af01ffad14b622fecc8d4357a998fbc4deb6e9bacaf9b"
@@ -4597,6 +4695,12 @@ checksum = "a2abe9b86193656635d2411dc43050282ca48aa31c2451210f4202550afb7526"
 dependencies = [
  "winnow 1.0.4",
 ]
+
+[[package]]
+name = "toml_write"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
 name = "toml_writer"
@@ -4865,7 +4969,7 @@ dependencies = [
 
 [[package]]
 name = "typespec"
-version = "1.2.0-beta.2"
+version = "1.2.0-beta.3"
 dependencies = [
  "base64",
  "bytes",
@@ -4904,7 +5008,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "1.2.0-beta.2"
+version = "1.2.0-beta.3"
 dependencies = [
  "async-trait",
  "base64",
@@ -4924,7 +5028,7 @@ dependencies = [
  "tokio-util",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.2",
+ "typespec 1.2.0-beta.3",
  "typespec_macros 1.0.0",
  "url",
  "uuid",
@@ -4953,7 +5057,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.119",
  "tokio",
- "typespec_client_core 1.2.0-beta.2",
+ "typespec_client_core 1.2.0-beta.3",
 ]
 
 [[package]]
@@ -5251,7 +5355,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5510,6 +5614,9 @@ name = "winnow"
 version = "0.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df79d97927682d2fd8adb29682d1140b343be4ac0f08fd68b7765d9c059d3945"
+dependencies = [
+ "memchr",
+]
 
 [[package]]
 name = "winnow"

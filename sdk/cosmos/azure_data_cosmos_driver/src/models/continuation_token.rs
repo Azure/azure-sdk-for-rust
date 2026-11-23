@@ -389,6 +389,7 @@ mod tests {
         let props = ContainerProperties {
             id: "coll".into(),
             partition_key,
+            vector_embedding_policy: None,
             system_properties: SystemProperties::default(),
         };
         ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &props)

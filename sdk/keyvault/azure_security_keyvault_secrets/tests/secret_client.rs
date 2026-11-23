@@ -29,6 +29,7 @@ use std::{collections::HashMap, sync::Arc};
 #[recorded::test]
 async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("sr"));
 
     let mut options = SecretClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -45,7 +46,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let secret = client
-        .set_secret("secret-roundtrip", body.try_into()?, None)
+        .set_secret(&name, body.try_into()?, None)
         .await?
         .into_model()?;
     assert_eq!(secret.value, Some("secret-value".into()));
@@ -54,7 +55,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     let secret_version = secret.resource_id()?.version;
     let secret = client
         .get_secret(
-            "secret-roundtrip",
+            &name,
             Some(SecretClientGetSecretOptions {
                 secret_version,
                 ..Default::default()
@@ -70,6 +71,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("usp"));
 
     let mut options = SecretClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -86,7 +88,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let secret = client
-        .set_secret("update-secret", body.try_into()?, None)
+        .set_secret(&name, body.try_into()?, None)
         .await?
         .into_model()?;
     assert_eq!(secret.value, Some("secret-value".into()));
@@ -101,7 +103,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
         )])),
     };
     let secret = client
-        .update_secret_properties("update-secret", properties.try_into()?, None)
+        .update_secret_properties(&name, properties.try_into()?, None)
         .await?
         .into_model()?;
     assert_eq!(secret.content_type, Some("text/plain".into()));
@@ -118,6 +120,10 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     use azure_core::http::RequestContent;
 
     let recording = ctx.recording();
+    let mut names = vec![
+        recording.random_string::<24>(Some("ls")),
+        recording.random_string::<24>(Some("ls")),
+    ];
 
     let mut options = SecretClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -129,10 +135,9 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create several secrets.
-    let mut names = vec!["list-secrets-1", "list-secrets-2"];
     let secret1 = client
         .set_secret(
-            names[0],
+            &names[0],
             RequestContent::from_str(r#"{"value":"secret-value-1"}"#),
             None,
         )
@@ -142,7 +147,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
 
     let secret2 = client
         .set_secret(
-            names[1],
+            &names[1],
             RequestContent::from_str(r#"{"value":"secret-value-2"}"#),
             None,
         )
@@ -155,7 +160,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     while let Some(secret) = pager.try_next().await? {
         // Get the secret name from the ID.
         let name = secret.resource_id()?.name;
-        if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
+        if let Some(idx) = names.iter().position(|n| name.eq(n)) {
             names.remove(idx);
         }
     }
@@ -167,6 +172,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn purge_secret(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("ps"));
 
     let mut options = SecretClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -180,7 +186,7 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
     // Create a secret.
     let secret = client
         .set_secret(
-            "purge-secret",
+            &name,
             SetSecretParameters {
                 value: Some("secret-value".into()),
                 ..Default::default()
@@ -228,6 +234,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
     use azure_core_test::tracing::ExpectedRestApiSpan;
 
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("rtsvt"));
 
     // Verify that the distributed tracing traces generated from the API call below match the expected traces.
     azure_core_test::tracing::assert_instrumentation_information(
@@ -251,7 +258,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
                     ..Default::default()
                 };
                 let secret = client
-                    .set_secret("secret-roundtrip-instrument", body.try_into()?, None)
+                    .set_secret(&name, body.try_into()?, None)
                     .await?
                     .into_model()?;
                 assert_eq!(secret.value, Some("secret-value-instrument".into()));
@@ -260,7 +267,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
                 let secret_version = secret.resource_id()?.version;
                 let secret = client
                     .get_secret(
-                        "secret-roundtrip-instrument",
+                        &name,
                         Some(SecretClientGetSecretOptions {
                             secret_version,
                             ..Default::default()
@@ -314,6 +321,9 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
     const SECRET_COUNT: usize = 50;
 
     let recording = ctx.recording();
+    let names: Vec<_> = (0..SECRET_COUNT)
+        .map(|_| recording.random_string::<24>(Some("lsvt")))
+        .collect();
 
     if recording.test_mode() != TestMode::Playback {
         // Do not record creation of a bunch of secrets.
@@ -328,10 +338,10 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
                 Some(options),
             )
         }?;
-        for i in 0..SECRET_COUNT {
+        for (i, name) in names.iter().enumerate() {
             let secret = secret_client
                 .set_secret(
-                    &format!("secret-list-telemetry-{}", i),
+                    name,
                     SetSecretParameters {
                         value: Some(format!("secret-list-telemetry-value-{}", i)),
                         ..Default::default()
@@ -404,6 +414,9 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
     const SECRET_COUNT: usize = 50;
 
     let recording = ctx.recording();
+    let names: Vec<_> = (0..SECRET_COUNT)
+        .map(|_| recording.random_string::<24>(Some("lsbpvt")))
+        .collect();
 
     if recording.test_mode() != TestMode::Playback {
         // Do not record creation of a bunch of secrets.
@@ -418,10 +431,10 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
                 Some(options),
             )
         }?;
-        for i in 0..SECRET_COUNT {
+        for (i, name) in names.iter().enumerate() {
             let secret = secret_client
                 .set_secret(
-                    &format!("secret-list-telemetry-by-page{}", i),
+                    name,
                     SetSecretParameters {
                         value: Some(format!("secret-list-telemetry-by-page-value-{}", i)),
                         ..Default::default()
@@ -497,6 +510,9 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
     const SECRET_COUNT: usize = 50;
 
     let recording = ctx.recording();
+    let names: Vec<_> = (0..SECRET_COUNT)
+        .map(|_| recording.random_string::<24>(Some("lsvtr")))
+        .collect();
 
     if recording.test_mode() != TestMode::Playback {
         // Do not record creation of a bunch of secrets.
@@ -511,10 +527,10 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
                 Some(options),
             )
         }?;
-        for i in 0..SECRET_COUNT {
+        for (i, name) in names.iter().enumerate() {
             let secret = secret_client
                 .set_secret(
-                    &format!("secret-rehydrate-telemetry-{}", i),
+                    name,
                     SetSecretParameters {
                         value: Some(format!("secret-rehydrate-telemetry-value-{}", i)),
                         ..Default::default()

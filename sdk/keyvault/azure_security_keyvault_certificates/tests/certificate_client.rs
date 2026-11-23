@@ -48,6 +48,7 @@ static DEFAULT_CERTIFICATE_POLICY: LazyLock<CertificatePolicy> =
 #[recorded::test]
 async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("cr"));
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
@@ -65,7 +66,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .begin_create_certificate("certificate-roundtrip", body.try_into()?, None)?
+        .begin_create_certificate(&name, body.try_into()?, None)?
         .await?
         .into_model()?;
 
@@ -81,6 +82,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("cvi"));
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
@@ -103,11 +105,7 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
                 ..Default::default()
             };
             let _certificate = client
-                .begin_create_certificate(
-                    "certificate-validate-instrumentation",
-                    body.try_into()?,
-                    None,
-                )?
+                .begin_create_certificate(&name, body.try_into()?, None)?
                 .await?
                 .into_model()?;
             Ok(())
@@ -146,6 +144,7 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("ucp"));
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
@@ -163,7 +162,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
         ..Default::default()
     };
     let certificate = client
-        .begin_create_certificate("update-properties", body.try_into()?, None)?
+        .begin_create_certificate(&name, body.try_into()?, None)?
         .await?
         .into_model()?;
 
@@ -181,7 +180,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     };
     let certificate = client
         .update_certificate_properties(
-            "update-properties",
+            &name,
             parameters.try_into()?,
             Some(CertificateClientUpdateCertificatePropertiesOptions {
                 certificate_version,
@@ -202,6 +201,10 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn list_certificates(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let mut names = vec![
+        recording.random_string::<24>(Some("lc")),
+        recording.random_string::<24>(Some("lc")),
+    ];
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
@@ -214,16 +217,15 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
     )?;
 
     // Create several self-signed certificates.
-    let mut names = vec!["list-certificates-1", "list-certificates-2"];
     let body = CreateCertificateParameters {
         certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
     client
-        .begin_create_certificate("list-certificates-1", body.clone().try_into()?, None)?
+        .begin_create_certificate(&names[0], body.clone().try_into()?, None)?
         .await?;
     client
-        .begin_create_certificate("list-certificates-2", body.try_into()?, None)?
+        .begin_create_certificate(&names[1], body.try_into()?, None)?
         .await?;
 
     // List certificates.
@@ -231,7 +233,7 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
     while let Some(certificate) = pager.try_next().await? {
         // Get the certificate name from the ID.
         let name = certificate.resource_id()?.name;
-        if let Some(idx) = names.iter().position(|n| name.eq(*n)) {
+        if let Some(idx) = names.iter().position(|n| name.eq(n)) {
             names.remove(idx);
         }
     }
@@ -243,6 +245,7 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn purge_certificate(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("pc"));
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
@@ -259,13 +262,12 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(DEFAULT_CERTIFICATE_POLICY.clone()),
         ..Default::default()
     };
-    const NAME: &str = "purge-certificate";
     client
-        .begin_create_certificate(NAME, body.try_into()?, None)?
+        .begin_create_certificate(&name, body.try_into()?, None)?
         .await?;
 
     // Delete the certificate.
-    client.delete_certificate(NAME.as_ref(), None).await?;
+    client.delete_certificate(&name, None).await?;
 
     // Because deletes may not happen right away, try purging in a loop.
     let mut retry = match recording.test_mode() {
@@ -274,9 +276,9 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     };
 
     loop {
-        match client.purge_deleted_certificate(NAME.as_ref(), None).await {
+        match client.purge_deleted_certificate(&name, None).await {
             Ok(_) => {
-                tracing::debug!("{NAME} has been purged");
+                tracing::debug!("{name} has been purged");
                 break;
             }
             Err(err) if matches!(err.http_status(), Some(StatusCode::Conflict)) => {
@@ -298,6 +300,7 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
 #[recorded::test]
 async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
+    let name = recording.random_string::<24>(Some("sjwec"));
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
@@ -332,9 +335,8 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         certificate_policy: Some(policy),
         ..Default::default()
     };
-    const NAME: &str = "ec-certificate-signer";
     let certificate = client
-        .begin_create_certificate(NAME, body.try_into()?, None)?
+        .begin_create_certificate(&name, body.try_into()?, None)?
         .await?
         .into_model()?;
     let certificate_version = certificate
@@ -360,10 +362,11 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     let body = SignParameters {
         algorithm: Some(SignatureAlgorithm::Es256),
         value: Some(digest),
+        ..Default::default()
     };
     let signature = key_client
         .sign(
-            NAME,
+            &name,
             body.try_into()?,
             Some(KeyClientSignOptions {
                 key_version: Some(certificate_version.clone()),

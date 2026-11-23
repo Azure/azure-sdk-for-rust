@@ -149,10 +149,20 @@ impl ResourceManagerError {
     }
 
     fn is_transient_arm_failure(&self) -> bool {
-        matches!(
-            debug_response_status(self.output()),
-            Some(429 | 500 | 502 | 503 | 504)
-        )
+        if let Some(status) = debug_response_status(self.output()) {
+            return matches!(status, 429 | 500 | 502 | 503 | 504);
+        }
+
+        // Azure CLI can fail before receiving HTTP headers when a proxy disconnects.
+        // Require the specific connection exception, not a generic proxy/SSL error.
+        let output = self.output();
+        if output.contains("CERTIFICATE_VERIFY_FAILED")
+            || output.contains("SSLCertVerificationError")
+            || output.contains("AADSTS")
+        {
+            return false;
+        }
+        output.contains("RemoteDisconnected('Remote end closed connection without response')")
     }
 
     fn retry_after(&self) -> Duration {
@@ -1048,6 +1058,7 @@ mod tests {
         resource_failed, resource_ready, throughput_matches, throughput_settings_resource,
         AzCliResourceManager, AzCommandRunner, CommandOutput, CosmosResourceManager,
         ResourceManagerConfig, ResourceManagerError, ResourceThroughput, Result,
+        RESOURCE_OPERATION_RETRY_INTERVAL, RESOURCE_OPERATION_RETRY_TIMEOUT,
     };
     use async_trait::async_trait;
     use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
@@ -1133,6 +1144,14 @@ mod tests {
         Err(ResourceManagerError::command(
             "Azure CLI command failed",
             output.stderr,
+        ))
+    }
+
+    fn proxy_disconnect() -> Result<CommandOutput> {
+        Err(ResourceManagerError::command(
+            "Azure CLI command failed",
+            "ProxyError('Unable to connect to proxy', \
+             RemoteDisconnected('Remote end closed connection without response'))",
         ))
     }
 
@@ -1334,18 +1353,178 @@ mod tests {
         assert_eq!(runner.calls().len(), 3);
     }
 
-    #[tokio::test]
-    async fn partition_merge_does_not_retry_transient_post_failure() {
-        let runner = Arc::new(MockRunner::new([command_error(503, &[])]));
+    #[tokio::test(start_paused = true)]
+    async fn database_creation_retries_proxy_disconnect_while_polling() {
+        let operation_url = "https://management.azure.com/operations/1?api-version=2026-03-15";
+        let runner = Arc::new(MockRunner::new([
+            output(202, &[("Azure-AsyncOperation", operation_url)], "{}"),
+            proxy_disconnect(),
+            output(200, &[], r#"{"status":"Succeeded"}"#),
+            output(
+                200,
+                &[],
+                r#"{"properties":{"provisioningState":"Succeeded"}}"#,
+            ),
+        ]));
         let manager = AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
 
+        manager.create_database("database").await.unwrap();
+
+        let calls = runner.calls();
+        assert_eq!(calls.len(), 4);
+        assert_eq!(&calls[0][..3], ["rest", "--method", "put"]);
+        for poll in &calls[1..3] {
+            assert_eq!(&poll[..3], ["rest", "--method", "get"]);
+            let url_index = poll
+                .iter()
+                .position(|argument| argument == "--url")
+                .unwrap();
+            assert_eq!(poll[url_index + 1], operation_url);
+        }
+    }
+
+    #[tokio::test]
+    async fn partition_merge_does_not_retry_transient_post_failure() {
+        for failure in [command_error(503, &[]), proxy_disconnect()] {
+            let runner = Arc::new(MockRunner::new([failure]));
+            let manager =
+                AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+
+            let error = manager
+                .merge_partitions("database", "container")
+                .await
+                .unwrap_err();
+
+            assert!(error.is_transient_arm_failure());
+            assert_eq!(runner.calls().len(), 1);
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn persistent_proxy_disconnect_preserves_error_after_retry_deadline() {
+        let runner = Arc::new(MockRunner::new(
+            std::iter::repeat_with(proxy_disconnect).take(61),
+        ));
+        let manager = AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+        let start = tokio::time::Instant::now();
+
         let error = manager
-            .merge_partitions("database", "container")
+            .rest_url("get", "https://management.azure.com/operations/1", None)
             .await
-            .unwrap_err();
+            .err()
+            .expect("persistent proxy failure must exhaust the retry deadline");
+
+        assert_eq!(error.output(), proxy_disconnect().err().unwrap().output());
+        assert_eq!(runner.calls().len(), 60);
+        assert_eq!(start.elapsed(), std::time::Duration::from_secs(885));
+    }
+
+    #[tokio::test]
+    async fn permanent_proxy_errors_are_not_retried() {
+        for output in [
+            "ProxyError('invalid proxy configuration')",
+            "Response status: 407\nProxyError('RemoteDisconnected')",
+            "Response status: 403\nProxyError('RemoteDisconnected')",
+        ] {
+            let runner = Arc::new(MockRunner::new([Err(ResourceManagerError::command(
+                "Azure CLI command failed",
+                output,
+            ))]));
+            let manager =
+                AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+
+            let error = manager
+                .rest_url("get", "https://management.azure.com/operations/1", None)
+                .await
+                .err()
+                .expect("permanent proxy errors must be returned immediately");
+
+            assert_eq!(error.output(), output);
+            assert_eq!(runner.calls().len(), 1);
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn idempotent_requests_retry_proxy_disconnect() {
+        for method in ["get", "put", "delete"] {
+            let runner = Arc::new(MockRunner::new([
+                Err(ResourceManagerError::command(
+                    "Azure CLI failed",
+                    "ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response'))",
+                )),
+                output(200, &[], "{}"),
+            ]));
+            let manager =
+                AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+            let start = tokio::time::Instant::now();
+
+            manager
+                .rest_url(method, "https://management.azure.com/resource", None)
+                .await
+                .unwrap();
+
+            let calls = runner.calls();
+            assert_eq!(calls.len(), 2);
+            assert_eq!(&calls[0][..5], &calls[1][..5]);
+            assert_eq!(start.elapsed(), RESOURCE_OPERATION_RETRY_INTERVAL);
+        }
+    }
+
+    #[tokio::test]
+    async fn proxy_disconnect_does_not_retry_post_or_permanent_failures() {
+        let disconnect = "RemoteDisconnected('Remote end closed connection without response')";
+        for (method, detail) in [
+            ("post", disconnect),
+            ("get", "SSLError: CERTIFICATE_VERIFY_FAILED"),
+            ("get", "SSLCertVerificationError"),
+            ("get", "AADSTS7000215: Invalid client secret"),
+            ("get", "Response status: 401"),
+            ("get", "Response status: 403"),
+        ] {
+            let diagnostic = format!("{detail}\n{disconnect}");
+            let runner = Arc::new(MockRunner::new([Err(ResourceManagerError::command(
+                "Azure CLI failed",
+                &diagnostic,
+            ))]));
+            let manager =
+                AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+
+            let error = manager
+                .rest_url(method, "https://management.azure.com/resource", None)
+                .await
+                .err()
+                .expect("non-retryable failures must propagate");
+
+            assert_eq!(error.output(), diagnostic);
+            assert_eq!(runner.calls().len(), 1);
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn repeated_proxy_disconnect_stops_at_retry_deadline() {
+        let attempts = (RESOURCE_OPERATION_RETRY_TIMEOUT.as_secs()
+            / RESOURCE_OPERATION_RETRY_INTERVAL.as_secs()) as usize;
+        let runner = Arc::new(MockRunner::new((0..attempts).map(|_| {
+            Err(ResourceManagerError::command(
+                "Azure CLI failed",
+                "RemoteDisconnected('Remote end closed connection without response')",
+            ))
+        })));
+        let manager = AzCliResourceManager::new(config(), Arc::new(MockCredential), runner.clone());
+        let start = tokio::time::Instant::now();
+
+        let error = manager
+            .rest_url("get", "https://management.azure.com/resource", None)
+            .await
+            .err()
+            .expect("repeated disconnects must fail");
 
         assert!(error.is_transient_arm_failure());
-        assert_eq!(runner.calls().len(), 1);
+        assert_eq!(runner.calls().len(), attempts);
+        assert_eq!(
+            start.elapsed(),
+            RESOURCE_OPERATION_RETRY_TIMEOUT - RESOURCE_OPERATION_RETRY_INTERVAL
+        );
     }
 
     #[tokio::test]
