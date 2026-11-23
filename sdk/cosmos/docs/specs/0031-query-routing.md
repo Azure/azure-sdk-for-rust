@@ -248,9 +248,10 @@ result. Pin that rejection in protocol tests rather than introducing a new
 client-side validation rule or a customer-facing feature flag.
 
 The one-EPK case is reserved for an application explicitly constructing an EPK
-`FeedRange` for a single logical partition; whenever the Rust API creates a
-`FeedRange` from a `PartitionKey`, it must preserve the original PK value so it
-can recover the `PartitionKey` and prefer the partition-key header instead.
+`FeedRange` for a single logical partition. An in-memory `FeedRange` created
+from a `PartitionKey` must retain that identity: prefer PK for complete keys,
+PPK for query prefixes, and EPK-R for change-feed prefixes. Serialization retains
+only EPK bounds; a deserialized range must not be treated as recoverable PK scope.
 
 Every necessary one-EPK filter remains a range rather than becoming an equality
 filter. PKRID alone suffices only for the whole physical partition, not a
