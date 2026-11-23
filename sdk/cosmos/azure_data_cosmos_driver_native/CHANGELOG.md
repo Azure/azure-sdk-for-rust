@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `cosmos_submit_singleton_operation_v2` and `cosmos_management_options_init` for typed manual/autoscale database and container creation throughput with complete auto-upgrade policies, preserving inherited custom headers and native header precedence.
+- Added `cosmos_submit_singleton_operation_v2` and `cosmos_management_options_init` for typed manual/autoscale database and container creation throughput with complete auto-upgrade policies, preserving inherited custom headers and native header precedence. ([#5663](https://github.com/Azure/azure-sdk-for-rust/pull/5663))
 
 ### Breaking Changes
 
