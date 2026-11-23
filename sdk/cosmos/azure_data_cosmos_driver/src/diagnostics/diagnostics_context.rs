@@ -1099,7 +1099,7 @@ pub struct RequestEvent {
     /// Type of the pipeline event.
     event_type: RequestEventType,
 
-    /// When this event occurred.
+    /// Monotonic time used to measure elapsed time.
     #[serde(skip)]
     timestamp: Instant,
 
@@ -1276,7 +1276,7 @@ impl RequestEvent {
         &self.event_type
     }
 
-    /// Returns when this event occurred.
+    /// Returns the monotonic timestamp of this event.
     pub fn timestamp(&self) -> Instant {
         self.timestamp
     }

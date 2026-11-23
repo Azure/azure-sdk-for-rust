@@ -494,7 +494,8 @@ fn required_scenario_inventory_categories_are_represented() {
         "distinct_type_mismatch_on_resume",
         "split_",
         "headers_request_charge",
-        "unsupported_combination",
+        "group_by_missing_service_rewrite",
+        "aggregate_missing_service_rewrite",
     ];
     for marker in required_markers {
         assert!(

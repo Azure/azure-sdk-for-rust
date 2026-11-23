@@ -21,7 +21,7 @@ unstable_fake = ["test", "azure_core/unstable_fake"]
 
 [dependencies]
 async-trait = { workspace = true }
-azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false, features = [
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.3", default-features = false, features = [
   "unstable_resource_manager",
 ] }
 serde = { workspace = true }

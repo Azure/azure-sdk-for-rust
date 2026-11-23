@@ -77,7 +77,8 @@ pub enum HedgeTerminalState {
     /// Both legs returned retriable failures (5xx / 429 / 408 / 410 /
     /// 404-1002 / transport error / deadline). The race produced no winner;
     /// the operation surfaced either a cancellation error (if the deadline
-    /// drove termination) or a synthetic both-transient error.
+    /// drove termination), a throttled partition-key-range batch for retry,
+    /// or a synthetic both-transient error.
     #[non_exhaustive]
     BothTransient {
         /// `true` iff the operation-level deadline had elapsed when the
