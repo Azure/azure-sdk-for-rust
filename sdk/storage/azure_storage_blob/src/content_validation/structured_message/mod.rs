@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-mod decode;
-mod encode_in_place;
-mod encode_streaming;
-mod smv1;
+pub(crate) mod decode;
+pub(crate) mod encode_in_place;
+pub(crate) mod encode_streaming;
+pub(crate) mod smv1;
 
 use std::num::NonZero;
 

@@ -134,9 +134,12 @@ pub(crate) fn apply_upload_content_validation(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::num::NonZero;
+
+    use super::{structured_message::encode_in_place::encode_bytes_in_structured_message, *};
     use azure_core::stream::BytesStream;
     use bytes::Bytes;
+    use futures::{AsyncRead, AsyncReadExt};
 
     const DATA: &str = "Hello, world!";
     const DATA_CRC: [u8; 8] = [52, 61, 26, 0, 105, 85, 120, 159];
@@ -145,273 +148,22 @@ mod tests {
     const FAKE_CRC: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
     const FAKE_MD5: [u8; 16] = 0x0102030405060708090a0b0c0d0e0f10u128.to_be_bytes();
 
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    enum Format {
-        Bytes,
-        Stream,
-    }
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    enum Encoding {
-        Plain,
-        Structured,
-    }
+    const DATA_PLAINTEXT_LEN: usize = DATA.len();
+    const DATA_STRUCTURED_LEN: usize = 13 + 10 + DATA.len() + 8 + 8;
 
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    enum RawHeader {
-        Crc([u8; 8]),
-        Md5([u8; 16]),
-    }
-
-    /// Test options combinations for Body::Bytes input.
-    // #[test_case(Format::Bytes, None, None,                                                        Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + no options sets crc header")]
     #[tokio::test]
     async fn test_bytes_w_no_options_sets_crc_header() {
-        apply_validation(
-            // inputs
-            Format::Bytes,
-            None,
-            None,
-            // expected outputs
-            Format::Bytes,
-            Encoding::Plain,
-            Some(RawHeader::Crc(DATA_CRC)),
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Bytes, Some(UploadContentValidation::Auto), None,                         Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + auto sets crc header")]
-    #[tokio::test]
-    async fn test_bytes_w_auto_options_sets_crc_header() {
-        apply_validation(
-            // inputs
-            Format::Bytes,
-            Some(UploadContentValidation::Auto),
-            None,
-            // expected outputs
-            Format::Bytes,
-            Encoding::Plain,
-            Some(RawHeader::Crc(DATA_CRC)),
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Bytes, Some(UploadContentValidation::Crc64Nvme(None)), None,              Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(DATA_CRC)) ; "Bytes + crc sets crc header")]
-    #[tokio::test]
-    async fn test_bytes_w_crc_options_sets_crc_header() {
-        apply_validation(
-            // inputs
-            Format::Bytes,
-            Some(UploadContentValidation::Crc64Nvme(None)),
-            None,
-            // expected outputs
-            Format::Bytes,
-            Encoding::Plain,
-            Some(RawHeader::Crc(DATA_CRC)),
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Bytes, Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))), None,    Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Bytes + crc64nvme precalculated sets crc header")]
-    #[tokio::test]
-    async fn test_bytes_w_precalculated_crc_sets_crc_header() {
-        apply_validation(
-            // inputs
-            Format::Bytes,
-            Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))),
-            None,
-            // expected outputs
-            Format::Bytes,
-            Encoding::Plain,
-            Some(RawHeader::Crc(FAKE_CRC)),
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Bytes, Some(UploadContentValidation::None), None,                         Format::Bytes, Encoding::Plain, None ; "Bytes + explicit none sets nothing")]
-    #[tokio::test]
-    async fn test_bytes_w_disabled_sets_nothing() {
-        apply_validation(
-            // inputs
-            Format::Bytes,
-            Some(UploadContentValidation::None),
-            None,
-            // expected outputs
-            Format::Bytes,
-            Encoding::Plain,
-            None,
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Bytes, None, Some(RawHeader::Crc(FAKE_CRC)),                              Format::Bytes, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Bytes + raw crc header remains unchanged")]
-    #[tokio::test]
-    async fn test_bytes_w_raw_crc_header_remains_unchanged() {
-        apply_validation(
-            // inputs
-            Format::Bytes,
-            None,
-            Some(RawHeader::Crc(FAKE_CRC)),
-            // expected outputs
-            Format::Bytes,
-            Encoding::Plain,
-            Some(RawHeader::Crc(FAKE_CRC)),
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Bytes, None, Some(RawHeader::Md5(FAKE_MD5)),                              Format::Bytes, Encoding::Plain, Some(RawHeader::Md5(FAKE_MD5)) ; "Bytes + raw md5 header remains unchanged")]
-    #[tokio::test]
-    async fn test_bytes_w_raw_md5_header_remains_unchanged() {
-        apply_validation(
-            // inputs
-            Format::Bytes,
-            None,
-            Some(RawHeader::Md5(FAKE_MD5)),
-            // expected outputs
-            Format::Bytes,
-            Encoding::Plain,
-            Some(RawHeader::Md5(FAKE_MD5)),
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Stream, None, None,                                                       Format::Stream, Encoding::Structured, None ; "Stream + no options encodes body")]
-    #[tokio::test]
-    async fn test_stream_w_no_options_encodes_body() {
-        apply_validation(
-            // inputs
-            Format::Stream,
-            None,
-            None,
-            // expected outputs
-            Format::Stream,
-            Encoding::Structured,
-            None,
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Stream, Some(UploadContentValidation::Auto), None,                        Format::Stream, Encoding::Structured, None ; "Stream + auto encodes body")]
-    #[tokio::test]
-    async fn test_stream_w_auto_options_encodes_body() {
-        apply_validation(
-            // inputs
-            Format::Stream,
-            Some(UploadContentValidation::Auto),
-            None,
-            // expected outputs
-            Format::Stream,
-            Encoding::Structured,
-            None,
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Stream, Some(UploadContentValidation::Crc64Nvme(None)), None,             Format::Stream, Encoding::Structured, None ; "Stream + crc encodes body")]
-    #[tokio::test]
-    async fn test_stream_w_crc_options_encodes_body() {
-        apply_validation(
-            // inputs
-            Format::Stream,
-            Some(UploadContentValidation::Crc64Nvme(None)),
-            None,
-            // expected outputs
-            Format::Stream,
-            Encoding::Structured,
-            None,
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Stream, Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))), None,   Format::Stream, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Stream + crc64nvme precalculated sets crc header")]
-    #[tokio::test]
-    async fn test_stream_w_precalculated_crc_sets_crc_header() {
-        apply_validation(
-            // inputs
-            Format::Stream,
-            Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC))),
-            None,
-            // expected outputs
-            Format::Stream,
-            Encoding::Plain,
-            Some(RawHeader::Crc(FAKE_CRC)),
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Stream, Some(UploadContentValidation::None), None,                        Format::Stream, Encoding::Plain, None ; "Stream + explicit none sets nothing")]
-    #[tokio::test]
-    async fn test_stream_w_disabled_options_sets_nothing() {
-        apply_validation(
-            // inputs
-            Format::Stream,
-            Some(UploadContentValidation::None),
-            None,
-            // expected outputs
-            Format::Stream,
-            Encoding::Plain,
-            None,
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Stream, None, Some(RawHeader::Crc(FAKE_CRC)),                             Format::Stream, Encoding::Plain, Some(RawHeader::Crc(FAKE_CRC)) ; "Stream + raw crc header remains unchanged")]
-    #[tokio::test]
-    async fn test_stream_w_raw_crc_header_remains_unchanged() {
-        apply_validation(
-            // inputs
-            Format::Stream,
-            None,
-            Some(RawHeader::Crc(FAKE_CRC)),
-            // expected outputs
-            Format::Stream,
-            Encoding::Plain,
-            Some(RawHeader::Crc(FAKE_CRC)),
-        )
-        .await;
-    }
-
-    // #[test_case(Format::Stream, None, Some(RawHeader::Md5(FAKE_MD5)),                             Format::Stream, Encoding::Plain, Some(RawHeader::Md5(FAKE_MD5)) ; "Stream + raw md5 header remains unchanged")]
-    #[tokio::test]
-    async fn test_stream_w_raw_md5_header_remains_unchanged() {
-        apply_validation(
-            // inputs
-            Format::Stream,
-            None,
-            Some(RawHeader::Md5(FAKE_MD5)),
-            // expected outputs
-            Format::Stream,
-            Encoding::Plain,
-            Some(RawHeader::Md5(FAKE_MD5)),
-        )
-        .await;
-    }
-
-    async fn apply_validation(
-        input_format: Format,
-        input_options: Option<UploadContentValidation>,
-        input_raw_header: Option<RawHeader>,
-        expect_format: Format,
-        expect_encoding: Encoding,
-        expect_raw_header: Option<RawHeader>,
-    ) {
-        let mut crc_header = match &input_raw_header {
-            Some(RawHeader::Crc(crc)) => Some(crc.to_vec()),
-            _ => None,
-        };
-        let mut md5_header = match &input_raw_header {
-            Some(RawHeader::Md5(md5)) => Some(md5.to_vec()),
-            _ => None,
-        };
+        let mut crc_header = None;
+        let mut md5_header = None;
         let mut structured_body_type_header = None;
         let mut structured_body_length_header = None;
 
+        let content_validation_options = None;
+        let input_body = Body::Bytes(Bytes::from(DATA));
+
         let output_body = apply_upload_content_validation(
-            match input_format {
-                Format::Bytes => Body::Bytes(Bytes::from(DATA)),
-                Format::Stream => Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes()))),
-            },
-            input_options,
+            input_body,
+            content_validation_options,
             &mut crc_header,
             &mut md5_header,
             &mut structured_body_type_header,
@@ -419,47 +171,437 @@ mod tests {
         )
         .unwrap();
 
-        // assert output encoding matches expectation
-        match (expect_encoding, &output_body) {
-            (Encoding::Plain, StorageUploadBody::RawContent(_)) => {
-                assert!(structured_body_type_header.is_none());
-                assert!(structured_body_length_header.is_none());
-            }
-            (Encoding::Structured, StorageUploadBody::StructuredMessage(_)) => {
-                assert!(structured_body_type_header.is_some());
-                assert!(structured_body_length_header.is_some());
-            }
-            _ => panic!("Unexpected encoding"),
-        };
+        assert!(matches!(
+            output_body,
+            StorageUploadBody::RawContent(Body::Bytes(bytes))
+            if bytes == DATA
+        ));
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert_eq!(crc_header, Some(DATA_CRC.to_vec()));
+        assert!(md5_header.is_none());
+    }
 
-        // assert output data structure matches expectation
-        let output_body: Body = output_body.into();
-        match (expect_format, &output_body) {
-            (Format::Bytes, Body::Bytes(_)) => {}
-            (Format::Stream, Body::SeekableStream(_)) => {}
-            _ => panic!("Unexpected body structure (Bytes vs. SeekableStream)"),
-        }
+    #[tokio::test]
+    async fn test_bytes_w_auto_options_sets_crc_header() {
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
 
-        // assert raw headers match expectation
-        match expect_raw_header {
-            Some(RawHeader::Crc(expected_crc)) => {
-                assert_eq!(crc_header, Some(expected_crc.to_vec()));
-                assert!(md5_header.is_none());
-            }
-            Some(RawHeader::Md5(expected_md5)) => {
-                assert!(crc_header.is_none());
-                assert_eq!(md5_header, Some(expected_md5.to_vec()));
-            }
-            None => {
-                assert!(crc_header.is_none());
-                assert!(md5_header.is_none());
-            }
+        let content_validation_options = Some(UploadContentValidation::Auto);
+        let input_body = Body::Bytes(Bytes::from(DATA));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        assert!(matches!(
+            output_body,
+            StorageUploadBody::RawContent(Body::Bytes(bytes))
+            if bytes == DATA
+        ));
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert_eq!(crc_header, Some(DATA_CRC.to_vec()));
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_bytes_w_crc_options_sets_crc_header() {
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = Some(UploadContentValidation::Crc64Nvme(None));
+        let input_body = Body::Bytes(Bytes::from(DATA));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        assert!(matches!(
+            output_body,
+            StorageUploadBody::RawContent(Body::Bytes(bytes))
+            if bytes == DATA
+        ));
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert_eq!(crc_header, Some(DATA_CRC.to_vec()));
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_bytes_w_precalculated_crc_sets_crc_header() {
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC)));
+        let input_body = Body::Bytes(Bytes::from(DATA));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        assert!(matches!(
+            output_body,
+            StorageUploadBody::RawContent(Body::Bytes(bytes))
+            if bytes == DATA
+        ));
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert_eq!(crc_header, Some(FAKE_CRC.to_vec()));
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_bytes_w_disabled_sets_nothing() {
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = Some(UploadContentValidation::None);
+        let input_body = Body::Bytes(Bytes::from(DATA));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        assert!(matches!(
+            output_body,
+            StorageUploadBody::RawContent(Body::Bytes(bytes))
+            if bytes == DATA
+        ));
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert!(crc_header.is_none());
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_bytes_w_raw_crc_header_remains_unchanged() {
+        let mut crc_header = Some(FAKE_CRC.to_vec());
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = None;
+        let input_body = Body::Bytes(Bytes::from(DATA));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        assert!(matches!(
+            output_body,
+            StorageUploadBody::RawContent(Body::Bytes(bytes))
+            if bytes == DATA
+        ));
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert_eq!(crc_header, Some(FAKE_CRC.to_vec()));
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_bytes_w_raw_md5_header_remains_unchanged() {
+        let mut crc_header = None;
+        let mut md5_header = Some(FAKE_MD5.to_vec());
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = None;
+        let input_body = Body::Bytes(Bytes::from(DATA));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        assert!(matches!(
+            output_body,
+            StorageUploadBody::RawContent(Body::Bytes(bytes))
+            if bytes == DATA
+        ));
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert!(crc_header.is_none());
+        assert_eq!(md5_header, Some(FAKE_MD5.to_vec()));
+    }
+
+    #[tokio::test]
+    async fn test_stream_w_no_options_encodes_body() {
+        const SEG_LEN: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = None;
+        let input_body = Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes())));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        let StorageUploadBody::StructuredMessage(Body::SeekableStream(mut stream)) = output_body
+        else {
+            panic!("Expected stream of structured message");
         };
+        assert_eq!(
+            collect_data(&mut stream).await,
+            encode_bytes_in_structured_message(DATA.as_bytes().into(), SEG_LEN).concat()
+        );
+        assert!(structured_body_type_header.is_some());
+        assert!(structured_body_length_header.is_some());
+        assert!(crc_header.is_none());
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_stream_w_auto_options_encodes_body() {
+        const SEG_LEN: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = Some(UploadContentValidation::Auto);
+        let input_body = Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes())));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        let StorageUploadBody::StructuredMessage(Body::SeekableStream(mut stream)) = output_body
+        else {
+            panic!("Expected stream of structured message");
+        };
+        assert_eq!(
+            collect_data(&mut stream).await,
+            encode_bytes_in_structured_message(DATA.as_bytes().into(), SEG_LEN).concat()
+        );
+        assert!(structured_body_type_header.is_some());
+        assert!(structured_body_length_header.is_some());
+        assert!(crc_header.is_none());
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_stream_w_crc_options_encodes_body() {
+        const SEG_LEN: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = Some(UploadContentValidation::Crc64Nvme(None));
+        let input_body = Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes())));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        let StorageUploadBody::StructuredMessage(Body::SeekableStream(mut stream)) = output_body
+        else {
+            panic!("Expected stream of structured message");
+        };
+        assert_eq!(
+            collect_data(&mut stream).await,
+            encode_bytes_in_structured_message(DATA.as_bytes().into(), SEG_LEN).concat()
+        );
+        assert!(structured_body_type_header.is_some());
+        assert!(structured_body_length_header.is_some());
+        assert!(crc_header.is_none());
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_stream_w_precalculated_crc_sets_crc_header() {
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = Some(UploadContentValidation::Crc64Nvme(Some(FAKE_CRC)));
+        let input_body = Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes())));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        let StorageUploadBody::RawContent(Body::SeekableStream(mut stream)) = output_body else {
+            panic!("Expected stream of raw content");
+        };
+        assert!(collect_data(&mut stream).await == DATA.as_bytes().to_vec());
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert_eq!(crc_header, Some(FAKE_CRC.to_vec()));
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_stream_w_disabled_options_sets_nothing() {
+        let mut crc_header = None;
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = Some(UploadContentValidation::None);
+        let input_body = Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes())));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        let StorageUploadBody::RawContent(Body::SeekableStream(mut stream)) = output_body else {
+            panic!("Expected stream of raw content");
+        };
+        assert!(collect_data(&mut stream).await == DATA.as_bytes().to_vec());
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert!(crc_header.is_none());
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_stream_w_raw_crc_header_remains_unchanged() {
+        let mut crc_header = Some(FAKE_CRC.to_vec());
+        let mut md5_header = None;
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = None;
+        let input_body = Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes())));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        let StorageUploadBody::RawContent(Body::SeekableStream(mut stream)) = output_body else {
+            panic!("Expected stream of raw content");
+        };
+        assert!(collect_data(&mut stream).await == DATA.as_bytes().to_vec());
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert_eq!(crc_header, Some(FAKE_CRC.to_vec()));
+        assert!(md5_header.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_stream_w_raw_md5_header_remains_unchanged() {
+        let mut crc_header = None;
+        let mut md5_header = Some(FAKE_MD5.to_vec());
+        let mut structured_body_type_header = None;
+        let mut structured_body_length_header = None;
+
+        let content_validation_options = None;
+        let input_body = Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes())));
+
+        let output_body = apply_upload_content_validation(
+            input_body,
+            content_validation_options,
+            &mut crc_header,
+            &mut md5_header,
+            &mut structured_body_type_header,
+            &mut structured_body_length_header,
+        )
+        .unwrap();
+
+        let StorageUploadBody::RawContent(Body::SeekableStream(mut stream)) = output_body else {
+            panic!("Expected stream of raw content");
+        };
+        assert!(collect_data(&mut stream).await == DATA.as_bytes().to_vec());
+        assert!(structured_body_type_header.is_none());
+        assert!(structured_body_length_header.is_none());
+        assert!(crc_header.is_none());
+        assert_eq!(md5_header, Some(FAKE_MD5.to_vec()));
     }
 
     fn crc_inline(bytes: &[u8]) -> u64 {
         let mut digest = crc_fast::Digest::new(crc_fast::CrcAlgorithm::Crc64Nvme);
         digest.update(bytes);
         digest.finalize()
+    }
+
+    async fn collect_data(stream: &mut (impl AsyncRead + Unpin)) -> Vec<u8> {
+        let mut dst = Vec::new();
+        stream.read_to_end(&mut dst).await.unwrap();
+        dst
     }
 }
