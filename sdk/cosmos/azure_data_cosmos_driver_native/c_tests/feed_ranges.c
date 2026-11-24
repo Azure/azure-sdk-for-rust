@@ -22,6 +22,7 @@ static int test_range_ownership(void) {
     ASSERT(!strcmp(info.min_inclusive, "10") && !strcmp(info.max_exclusive, "80"),
         "bounds outlive source handle");
     ASSERT(info.is_logical_partition == 0, "EPK range has no logical identity");
+    ASSERT(!strcmp(info.serialized, text), "inspection includes canonical serialization");
     REQUIRE(!cosmos_feed_range_parse(string_view(text), &parsed), "parse owned text");
     cosmos_string_free(text);
     text = NULL;
@@ -34,6 +35,7 @@ cleanup:
     cosmos_string_free(text);
     cosmos_string_free(info.min_inclusive);
     cosmos_string_free(info.max_exclusive);
+    cosmos_string_free(info.serialized);
     cosmos_feed_range_free(range);
     cosmos_feed_range_free(parsed);
     cosmos_feed_range_free(full);
@@ -48,6 +50,7 @@ static int test_discovery_and_scoped_cursor(void) {
     cosmos_completion_queue_t *queue = NULL, *cursor_queue = NULL;
     cosmos_feed_range_list_t *list = NULL;
     cosmos_feed_range_t *range = NULL;
+    char *min = NULL, *max = NULL, *serialized = NULL;
     cosmos_operation_handle_t *op = NULL;
     cosmos_completion_t completion = {0};
     int has_completion = 0;
@@ -68,10 +71,24 @@ static int test_discovery_and_scoped_cursor(void) {
     ASSERT(!cosmos_completion_take_feed_ranges(&completion), "list detaches exactly once");
     cosmos_completion_queue_free_completions(&completion, 1);
     has_completion = 0;
-    REQUIRE(cosmos_feed_range_list_len(list) == 2, "detached list outlives completion");
-    REQUIRE(!cosmos_feed_range_list_get(list, 0, &range), "copy independent range handle");
+    REQUIRE(list && list->count == 2 && list->ranges, "detached flat list outlives completion");
+    ASSERT(!strcmp(list->ranges[0].min_inclusive, "") &&
+        !strcmp(list->ranges[0].max_exclusive, "80") &&
+        !strcmp(list->ranges[1].min_inclusive, "80") &&
+        !strcmp(list->ranges[1].max_exclusive, "FF"), "contiguous entries preserve exact bounds");
+    ASSERT(!list->ranges[0].is_logical_partition && !list->ranges[1].is_logical_partition,
+        "discovered ranges have EPK identity");
+    min = malloc(strlen(list->ranges[0].min_inclusive) + 1);
+    max = malloc(strlen(list->ranges[0].max_exclusive) + 1);
+    serialized = malloc(strlen(list->ranges[0].serialized) + 1);
+    REQUIRE(min && max && serialized, "allocate host-owned copies");
+    strcpy(min, list->ranges[0].min_inclusive);
+    strcpy(max, list->ranges[0].max_exclusive);
+    strcpy(serialized, list->ranges[0].serialized);
     cosmos_feed_range_list_free(list);
     list = NULL;
+    ASSERT(!strcmp(min, "") && !strcmp(max, "80"), "host strings outlive list");
+    REQUIRE(!cosmos_feed_range_parse(string_view(serialized), &range), "construct scoped handle from host copy");
     cosmos_operation_handle_free(op);
     op = NULL;
     cursor_queue = cosmos_cursor_queue_create(runtime, 2);
@@ -105,6 +122,9 @@ cleanup:
     cosmos_operation_handle_free(op);
     cosmos_feed_range_free(range);
     cosmos_feed_range_list_free(list);
+    free(min);
+    free(max);
+    free(serialized);
     cosmos_completion_queue_free(cursor_queue);
     cosmos_completion_queue_free(queue);
     cosmos_container_ref_free(container);

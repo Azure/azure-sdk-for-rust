@@ -17,10 +17,12 @@
 //! only support `c1.` reject `c2.` checkpoints.
 //! Unsupported versions are rejected with a clear error.
 //!
-//! Client-issued tokens record the normalized EPK bounds of the operation's feed
-//! scope, and resuming under different bounds is rejected before any request.
-//! Tokens issued before the scope was recorded cannot be scope-validated;
-//! streaming `ORDER BY` checkpoints remain bound by their query fingerprint.
+//! Resume with the same container, query, and feed scope. Client tokens validate
+//! operation kind, container RID, and change-feed mode, but do not record the
+//! original scope. Changing scope can silently change the resumed work.
+//! Streaming `ORDER BY` checkpoints with a query fingerprint also validate the
+//! query and scope; older ones without it only check saved-range containment
+//! and pipeline shape.
 //!
 //! Tokens without a `c<N>.` prefix are treated as opaque server-issued
 //! continuation strings and are only valid for trivial operations
@@ -32,7 +34,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     driver::dataflow::PipelineNodeState,
-    models::{CosmosOperation, FeedRange, OperationType},
+    models::{CosmosOperation, OperationType},
 };
 
 const SDK_V1_PREFIX: &str = "c1.";
@@ -103,7 +105,6 @@ impl ContinuationToken {
                 None
             },
             next_change_feed_range: None,
-            scope: Some(TokenScope::for_operation(operation)),
         };
 
         let json = serde_json::to_vec(&state).map_err(|e| {
@@ -249,32 +250,6 @@ pub struct TokenState {
     /// Legacy top-level polling position, normalized into the merge snapshot on decode.
     #[serde(rename = "cfn", default, skip_serializing)]
     next_change_feed_range: Option<String>,
-
-    /// Normalized EPK bounds of the operation's feed scope, validated on resume.
-    /// `None` for legacy tokens issued before the scope was recorded.
-    #[serde(rename = "fr", default, skip_serializing_if = "Option::is_none")]
-    scope: Option<TokenScope>,
-}
-
-/// Effective `[min, max)` bounds of the feed scope a checkpoint was issued for.
-///
-/// Logical-partition identity is not retained; equal bounds are the same scope.
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
-struct TokenScope {
-    min: String,
-    max: String,
-}
-
-impl TokenScope {
-    /// An untargeted operation covers the full container.
-    fn for_operation(operation: &CosmosOperation) -> Self {
-        let full = FeedRange::full();
-        let range = operation.target().unwrap_or(&full);
-        Self {
-            min: range.min_inclusive().to_hex().to_owned(),
-            max: range.max_exclusive().to_hex().to_owned(),
-        }
-    }
 }
 
 impl TokenState {
@@ -289,7 +264,15 @@ impl TokenState {
         .or(self.change_feed_start.as_ref())
     }
 
-    /// Validates that this token state is compatible with the provided query
+    /// Validates the operation kind, container RID, and change-feed mode.
+    ///
+    /// This does not validate query text or feed scope. Callers must reuse both;
+    /// streaming `ORDER BY` planning separately checks its query fingerprint.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an incompatible operation kind, change-feed mode,
+    /// or container, or an operation without a container.
     pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> crate::error::Result<()> {
         let expected = TokenOperation::for_operation(operation)?;
         if self.operation != expected {
@@ -340,23 +323,6 @@ impl TokenState {
                     token_rid = self.rid,
                     op_rid = container.rid(),
                 )).build());
-        }
-        // Legacy tokens without a recorded scope cannot be scope-validated.
-        if let Some(scope) = &self.scope {
-            let requested = TokenScope::for_operation(operation);
-            if *scope != requested {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
-                    .with_message(format!(
-                        "continuation token was issued for feed scope {}-{} but this operation \
-                         targets {}-{}; resume with the original feed range or start a new \
-                         operation without the continuation token",
-                        scope.min, scope.max, requested.min, requested.max,
-                    ))
-                    .build());
-            }
         }
         Ok(())
     }
@@ -422,9 +388,8 @@ mod tests {
     use super::*;
     use crate::driver::dataflow::RangedToken;
     use crate::models::{
-        effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
-        ContainerReference, FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition,
-        SystemProperties,
+        AccountReference, ContainerProperties, ContainerReference, FeedRange, ItemReference,
+        PartitionKey, PartitionKeyDefinition, SystemProperties,
     };
 
     use url::Url;
@@ -497,7 +462,7 @@ mod tests {
         let token = ContinuationToken::encode(&query_op(), &PipelineNodeState::Drained).unwrap();
         assert_eq!(
             decode_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"},"fr":{"min":"","max":"FF"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#,
         );
     }
 
@@ -512,7 +477,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             decode_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"},"fr":{"min":"","max":"FF"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#,
         );
     }
 
@@ -527,7 +492,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             decode_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request","server_continuation":"server-token-1"},"fr":{"min":"","max":"FF"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request","server_continuation":"server-token-1"}}"#,
         );
     }
 
@@ -547,7 +512,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             decode_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"3F","active_tokens":[{"min_epk":"3F","max_epk":"7F","server_continuation":"srv"}]},"fr":{"min":"","max":"FF"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"3F","active_tokens":[{"min_epk":"3F","max_epk":"7F","server_continuation":"srv"}]}}"#,
         );
     }
 
@@ -567,7 +532,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             decode_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"80"},"fr":{"min":"","max":"FF"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"80"}}"#,
         );
     }
 
@@ -582,7 +547,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             decode_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"},"fr":{"min":"","max":"FF"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#,
         );
     }
 
@@ -606,17 +571,9 @@ mod tests {
             },
         )
         .unwrap();
-        let epk = change_feed_op()
-            .target()
-            .unwrap()
-            .min_inclusive()
-            .to_hex()
-            .to_owned();
         assert_eq!(
             decode_payload(&token),
-            format!(
-                r#"{{"op":"ChangeFeed","rid":"coll_rid","root":{{"kind":"request","server_continuation":"\"etag-1\""}},"cfs":{{"kind":"beginning"}},"fr":{{"min":"{epk}","max":"{epk}"}}}}"#
-            ),
+            r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"request","server_continuation":"\"etag-1\""},"cfs":{"kind":"beginning"}}"#,
         );
 
         match token.resolve().unwrap() {
@@ -757,7 +714,7 @@ mod tests {
         let token = ContinuationToken::encode(&query_op(), &request).unwrap();
         assert_eq!(
             decode_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"},"fr":{"min":"","max":"FF"}}"#
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#
         );
     }
 
@@ -787,7 +744,6 @@ mod tests {
         let token = ContinuationToken::encode(&operation, &root).unwrap();
         assert!(token.as_str().starts_with(SDK_V2_PREFIX));
         let payload: serde_json::Value = serde_json::from_str(&decode_payload(&token)).unwrap();
-        let epk = operation.target().unwrap().min_inclusive().to_hex();
         assert_eq!(
             payload,
             serde_json::json!({
@@ -796,8 +752,7 @@ mod tests {
                     "kind": "unordered_merge",
                     "start_from": { "kind": "beginning" },
                     "next_poll_min_epk": ""
-                },
-                "fr": { "min": epk, "max": epk }
+                }
             })
         );
         assert!(token.as_str().strip_prefix(SDK_V1_PREFIX).is_none());
@@ -836,8 +791,7 @@ mod tests {
     }
 
     #[test]
-    fn legacy_query_checkpoints_reemit_as_v2_with_scope_and_unchanged_root() {
-        const FULL: &str = r#","fr":{"min":"","max":"FF"}}"#;
+    fn legacy_query_checkpoints_reemit_as_v2_without_changing_payloads() {
         let operation = query_op();
         for json in [
             r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#,
@@ -853,12 +807,11 @@ mod tests {
             legacy_state.is_valid_for_operation(&operation).unwrap();
             let current = ContinuationToken::encode(&operation, &legacy_state.root).unwrap();
             assert!(current.as_str().starts_with(SDK_V2_PREFIX));
-            let scoped = format!("{}{FULL}", &json[..json.len() - 1]);
-            assert_eq!(decode_payload(&current), scoped);
+            assert_eq!(decode_payload(&current), json);
             let ResolvedToken::Client(current_state) = current.resolve().unwrap() else {
                 panic!("current query checkpoint");
             };
-            assert_eq!(current_state.root, legacy_state.root);
+            assert_eq!(current_state, legacy_state);
             current_state.is_valid_for_operation(&operation).unwrap();
             assert!(current_state
                 .is_valid_for_operation(&change_feed_op())
@@ -875,7 +828,6 @@ mod tests {
             change_feed_full_fidelity: None,
             change_feed_start: None,
             next_change_feed_range: None,
-            scope: None,
         };
         let err = state.is_valid_for_operation(&change_feed_op()).unwrap_err();
         assert!(err.to_string().contains("ChangeFeed"));
@@ -890,7 +842,6 @@ mod tests {
             change_feed_full_fidelity: None,
             change_feed_start: None,
             next_change_feed_range: None,
-            scope: None,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
         assert!(err.to_string().contains("Query"));
@@ -907,7 +858,6 @@ mod tests {
             change_feed_full_fidelity: None,
             change_feed_start: None,
             next_change_feed_range: None,
-            scope: None,
         };
         let err = latest
             .is_valid_for_operation(&change_feed_avad_op())
@@ -922,7 +872,6 @@ mod tests {
             change_feed_full_fidelity: Some(true),
             change_feed_start: None,
             next_change_feed_range: None,
-            scope: None,
         };
         let err = avad.is_valid_for_operation(&change_feed_op()).unwrap_err();
         assert!(err.to_string().contains("AllVersionsAndDeletes"));
@@ -938,7 +887,6 @@ mod tests {
             change_feed_full_fidelity: Some(true),
             change_feed_start: None,
             next_change_feed_range: None,
-            scope: None,
         };
         avad.is_valid_for_operation(&change_feed_avad_op())
             .expect("AllVersionsAndDeletes token resumes an AllVersionsAndDeletes operation");
@@ -1016,7 +964,7 @@ mod tests {
     #[test]
     fn resolve_v1_sequential_drain_state() {
         let token = encode_v1_payload(
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"3F","active_tokens":[{"min_epk":"3F","max_epk":"7F","server_continuation":"srv"}]},"fr":{"min":"","max":"FF"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"3F","active_tokens":[{"min_epk":"3F","max_epk":"7F","server_continuation":"srv"}]}}"#,
         );
         match token.resolve().unwrap() {
             ResolvedToken::Client(state) => {
@@ -1044,7 +992,7 @@ mod tests {
         // range above the cursor owes a server continuation). The
         // resolved state defaults to an empty `Vec`.
         let token = encode_v1_payload(
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"80"},"fr":{"min":"","max":"FF"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"80"}}"#,
         );
         match token.resolve().unwrap() {
             ResolvedToken::Client(state) => {
@@ -1071,7 +1019,6 @@ mod tests {
             change_feed_full_fidelity: None,
             change_feed_start: None,
             next_change_feed_range: None,
-            scope: None,
         };
         state.is_valid_for_operation(&query_op()).unwrap();
     }
@@ -1085,7 +1032,6 @@ mod tests {
             change_feed_full_fidelity: None,
             change_feed_start: None,
             next_change_feed_range: None,
-            scope: None,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
         assert!(err.to_string().contains("different_rid"));
@@ -1101,76 +1047,10 @@ mod tests {
             change_feed_full_fidelity: None,
             change_feed_start: None,
             next_change_feed_range: None,
-            scope: None,
         };
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);
         let _err = state.is_valid_for_operation(&read).unwrap_err();
-    }
-
-    // ── Feed-scope validation ──────────────────────────────────────────
-
-    fn scoped_state(op: &CosmosOperation) -> TokenState {
-        match ContinuationToken::encode(op, &PipelineNodeState::Drained)
-            .unwrap()
-            .resolve()
-            .unwrap()
-        {
-            ResolvedToken::Client(state) => state,
-            ResolvedToken::ServerOpaque(_) => panic!("expected client token"),
-        }
-    }
-
-    fn epk_range(min: &str, max: &str) -> FeedRange {
-        FeedRange::new(
-            EffectivePartitionKey::try_from(min).unwrap(),
-            EffectivePartitionKey::try_from(max).unwrap(),
-        )
-        .unwrap()
-    }
-
-    #[test]
-    fn scope_mismatch_is_rejected_for_query_and_change_feed() {
-        let issued = epk_range("10", "20");
-        let builders: [fn(FeedRange) -> CosmosOperation; 2] = [
-            |r| CosmosOperation::query_items(test_container(), Some(r)),
-            |r| CosmosOperation::change_feed(test_container(), Some(r)),
-        ];
-        for build in builders {
-            let state = scoped_state(&build(issued.clone()));
-            state
-                .is_valid_for_operation(&build(issued.clone()))
-                .unwrap();
-            let err = state
-                .is_valid_for_operation(&build(epk_range("10", "30")))
-                .unwrap_err();
-            assert!(err.to_string().contains("feed scope 10-20"), "{err}");
-        }
-    }
-
-    #[test]
-    fn logical_point_and_equal_bound_range_are_the_same_scope() {
-        let op = change_feed_op();
-        let point = op.target().unwrap().min_inclusive().clone();
-        let explicit = CosmosOperation::change_feed(
-            test_container(),
-            Some(FeedRange::new(point.clone(), point).unwrap()),
-        );
-        scoped_state(&op).is_valid_for_operation(&explicit).unwrap();
-    }
-
-    #[test]
-    fn legacy_token_without_scope_is_not_scope_validated() {
-        let state = TokenState {
-            scope: None,
-            ..scoped_state(&query_op())
-        };
-        state
-            .is_valid_for_operation(&CosmosOperation::query_items(
-                test_container(),
-                Some(epk_range("10", "30")),
-            ))
-            .unwrap();
     }
 
     // ── CosmosError and fallback paths ────────────────────────────────────────

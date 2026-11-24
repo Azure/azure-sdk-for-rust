@@ -865,9 +865,8 @@ async fn build_streaming_ordered_merge_inner(
     let plain_operation = Arc::new((**operation).clone().with_body(plain_body));
 
     let is_resume = resume.is_some();
-    // The feed scope is folded into the fingerprint (see
-    // `streaming_ordered_merge::query_fingerprint`) because a resumed node treats
-    // its saved ranges as authoritative and legacy tokens record no scope.
+    // The fingerprint binds the scope because resumed nodes trust their saved ranges;
+    // TokenState::is_valid_for_operation does not validate query text or scope.
     let scope_range = operation.target();
     let query_fingerprint =
         streaming_ordered_merge::query_fingerprint(operation.body(), scope_range);
@@ -5739,8 +5738,7 @@ mod tests {
     }
 
     /// A token minted under one feed scope must not resume under another.
-    /// The fingerprint binds them even for tokens that record no scope; the
-    /// resumed node treats its saved ranges as authoritative.
+    /// The fingerprint binds them because the resumed node trusts its saved ranges.
     #[tokio::test]
     async fn build_streaming_ordered_merge_rejects_token_from_a_different_feed_scope(
     ) -> crate::error::Result<()> {

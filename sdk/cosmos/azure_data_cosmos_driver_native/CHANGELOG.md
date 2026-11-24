@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added native feed-range discovery, EPK construction, combined bounds/identity inspection, combined subset/overlap relations, and bounds-only serialization with explicit list, handle, and string ownership. ([#5662](https://github.com/Azure/azure-sdk-for-rust/pull/5662))
+- Added native feed-range discovery as a Rust-owned flat array of bounds, identity, and canonical serialization with one list free, plus EPK construction, combined inspection, subset/overlap relations, and bounds-only serialization. ([#5662](https://github.com/Azure/azure-sdk-for-rust/pull/5662))
 
 ### Breaking Changes
 

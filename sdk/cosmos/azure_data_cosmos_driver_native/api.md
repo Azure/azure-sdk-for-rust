@@ -505,10 +505,6 @@ pub mod feed_range {
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_list_free(list: *mut FeedRangeListHandle);
     #[no_mangle]
-    pub extern "C" fn cosmos_feed_range_list_get(list: *const FeedRangeListHandle, index: usize, out: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
-    #[no_mangle]
-    pub extern "C" fn cosmos_feed_range_list_len(list: *const FeedRangeListHandle) -> usize;
-    #[no_mangle]
     pub extern "C" fn cosmos_feed_range_parse(serialized: crate::string::CosmosStringView, out: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_relate(range: *const FeedRangeHandle, other: *const FeedRangeHandle, out: *mut CosmosFeedRangeRelation) -> crate::error::CosmosStatusCode;
@@ -520,6 +516,7 @@ pub mod feed_range {
         pub min_inclusive: *mut std::ffi::c_char,
         pub max_exclusive: *mut std::ffi::c_char,
         pub is_logical_partition: u8,
+        pub serialized: *mut std::ffi::c_char,
     }
     #[derive(Default)]
     #[repr(C)]
@@ -529,7 +526,10 @@ pub mod feed_range {
     }
     pub struct FeedRangeHandle {
     }
+    #[repr(C)]
     pub struct FeedRangeListHandle {
+        pub ranges: *const CosmosFeedRangeInfo,
+        pub count: usize,
     }
 }
 pub mod op_request {

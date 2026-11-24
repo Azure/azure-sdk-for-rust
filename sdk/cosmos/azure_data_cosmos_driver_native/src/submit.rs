@@ -187,6 +187,14 @@ fn spawn_oneshot<Fut, R>(
             Ok(Ok(success)) => match success {
                 SuccessKind::FeedRanges(ranges) => {
                     PendingCompletion::ok_feed_ranges(user_data, ctx.op_inner.clone(), ranges)
+                        .unwrap_or_else(|error| {
+                            PendingCompletion::error(
+                                user_data,
+                                ctx.op_inner.clone(),
+                                error,
+                                ctx.include_error_details,
+                            )
+                        })
                 }
                 SuccessKind::Response {
                     response,

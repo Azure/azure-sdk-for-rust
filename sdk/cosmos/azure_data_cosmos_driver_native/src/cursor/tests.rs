@@ -49,9 +49,7 @@ use std::{
 #[test]
 fn discovery_force_refresh_and_detached_list_lifetimes() {
     use crate::completion::cosmos_completion_take_feed_ranges;
-    use crate::feed_range::{
-        cosmos_feed_range_list_free, cosmos_feed_range_list_get, cosmos_feed_range_list_len,
-    };
+    use crate::feed_range::{cosmos_feed_range_list_free, cosmos_feed_range_parse};
     use crate::submit::cosmos_container_read_feed_ranges_submit;
     let gate = Arc::new(fixture::Gate::default());
     let fixture = Fixture::from_handles(fixture::scripted_gated(true, Some(Arc::clone(&gate))), 2);
@@ -96,13 +94,30 @@ fn discovery_force_refresh_and_detached_list_lifetimes() {
         assert!(cosmos_completion_take_feed_ranges(&mut completion).is_null());
         completion.free_inner();
         cosmos_operation_handle_free(op);
-        assert_eq!(cosmos_feed_range_list_len(list), 2);
+        assert!(!list.is_null());
+        // SAFETY: the detached list outlives the completion; copy before freeing it.
+        let serialized = unsafe {
+            assert_eq!((*list).count, 2);
+            let ranges = std::slice::from_raw_parts((*list).ranges, (*list).count);
+            assert_eq!(
+                std::ffi::CStr::from_ptr(ranges[1].min_inclusive).to_bytes(),
+                b"80"
+            );
+            assert_eq!(
+                std::ffi::CStr::from_ptr(ranges[1].max_exclusive).to_bytes(),
+                b"FF"
+            );
+            assert_eq!(ranges[1].is_logical_partition, 0);
+            std::ffi::CStr::from_ptr(ranges[1].serialized)
+                .to_bytes()
+                .to_vec()
+        };
+        cosmos_feed_range_list_free(list);
         let mut range = ptr::null_mut();
         assert_eq!(
-            cosmos_feed_range_list_get(list, 1, &mut range),
+            cosmos_feed_range_parse(view(&serialized), &mut range),
             COSMOS_STATUS_SUCCESS
         );
-        cosmos_feed_range_list_free(list);
         assert_eq!(
             crate::feed_range::FeedRangeHandle::from_ptr(range)
                 .unwrap()
@@ -138,7 +153,9 @@ fn discovery_force_refresh_and_detached_list_lifetimes() {
     let list = cosmos_completion_take_feed_ranges(&mut completion);
     completion.free_inner();
     cosmos_operation_handle_free(op);
-    assert_eq!(cosmos_feed_range_list_len(list), 2);
+    assert!(!list.is_null());
+    // SAFETY: the list has been detached and remains live.
+    assert_eq!(unsafe { (*list).count }, 2);
     cosmos_feed_range_list_free(list);
     cosmos_completion_queue_free(queue);
 }

@@ -69,19 +69,33 @@ for the full design.
 
 Discover ranges with `cosmos_container_read_feed_ranges_submit` on an ordinary
 completion queue. A failed refresh can return cached ranges. Detach the list with
-`cosmos_completion_take_feed_ranges`; each `cosmos_feed_range_list_get` handle
-outlives the list. Free each handle with `cosmos_feed_range_free`, the list with
-`cosmos_feed_range_list_free`, and each inspected or serialized string with
-`cosmos_string_free`.
+`cosmos_completion_take_feed_ranges`, then read its `ranges` array and `count`
+directly. Each entry contains NUL-terminated bounds, a logical-partition flag,
+and canonical bounds-only `serialized` text. Copy all needed strings into
+host-owned storage, then call `cosmos_feed_range_list_free` once; never free
+individual entries or their strings. An empty successful list has `count == 0`
+and `ranges == NULL`; a NULL list means no discovery result. Detached lists
+outlive their completions.
 
-For a query or change feed, set `operation.feed_range` to a discovered range or
-one built with `cosmos_feed_range_from_epk`. Submit copies the range.
+For a query or change feed, parse the copied `serialized` text with
+`cosmos_feed_range_parse`, or construct a range with `cosmos_feed_range_from_epk`.
+Set `operation.feed_range` to that handle; submit copies it. Free handles with
+`cosmos_feed_range_free`. Standalone inspection returns three owned strings
+(bounds and serialization); free each with `cosmos_string_free`, as for
+standalone serialization.
 Equal-bound ranges relate as single EPK points. Queries and change feeds reject
 explicit equal-bound EPK ranges, not ranges created from a complete logical
-partition key. Do not widen a rejected range. To resume, use a checkpoint with
-the same container and scope; a different scope fails before any request, but
-checkpoints from earlier releases cannot be scope-checked. A serialized range
-preserves only bounds, not progress or the logical partition key.
+partition key. Do not widen a rejected range. A serialized range preserves only
+bounds, not progress or the logical partition key.
+
+To resume, callers must reuse the same container, query, and feed scope.
+Client-issued checkpoints validate operation kind, container RID, and change-feed
+mode, but do not record or generally validate the original scope. Changing the
+scope can expand or otherwise change the resumed work without an error.
+Streaming `ORDER BY` checkpoints with a query fingerprint are an exception:
+they validate the query and scope; older ones without it only check saved-range
+containment and pipeline shape. Opaque server tokens are passed through only
+where supported and do not provide client-side scope validation.
 
 Use a matching header and native library; these APIs are not in v0.3.0.
 
