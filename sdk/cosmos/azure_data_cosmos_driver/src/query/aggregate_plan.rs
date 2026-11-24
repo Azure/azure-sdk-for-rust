@@ -4,21 +4,18 @@
 //! Executable aggregate projections over backend-generated partial results.
 
 use crate::{
-    driver::dataflow::query_plan::{DCountInfo, QueryInfo, QueryPlan},
+    driver::dataflow::query_plan::{QueryInfo, QueryPlan},
     models::PartitionKeyDefinition,
     query::{
-        ast::{
-            SqlCollection, SqlCollectionExpression, SqlLiteral, SqlQuery, SqlScalarExpression,
-            SqlSelectSpec,
-        },
+        ast::{SqlQuery, SqlScalarExpression, SqlSelectSpec},
         common::Params,
         lexer::{Lexer, Token, TokenKind},
         local_plan_adapter::{
             full_query_range, has_unresolvable_pk_values, local_distinct_type_to_dataflow,
-            local_sort_order_to_dataflow, production_query_info_to_dataflow,
-            query_ranges_from_pk_filter, synthesize_order_by_rewritten_query,
-            LocalPlanFallbackReason,
+            local_sort_order_to_dataflow, query_ranges_from_pk_filter,
+            synthesize_order_by_rewritten_query, LocalPlanFallbackReason,
         },
+        parser::{parse_with_spans, QuerySpans},
         plan::{self, PartitionKeyFilter},
     },
 };
@@ -42,6 +39,9 @@ pub(crate) fn try_generate(
     if !has_aggregate && query.group_by.is_none() {
         return Ok(None);
     }
+    if query.from.is_none() {
+        return Err(LocalPlanFallbackReason::Aggregates);
+    }
     if query
         .where_clause
         .as_ref()
@@ -54,16 +54,7 @@ pub(crate) fn try_generate(
         return Err(LocalPlanFallbackReason::Aggregates);
     }
 
-    let text = QueryText::new(source);
-    if let Some(SqlCollectionExpression::Aliased {
-        collection: SqlCollection::Subquery(inner),
-        ..
-    }) = query.from.as_ref().map(|from| &from.collection)
-    {
-        if inner.select.distinct {
-            return distinct_count(query, inner, &text, pk_definition, parameters).map(Some);
-        }
-    }
+    let text = QueryText::new(source)?;
 
     let pk_paths: Vec<_> = pk_definition
         .paths()
@@ -157,7 +148,15 @@ pub(crate) fn try_generate(
     } else {
         format!("SELECT {distinct}{payload} AS payload")
     };
-    let rewrite = format!("{projection}{}", text.source_tail());
+    let mut rewrite = format!("{projection}{}", text.source_tail()?);
+    if !info.has_group_by() && !info.has_select_value {
+        if let Some(limit) = info.limit {
+            rewrite.push_str(&format!(
+                " OFFSET 0 LIMIT {}",
+                info.offset.unwrap_or(0).saturating_add(limit)
+            ));
+        }
+    }
     info.rewritten_query = Some(if ordered_groups {
         info.order_by = local
             .query_info
@@ -197,64 +196,6 @@ fn finish(
         query_ranges,
         hybrid_search_query_info: None,
     })
-}
-
-fn distinct_count(
-    outer: &SqlQuery,
-    inner: &SqlQuery,
-    text: &QueryText<'_>,
-    pk_definition: &PartitionKeyDefinition,
-    parameters: &Params,
-) -> Result<QueryPlan> {
-    let (expression, alias) = match &outer.select.spec {
-        SqlSelectSpec::Value(expression) => (expression.as_ref(), String::new()),
-        SqlSelectSpec::List(items) if items.len() == 1 => (
-            &items[0].expression,
-            items[0].alias.clone().unwrap_or_else(|| "$1".to_owned()),
-        ),
-        _ => return Err(LocalPlanFallbackReason::DCount),
-    };
-    let SqlScalarExpression::FunctionCall { name, args, is_udf } = expression else {
-        return Err(LocalPlanFallbackReason::DCount);
-    };
-    if *is_udf
-        || !name.eq_ignore_ascii_case("COUNT")
-        || !(matches!(
-            args.as_slice(),
-            [SqlScalarExpression::Literal(SqlLiteral::Integer(1))]
-        ) || matches!(args.as_slice(), [SqlScalarExpression::Literal(SqlLiteral::Number(number))] if *number == 1.0))
-        || outer.where_clause.is_some()
-        || outer.group_by.is_some()
-        || outer.order_by.is_some()
-        || outer.offset_limit.is_some()
-        || outer.select.top.is_some()
-        || outer.select.distinct
-        || inner.select.top.is_some()
-        || inner.offset_limit.is_some()
-        || inner.order_by.is_some()
-    {
-        return Err(LocalPlanFallbackReason::DCount);
-    }
-    let source = text.inner_source()?;
-    let pk_paths: Vec<_> = pk_definition
-        .paths()
-        .iter()
-        .map(|path| path.as_ref())
-        .collect();
-    let local = plan::generate_query_plan_with_parameters(inner, &pk_paths, parameters)
-        .map_err(|_| LocalPlanFallbackReason::PlanFailed)?;
-    if !local.query_info.aggregates.is_empty() || inner.group_by.is_some() {
-        return Err(LocalPlanFallbackReason::DCount);
-    }
-    let mut info = production_query_info_to_dataflow(&local.query_info, source)?;
-    if info.rewritten_query.as_deref().is_none_or(str::is_empty) {
-        info.rewritten_query = Some(source.to_owned());
-    }
-    info.has_select_value = matches!(outer.select.spec, SqlSelectSpec::Value(_));
-    info.d_count_info = Some(DCountInfo {
-        d_count_alias: Some(alias),
-    });
-    finish(info, &local.pk_filters, pk_definition)
 }
 
 fn aggregate_operator(expression: &SqlScalarExpression) -> Option<&'static str> {
@@ -396,10 +337,13 @@ struct QueryText<'a> {
     source: &'a str,
     tokens: Vec<Token<'a>>,
     top_level: Vec<usize>,
+    spans: QuerySpans,
 }
 
 impl<'a> QueryText<'a> {
-    fn new(source: &'a str) -> Self {
+    fn new(source: &'a str) -> Result<Self> {
+        let (_, spans) =
+            parse_with_spans(source).map_err(|_| LocalPlanFallbackReason::ParseFailed)?;
         let tokens = Lexer::tokenize(source);
         let mut depth = 0_usize;
         let mut top_level = Vec::new();
@@ -420,11 +364,12 @@ impl<'a> QueryText<'a> {
                 depth += 1;
             }
         }
-        Self {
+        Ok(Self {
             source,
             tokens,
             top_level,
-        }
+            spans,
+        })
     }
 
     fn clause(&self, kind: TokenKind) -> Option<usize> {
@@ -449,7 +394,13 @@ impl<'a> QueryText<'a> {
             start += 1;
         }
         let end = self
-            .clause(TokenKind::From)
+            .spans
+            .from
+            .and_then(|span| {
+                self.tokens
+                    .iter()
+                    .position(|token| token.span.start == span.start)
+            })
             .or_else(|| self.clause(TokenKind::Eof))
             .ok_or(LocalPlanFallbackReason::Aggregates)?;
         let mut boundaries: Vec<_> = self
@@ -493,44 +444,20 @@ impl<'a> QueryText<'a> {
         Ok(expressions)
     }
 
-    fn source_tail(&self) -> String {
-        let Some(from) = self.clause(TokenKind::From) else {
-            return String::new();
-        };
-        let end = self
-            .clause(TokenKind::Offset)
-            .map(|index| self.tokens[index].span.start)
-            .unwrap_or(self.source.len());
-        format!(" {}", self.source[self.tokens[from].span.start..end].trim())
-    }
-
-    fn inner_source(&self) -> Result<&'a str> {
-        let from = self
-            .clause(TokenKind::From)
-            .ok_or(LocalPlanFallbackReason::DCount)?;
-        let open = self
-            .tokens
-            .get(from + 1)
-            .ok_or(LocalPlanFallbackReason::DCount)?;
-        if open.kind != TokenKind::LParen {
-            return Err(LocalPlanFallbackReason::DCount);
-        }
-        let close = self
-            .top_level
-            .iter()
-            .copied()
-            .find(|index| *index > from + 1 && self.tokens[*index].kind == TokenKind::RParen)
-            .ok_or(LocalPlanFallbackReason::DCount)?;
-        Ok(self.source[open.span.end..self.tokens[close].span.start].trim())
+    fn source_tail(&self) -> Result<String> {
+        let from = self.spans.from.ok_or(LocalPlanFallbackReason::Aggregates)?;
+        let end = self.spans.window_prefix_end;
+        let tail = self
+            .source
+            .get(from.start..end)
+            .ok_or(LocalPlanFallbackReason::Aggregates)?;
+        Ok(format!(" {}", tail.trim()))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        full_query_range, plan, query_ranges_from_pk_filter, PartitionKeyDefinition,
-        PartitionKeyFilter, QueryInfo, QueryPlan,
-    };
+    use super::{full_query_range, PartitionKeyDefinition, QueryInfo, QueryPlan};
     use crate::query::local_plan_adapter::{try_local_plan, ProviderResolution};
 
     fn generate(sql: &str) -> QueryPlan {
@@ -599,33 +526,27 @@ mod tests {
     }
 
     #[test]
-    fn distinct_count_routes_using_inner_parameters() {
-        let body = br#"{"query":"SELECT COUNT(1) AS n FROM (SELECT DISTINCT VALUE c.x FROM c WHERE c.pk = @pk) AS t","parameters":[{"name":"@pk","value":"a"}]}"#;
-        let definition = PartitionKeyDefinition::from("/pk");
-        let ProviderResolution::Plan(plan) = try_local_plan(Some(body), &definition).unwrap()
-        else {
-            panic!("distinct count must produce a plan");
-        };
-        let expected_ranges = query_ranges_from_pk_filter(
-            &PartitionKeyFilter::Equality(vec![plan::PartitionKeyValue::String("a".into())]),
-            &definition,
-        )
-        .unwrap();
-        assert_eq!(plan.query_ranges, expected_ranges);
-        let info = plan.query_info.unwrap();
-        assert_eq!(
-            info.d_count_info.unwrap().d_count_alias.as_deref(),
-            Some("n")
-        );
+    fn quoted_keyword_alias_preserves_real_window() {
+        let info = generate("SELECT COUNT(1) AS \"OFFSET\" FROM c WHERE c.note = 'OFFSET 9 LIMIT 9' -- OFFSET 7 LIMIT 8\nOFFSET 1 LIMIT 2")
+            .query_info.unwrap();
+        assert_eq!((info.offset, info.limit), (Some(1), Some(2)));
+        assert_eq!(info.group_by_aliases, ["OFFSET"]);
         assert_eq!(
             info.rewritten_query.as_deref(),
-            Some("SELECT DISTINCT VALUE c.x FROM c WHERE c.pk = @pk")
+            Some(
+                r#"SELECT {"OFFSET": {"item": COUNT(1)}} AS payload FROM c WHERE c.note = 'OFFSET 9 LIMIT 9' OFFSET 0 LIMIT 3"#
+            )
         );
     }
 
     #[test]
     fn unsupported_aggregate_shapes_keep_fallback() {
         for sql in [
+            "SELECT VALUE COUNT(1)",
+            "SELECT VALUE SUM(1)",
+            "SELECT VALUE AVG(1)",
+            "SELECT VALUE MIN(1)",
+            "SELECT VALUE MAX(1)",
             "SELECT VALUE SUM(c.x) + 1 FROM c",
             "SELECT VALUE {n: COUNT(1)} FROM c",
             "SELECT VALUE SUM(COUNT(1)) FROM c",

@@ -6795,11 +6795,16 @@ mod tests {
 
     #[test]
     fn synthesize_rewrite_ignores_property_named_offset() {
-        // `c.offset` is a property path, not the OFFSET keyword; without a
-        // trailing OFFSET clause the query is returned untouched (empty rewrite).
-        let rewritten =
-            synthesize_offset_limit_rewritten_query("SELECT c.offset FROM c", 0, 3).unwrap();
-        assert_eq!(rewritten, "");
+        assert!(synthesize_offset_limit_rewritten_query("SELECT c.offset FROM c", 0, 3).is_none());
+        assert_eq!(
+            synthesize_offset_limit_rewritten_query(
+                "SELECT c.offset FROM c OFFSET 1 LIMIT 2",
+                1,
+                2
+            )
+            .as_deref(),
+            Some("SELECT c.offset FROM c OFFSET 0 LIMIT 3")
+        );
     }
 
     #[test]

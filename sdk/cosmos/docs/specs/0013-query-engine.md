@@ -10,7 +10,7 @@ A subset of the C++ query engine has been ported to Rust, enabling:
 
 The implementation lives entirely inside the `azure_data_cosmos_driver` crate. In normal builds the query subsystem remains crate-private; test builds and the `__internal_testing` feature expose temporary validation entry points (`query` and `__test_only_generate_query_plan_for_pk_paths`) so parity tests can exercise the local planner without making it part of the supported surface.
 
-The supported SDK query path integrates the local planner as a pre-Gateway optimization in `CosmosDriver::resolve_query_plan`. It plans plain queries (including JOIN, subquery, and UDF shapes), TOP, OFFSET/LIMIT, streaming ORDER BY, DISTINCT compositions, ordinary aggregates, dotted-path GROUP BY, and supported COUNT-over-DISTINCT subqueries. It reproduces the required service rewrites and falls back for unsupported projection shapes, computed/indexed grouping keys, non-streaming ORDER BY, and hybrid-search metadata. Contradictory partition key filters short-circuit ordinary feeds to `DrainedLeaf`; aggregate queries keep a backend source so empty-input reductions still produce the required result.
+The supported SDK query path integrates the local planner as a pre-Gateway optimization in `CosmosDriver::resolve_query_plan`. It plans plain queries with simple container roots, validated array JOINs, scalar subqueries, UDFs, TOP, OFFSET/LIMIT, streaming ORDER BY, DISTINCT compositions, ordinary aggregates, and dotted-path GROUP BY. It reproduces the required service rewrites and falls back for derived-table or nested document sources, source-less aggregates, unsupported projection shapes, computed/indexed grouping keys, non-streaming ORDER BY, and hybrid-search metadata. Contradictory partition key filters short-circuit ordinary feeds to `DrainedLeaf`; aggregate queries keep a backend source so empty-input reductions still produce the required result.
 
 ---
 
@@ -211,7 +211,7 @@ When `__internal_native_query_plan` is enabled, the existing native-first behavi
 3. Gateway query-plan endpoint.
 
 The local provider accepts plain `SELECT`/`WHERE`, projections, `SELECT VALUE`,
-JOINs, subqueries, UDFs, partition-key equality/`IN`, TOP, OFFSET/LIMIT,
+validated array JOINs, scalar subqueries, UDFs, partition-key equality/`IN`, TOP, OFFSET/LIMIT,
 streaming ORDER BY, and DISTINCT combinations. ORDER BY and result-window
 rewrites follow the service's ordering: ORDER BY first, then OFFSET/LIMIT, then
 TOP, with partial DISTINCT results kept below the global window. It declines
@@ -219,17 +219,28 @@ composite aggregates, computed/indexed grouping keys, non-streaming ORDER BY, hy
 projection whose required rewrite cannot be generated safely. Ordinary
 `COUNT`, `SUM`, `AVG`, `MIN`, and `MAX` use local partial-result rewrites for
 VALUE and SELECT-list projections. GROUP BY supports dotted-path keys,
-including multiple keys and grouping without aggregates. COUNT over a DISTINCT
-subquery uses the inner query's partition filters, global deduplication, and
-distinct-count output metadata.
+including multiple keys and grouping without aggregates.
+
+Every FROM clause must have a bare container-document source with an optional
+bare alias. Array JOINs may iterate paths rooted in an already bound variable;
+their aliases must be unique. Derived-table sources, nested document sources,
+and standalone array iterators fall back, including inside nested queries.
+Consequently, COUNT over a DISTINCT subquery requires native or Gateway planning.
+Aggregate queries without FROM also fall back. For JOIN queries, partition-key
+extraction requires the container-document alias explicitly; iterator bindings
+are never interpreted as container partition keys.
+
+Unescaped keyword aliases are rejected by the parser. Quoted SELECT aliases
+remain supported, while collection aliases must be bare identifiers. SQL
+rewrites use parser-recorded clause spans to distinguish an outer OFFSET clause
+from nested windows, aliases, property names, comments, and strings.
 
 Declining local generation does not mean a shape is unsupported by the
 production driver. Native and Gateway providers remain available for shapes
 the local adapter cannot reproduce. The driver combines backend-produced
 partials; it does not evaluate their SQL locally. AVG uses sum/count partials,
 MIN/MAX preserve empty-partial metadata, and SELECT-list projections carry
-ordered aliases and scalar/aggregate slot mappings. COUNT over a DISTINCT
-subquery is classified before ordinary aggregation. See
+ordered aliases and scalar/aggregate slot mappings. See
 `specs/0012-feed-operations-and-dataflow.md` for execution, retained-state, and
 continuation behavior.
 

@@ -20,6 +20,9 @@
 use crate::driver::dataflow::query_plan::{self as dataflow, QueryRange};
 use crate::error::{CosmosError, CosmosStatus};
 use crate::models::{EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue};
+use crate::query::ast::{
+    SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
+};
 use crate::query::plan::{self, PartitionKeyFilter};
 
 // ─── PK filter → dataflow QueryRange conversion (shared with emulator) ──────
@@ -255,6 +258,7 @@ pub(crate) fn synthesize_order_by_rewritten_query(
 
     const ORDER_BY_FILTER_PLACEHOLDER: &str = "{documentdb-formattableorderbyquery-filter}";
 
+    let (parsed, spans) = crate::query::parser::parse_with_spans(original_query).ok()?;
     let tokens = Lexer::tokenize(original_query);
     let mut depth = 0_usize;
     let mut top_level = Vec::new();
@@ -275,15 +279,14 @@ pub(crate) fn synthesize_order_by_rewritten_query(
             depth += 1;
         }
     }
-    let is_clause_keyword = |index: usize| index == 0 || tokens[index - 1].kind != TokenKind::Dot;
     let select_idx = top_level
         .iter()
         .copied()
         .find(|&i| tokens[i].kind == TokenKind::Select)?;
-    let from_idx = top_level
+    let from = spans.from?;
+    let from_idx = tokens
         .iter()
-        .copied()
-        .find(|&i| tokens[i].kind == TokenKind::From && is_clause_keyword(i))?;
+        .position(|token| token.span.start == from.start)?;
     let collection_token = tokens.get(from_idx + 1)?;
     let alias = match tokens.get(from_idx + 2) {
         Some(t) if t.kind == TokenKind::As => tokens.get(from_idx + 3)?.text,
@@ -303,7 +306,6 @@ pub(crate) fn synthesize_order_by_rewritten_query(
     {
         payload_idx += 2;
     }
-    let parsed = crate::query::parse(original_query).ok()?;
     let (payload, select_value) = match &parsed.query.select.spec {
         crate::query::ast::SqlSelectSpec::Star => (alias.to_owned(), false),
         crate::query::ast::SqlSelectSpec::Value(_) => {
@@ -312,7 +314,8 @@ pub(crate) fn synthesize_order_by_rewritten_query(
                 return None;
             }
             (
-                original_query[token.span.end..tokens[from_idx].span.start]
+                original_query
+                    .get(token.span.end..from.start)?
                     .trim()
                     .to_owned(),
                 true,
@@ -331,56 +334,17 @@ pub(crate) fn synthesize_order_by_rewritten_query(
         ),
     };
 
-    let order_idx = top_level.iter().copied().find(|&i| {
-        tokens[i].kind == TokenKind::Order
-            && tokens
-                .get(i + 1)
-                .is_some_and(|token| token.kind == TokenKind::By)
-    });
-    let clause_end = order_idx
-        .map(|i| tokens[i].span.start)
-        .unwrap_or(original_query.len());
-    let order_by_end = order_idx.and_then(|oi| {
-        top_level
-            .iter()
-            .copied()
-            .find(|&i| i > oi && tokens[i].kind == TokenKind::Offset && is_clause_keyword(i))
-            .map(|i| tokens[i].span.start)
-    });
-    let order_by_text = order_idx.map(|i| {
-        let end = order_by_end.unwrap_or(original_query.len());
-        original_query[tokens[i].span.start..end].trim()
-    })?;
-
-    let group_idx = top_level
-        .iter()
-        .copied()
-        .find(|&index| tokens[index].kind == TokenKind::Group && is_clause_keyword(index));
-    let predicate_end = group_idx
-        .map(|index| tokens[index].span.start)
-        .unwrap_or(clause_end);
-    let group_by_text = group_idx
-        .map(|index| {
-            format!(
-                "{} ",
-                original_query[tokens[index].span.start..clause_end].trim()
-            )
-        })
-        .unwrap_or_default();
-    let where_bound = group_idx.or(order_idx).unwrap_or(tokens.len());
-    let where_idx = top_level.iter().copied().find(|&i| {
-        i > from_idx
-            && i < where_bound
-            && tokens[i].kind == TokenKind::Where
-            && is_clause_keyword(i)
-    });
-    let from_end = where_idx
-        .map(|i| tokens[i].span.start)
-        .unwrap_or(predicate_end);
-    let from_text = original_query[tokens[from_idx].span.start..from_end].trim();
+    let order_by = spans.order_by?;
+    let order_by_text = original_query.get(order_by.start..order_by.end)?.trim();
+    let group_by_text = match spans.group_by {
+        Some(span) => format!("{} ", original_query.get(span.start..span.end)?.trim()),
+        None => String::new(),
+    };
+    let from_text = original_query.get(from.start..from.end)?.trim();
     let mut predicates = Vec::with_capacity(3);
-    if let Some(i) = where_idx {
-        let predicate = original_query[tokens[i].span.end..predicate_end].trim();
+    if let Some(span) = spans.where_clause {
+        let token = tokens.iter().find(|token| token.span.start == span.start)?;
+        let predicate = original_query.get(token.span.end..span.end)?.trim();
         predicates.push(format!("({predicate})"));
     }
     predicates.push(ORDER_BY_FILTER_PLACEHOLDER.to_owned());
@@ -438,16 +402,20 @@ fn select_list_payload(
         .zip(starts)
         .zip(ends)
         .map(|(((position, item), start), end)| {
-            let as_token = top_level.iter().copied().find(|index| {
-                *index >= start
-                    && *index < from
-                    && tokens[*index].span.start < end
-                    && tokens[*index].kind == TokenKind::As
-            });
-            let expression_end = as_token
-                .map(|index| tokens[index].span.start)
-                .unwrap_or(end);
-            let expression = original_query[tokens[start].span.start..expression_end].trim();
+            let mut last = tokens
+                .iter()
+                .position(|token| token.span.start >= end)?
+                .checked_sub(1)?;
+            if item.alias.is_some() {
+                last = last.checked_sub(1)?;
+                if tokens.get(last)?.kind == TokenKind::As {
+                    last = last.checked_sub(1)?;
+                }
+            }
+            let expression_end = tokens.get(last)?.span.end;
+            let expression = original_query
+                .get(tokens.get(start)?.span.start..expression_end)?
+                .trim();
             if expression.is_empty() {
                 return None;
             }
@@ -469,30 +437,9 @@ pub(crate) fn synthesize_offset_limit_rewritten_query(
     offset: u64,
     limit: u64,
 ) -> Option<String> {
-    use crate::query::lexer::{Lexer, TokenKind};
-
-    let tokens = Lexer::tokenize(original_query);
-    let mut depth: u32 = 0;
-    let mut outer_offset_idx: Option<usize> = None;
-    for (idx, token) in tokens.iter().enumerate() {
-        match token.kind {
-            TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => depth += 1,
-            TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
-                depth = depth.saturating_sub(1);
-            }
-            TokenKind::Offset if depth == 0 => {
-                let is_property_access = idx > 0 && tokens[idx - 1].kind == TokenKind::Dot;
-                if !is_property_access {
-                    outer_offset_idx = Some(idx);
-                }
-            }
-            _ => {}
-        }
-    }
-    let Some(offset_idx) = outer_offset_idx else {
-        return Some(String::new());
-    };
-    let prefix = original_query[..tokens[offset_idx].span.start].trim_end();
+    let (_, spans) = crate::query::parser::parse_with_spans(original_query).ok()?;
+    spans.offset_limit?;
+    let prefix = original_query.get(..spans.window_prefix_end)?.trim_end();
     let combined = offset.saturating_add(limit);
     Some(format!("{prefix} OFFSET 0 LIMIT {combined}"))
 }
@@ -510,6 +457,7 @@ fn synthesize_distinct_window_rewritten_query(
     use crate::query::lexer::{Lexer, TokenKind};
 
     let tokens = Lexer::tokenize(original_query);
+    let (_, spans) = crate::query::parser::parse_with_spans(original_query).ok()?;
     let mut removals = Vec::with_capacity(2);
     if remove_top {
         let select = tokens
@@ -527,23 +475,8 @@ fn synthesize_distinct_window_rewritten_query(
     }
 
     if remove_offset_limit {
-        let mut depth = 0_u32;
-        let offset = tokens.iter().enumerate().find_map(|(index, token)| {
-            match token.kind {
-                TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => depth += 1,
-                TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
-                    depth = depth.saturating_sub(1);
-                }
-                TokenKind::Offset
-                    if depth == 0 && (index == 0 || tokens[index - 1].kind != TokenKind::Dot) =>
-                {
-                    return Some(token.span.start);
-                }
-                _ => {}
-            }
-            None
-        })?;
-        removals.push(offset..original_query.len());
+        let offset = spans.offset_limit?;
+        removals.push(offset.start..offset.end);
     }
 
     removals.sort_by_key(|range| range.start);
@@ -586,6 +519,8 @@ pub(crate) enum LocalPlanFallbackReason {
     UnresolvablePkFilter,
     /// PK-to-EPK conversion failed.
     EpkConversionFailed,
+    /// FROM does not preserve a proven container-document root.
+    UnsupportedFrom,
 }
 
 impl std::fmt::Display for LocalPlanFallbackReason {
@@ -604,6 +539,7 @@ impl std::fmt::Display for LocalPlanFallbackReason {
             Self::HybridSearch => f.write_str("hybrid_search"),
             Self::UnresolvablePkFilter => f.write_str("unresolvable_pk_filter"),
             Self::EpkConversionFailed => f.write_str("epk_conversion_failed"),
+            Self::UnsupportedFrom => f.write_str("unsupported_from"),
         }
     }
 }
@@ -641,8 +577,8 @@ pub(super) fn has_unresolvable_pk_values(filter: &PartitionKeyFilter) -> bool {
 /// execution without Gateway-only metadata.
 ///
 /// Rejects features requiring native or Gateway rewrites. ORDER BY,
-/// OFFSET/LIMIT, DISTINCT, TOP, JOIN, subqueries, and UDFs are executable by
-/// the current driver and remain eligible.
+/// OFFSET/LIMIT, DISTINCT, TOP, validated array JOINs, scalar subqueries, and
+/// UDFs remain eligible.
 fn check_production_eligibility(
     info: &plan::LocalQueryInfo,
 ) -> Result<(), LocalPlanFallbackReason> {
@@ -651,6 +587,110 @@ fn check_production_eligibility(
     }
     if !info.group_by_expressions.is_empty() {
         return Err(LocalPlanFallbackReason::GroupBy);
+    }
+    Ok(())
+}
+
+fn check_from_clauses(query: &SqlQuery) -> Result<(), LocalPlanFallbackReason> {
+    let mut queries = vec![query];
+    while let Some(query) = queries.pop() {
+        if let Some(from) = &query.from {
+            let mut bindings = std::collections::HashSet::new();
+            let mut sources = vec![&from.collection];
+            while let Some(source) = sources.pop() {
+                let binding = match source {
+                    SqlCollectionExpression::Join { left, right } => {
+                        sources.push(right.as_ref());
+                        sources.push(left.as_ref());
+                        continue;
+                    }
+                    SqlCollectionExpression::Aliased {
+                        collection: SqlCollection::Path { root, path },
+                        alias,
+                    } if bindings.is_empty() && path.is_empty() && !root.starts_with('"') => {
+                        alias.as_deref().unwrap_or(root)
+                    }
+                    SqlCollectionExpression::ArrayIterator {
+                        identifier,
+                        collection: SqlCollection::Path { root, path },
+                    } if !path.is_empty() && bindings.contains(root.as_str()) => identifier,
+                    _ => return Err(LocalPlanFallbackReason::UnsupportedFrom),
+                };
+                if binding.starts_with('"') || !bindings.insert(binding) {
+                    return Err(LocalPlanFallbackReason::UnsupportedFrom);
+                }
+            }
+        }
+        let mut expressions = Vec::new();
+        match &query.select.spec {
+            SqlSelectSpec::List(items) => {
+                expressions.extend(items.iter().map(|item| &item.expression))
+            }
+            SqlSelectSpec::Value(expression) => expressions.push(expression.as_ref()),
+            SqlSelectSpec::Star => {}
+        }
+        if let Some(clause) = &query.where_clause {
+            expressions.push(&clause.expression);
+        }
+        if let Some(clause) = &query.group_by {
+            expressions.extend(&clause.expressions);
+        }
+        if let Some(clause) = &query.order_by {
+            expressions.extend(clause.items.iter().map(|item| &item.expression));
+        }
+        while let Some(expression) = expressions.pop() {
+            match expression {
+                SqlScalarExpression::Subquery(query)
+                | SqlScalarExpression::Exists(query)
+                | SqlScalarExpression::Array(query) => queries.push(query.as_ref()),
+                SqlScalarExpression::FunctionCall { args, .. }
+                | SqlScalarExpression::ArrayCreate(args) => expressions.extend(args),
+                SqlScalarExpression::ObjectCreate(properties) => {
+                    expressions.extend(properties.iter().map(|property| &property.expression));
+                }
+                SqlScalarExpression::Binary { left, right, .. }
+                | SqlScalarExpression::Coalesce { left, right } => {
+                    expressions.extend([left.as_ref(), right.as_ref()]);
+                }
+                SqlScalarExpression::Unary { operand, .. } => expressions.push(operand),
+                SqlScalarExpression::MemberRef { source, .. } => expressions.push(source),
+                SqlScalarExpression::MemberIndexer { source, index } => {
+                    expressions.extend([source.as_ref(), index.as_ref()]);
+                }
+                SqlScalarExpression::Between {
+                    expression,
+                    low,
+                    high,
+                    ..
+                } => {
+                    expressions.extend([expression.as_ref(), low.as_ref(), high.as_ref()]);
+                }
+                SqlScalarExpression::In {
+                    expression, items, ..
+                } => {
+                    expressions.push(expression);
+                    expressions.extend(items);
+                }
+                SqlScalarExpression::Like {
+                    expression,
+                    pattern,
+                    ..
+                } => {
+                    expressions.extend([expression.as_ref(), pattern.as_ref()]);
+                }
+                SqlScalarExpression::Conditional {
+                    condition,
+                    if_true,
+                    if_false,
+                } => {
+                    expressions.extend([condition.as_ref(), if_true.as_ref(), if_false.as_ref()]);
+                }
+                SqlScalarExpression::IsNull { expression, .. } => expressions.push(expression),
+                SqlScalarExpression::Literal(_)
+                | SqlScalarExpression::PropertyRef(_)
+                | SqlScalarExpression::ParameterRef(_) => {}
+            }
+        }
     }
     Ok(())
 }
@@ -722,6 +762,7 @@ pub(crate) fn try_local_plan(
     // 2. Parse the SQL.
     let program =
         crate::query::parse(&query_text).map_err(|_| LocalPlanFallbackReason::ParseFailed)?;
+    check_from_clauses(&program.query)?;
 
     if let Some(plan) = super::aggregate_plan::try_generate(
         &program.query,
@@ -1029,22 +1070,33 @@ mod tests {
     }
 
     #[test]
-    fn count_over_distinct_subquery_uses_global_deduplication() {
-        let body = br#"{"query": "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t"}"#;
-        let ProviderResolution::Plan(plan) = try_local_plan(Some(body), &single_pk_def()).unwrap()
-        else {
-            panic!("distinct count must have an executable plan");
-        };
-        let info = plan.query_info.unwrap();
-        assert_eq!(
-            info.d_count_info.unwrap().d_count_alias.as_deref(),
-            Some("")
-        );
-        assert_eq!(info.distinct_type, dataflow::DistinctType::Unordered);
-        assert_eq!(
-            info.rewritten_query.as_deref(),
-            Some("SELECT DISTINCT VALUE c.category FROM c")
-        );
+    fn unsupported_sources_fall_back_before_routing() {
+        for sql in [
+            "SELECT * FROM c.child x WHERE x.pk = 'a' AND x.pk = 'b'",
+            "SELECT * FROM c['child'] x",
+            "SELECT * FROM c.children[0] x",
+            "SELECT * FROM (SELECT c.child AS pk FROM c) t WHERE t.pk = 'a'",
+            "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t",
+            "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE 1) AS t",
+            "SELECT VALUE t FROM t IN c.tags",
+            "SELECT VALUE t FROM c.child x JOIN t IN x.tags",
+            "SELECT VALUE t FROM c JOIN t",
+            "SELECT VALUE t FROM c JOIN t IN missing.tags",
+            "SELECT VALUE c FROM c JOIN c IN c.tags",
+            "SELECT VALUE t FROM c JOIN t IN c.tags JOIN t IN c.tags",
+            "SELECT VALUE t FROM c JOIN (SELECT VALUE 1) t",
+            "SELECT (SELECT VALUE x FROM c.child x) AS result FROM c",
+            "SELECT * FROM c WHERE EXISTS(SELECT VALUE t FROM t IN c.tags)",
+            "SELECT ARRAY(SELECT VALUE x FROM c.child x) AS result FROM c",
+            r#"SELECT * FROM "c""#,
+        ] {
+            let body = serde_json::to_vec(&serde_json::json!({"query":sql})).unwrap();
+            assert_eq!(
+                try_local_plan(Some(&body), &single_pk_def()).unwrap_err(),
+                LocalPlanFallbackReason::UnsupportedFrom,
+                "{sql}"
+            );
+        }
     }
 
     #[test]
@@ -1063,11 +1115,110 @@ mod tests {
 
     #[test]
     fn join_is_accepted() {
-        let body = br#"{"query": "SELECT * FROM c JOIN t IN c.tags"}"#;
-        assert!(matches!(
-            try_local_plan(Some(body), &single_pk_def()),
-            Ok(ProviderResolution::Plan(_))
-        ));
+        for sql in [
+            "SELECT * FROM c",
+            "SELECT * FROM products p",
+            "SELECT * FROM products AS p",
+            "SELECT VALUE t FROM c JOIN t IN c.tags",
+            "SELECT VALUE u FROM products p JOIN t IN p.tags JOIN u IN t.values",
+            "SELECT (SELECT VALUE x.pk FROM products x) AS result FROM c",
+            "SELECT VALUE COUNT(1) FROM c JOIN t IN c.tags",
+        ] {
+            let body = serde_json::to_vec(&serde_json::json!({"query":sql})).unwrap();
+            assert!(
+                matches!(
+                    try_local_plan(Some(&body), &single_pk_def()),
+                    Ok(ProviderResolution::Plan(_))
+                ),
+                "{sql}"
+            );
+        }
+    }
+
+    #[test]
+    fn join_bindings_are_not_container_partition_keys() {
+        for (path, iterator, child_predicate, root_predicate) in [
+            ("/pk", "pk", "pk = 'b'", "c.pk = 'a'"),
+            ("/tag/pk", "tag", "tag.pk = 'b'", "c.tag.pk = 'a'"),
+        ] {
+            let definition = PartitionKeyDefinition::from(path);
+            for aggregate in [false, true] {
+                let projection = if aggregate {
+                    "VALUE COUNT(1)"
+                } else {
+                    "VALUE c"
+                };
+                for (predicate, expected) in [
+                    (child_predicate.to_owned(), vec![full_query_range()]),
+                    (
+                        format!("{root_predicate} AND {child_predicate}"),
+                        query_ranges_from_pk_filter(
+                            &PartitionKeyFilter::Equality(vec![plan::PartitionKeyValue::String(
+                                "a".into(),
+                            )]),
+                            &definition,
+                        )
+                        .unwrap(),
+                    ),
+                ] {
+                    let sql = format!(
+                        "SELECT {projection} FROM c JOIN {iterator} IN c.tags WHERE {predicate}"
+                    );
+                    let body = serde_json::to_vec(&serde_json::json!({"query":sql})).unwrap();
+                    let ProviderResolution::Plan(plan) =
+                        try_local_plan(Some(&body), &definition).unwrap()
+                    else {
+                        panic!("JOIN predicate must not short-circuit: {sql}");
+                    };
+                    assert_eq!(plan.query_ranges, expected, "{sql}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn windows_use_parsed_offset_clause() {
+        for (sql, expected) in [
+            (
+                r#"SELECT c.name AS "OFFSET" FROM c OFFSET 1 LIMIT 2"#,
+                r#"SELECT c.name AS "OFFSET" FROM c OFFSET 0 LIMIT 3"#,
+            ),
+            (
+                r#"SELECT DISTINCT c.name "OFFSET" FROM c OFFSET 1 LIMIT 2"#,
+                r#"SELECT DISTINCT c.name "OFFSET" FROM c"#,
+            ),
+            (
+                "SELECT (SELECT VALUE 1 OFFSET 7 LIMIT 8) AS result FROM c OFFSET 1 LIMIT 2",
+                "SELECT (SELECT VALUE 1 OFFSET 7 LIMIT 8) AS result FROM c OFFSET 0 LIMIT 3",
+            ),
+            (
+                "SELECT c.name FROM c -- OFFSET 7 LIMIT 8\nOFFSET 1 LIMIT 2",
+                "SELECT c.name FROM c OFFSET 0 LIMIT 3",
+            ),
+        ] {
+            let body = serde_json::to_vec(&serde_json::json!({"query":sql})).unwrap();
+            let ProviderResolution::Plan(plan) =
+                try_local_plan(Some(&body), &single_pk_def()).unwrap()
+            else {
+                panic!("query must produce a plan");
+            };
+            assert_eq!(
+                plan.query_info.unwrap().rewritten_query.as_deref(),
+                Some(expected)
+            );
+        }
+        let sql = "SELECT c.name -- not an OFFSET clause\nAS \"OFFSET\" FROM c -- OFFSET 7 LIMIT 8\nWHERE c.note = 'OFFSET 9 LIMIT 9' -- keep the predicate\nORDER BY c.name -- not the window\nOFFSET 1 LIMIT 2";
+        let body = serde_json::to_vec(&serde_json::json!({"query":sql})).unwrap();
+        let ProviderResolution::Plan(plan) = try_local_plan(Some(&body), &single_pk_def()).unwrap()
+        else {
+            panic!("ordered query must produce a plan");
+        };
+        assert_eq!(
+            plan.query_info.unwrap().rewritten_query.as_deref(),
+            Some(
+                r#"SELECT VALUE {"_rid": c._rid, "orderByItems": [{"item": c.name}], "payload": {"OFFSET": c.name}} FROM c WHERE (c.note = 'OFFSET 9 LIMIT 9') AND {documentdb-formattableorderbyquery-filter} ORDER BY c.name"#
+            )
+        );
     }
 
     #[test]

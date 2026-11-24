@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Aggregate, dotted-path `GROUP BY`, and distinct-count queries can now use Rust-local planning without a native planner or Gateway query-plan request. ([#5664](https://github.com/Azure/azure-sdk-for-rust/pull/5664))
+- Aggregate and dotted-path `GROUP BY` queries over simple container roots and validated array JOINs can now use Rust-local planning without a native planner or Gateway query-plan request. ([#5664](https://github.com/Azure/azure-sdk-for-rust/pull/5664))
 - Added cross-partition `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, and distinct-count queries using `COUNT` over a `DISTINCT` subquery; grouped results support live paging, but aggregates and groups do not support external continuation tokens. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added SQL filter predicates to unstable PATCH instruction payloads for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
@@ -17,6 +17,7 @@
 
 ### Bugs Fixed
 
+- Preserve query routing for complex FROM sources and JOIN aliases by limiting Rust-local planning to proven container-document references; reject unescaped keyword aliases and distinguish actual OFFSET clauses during rewriting. ([#5664](https://github.com/Azure/azure-sdk-for-rust/pull/5664))
 - Retain partition-key-range pages across HTTP 429 retries, bypassing configured throttle caps until success, a non-429 result, deadline, or cancellation; persistent throttling without a deadline or cancellation can wait indefinitely, while joined callers keep independent deadlines. ([#5595](https://github.com/Azure/azure-sdk-for-rust/pull/5595))
 - Report query-page deserialization failures in operation-level diagnostics while preserving request statuses and charges. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))

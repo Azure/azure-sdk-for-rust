@@ -305,6 +305,24 @@ async fn advanced_families_plan_natively_or_fall_back_once() {
     // (name, query, expected outcome, handled by native planner)
     let scenarios = [
         (
+            "distinct_count",
+            "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.pk FROM c) AS t",
+            FallbackOutcome::Plan,
+            true,
+        ),
+        (
+            "subroot",
+            "SELECT VALUE x FROM c.child x",
+            FallbackOutcome::Plan,
+            true,
+        ),
+        (
+            "reserved_alias",
+            "SELECT COUNT(1) AS OFFSET FROM c",
+            FallbackOutcome::Error,
+            false,
+        ),
+        (
             "dcount",
             "SELECT VALUE DCOUNT(c.pk) FROM c",
             FallbackOutcome::Plan,
@@ -368,7 +386,7 @@ async fn aggregate_and_group_by_skip_gateway_planning() {
         "SELECT VALUE COUNT(1) FROM c",
         "SELECT AVG(c.price) AS mean FROM c",
         "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
-        "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.pk FROM c) AS t",
+        "SELECT VALUE COUNT(1) FROM c JOIN t IN c.tags",
     ] {
         recorder.clear();
         driver

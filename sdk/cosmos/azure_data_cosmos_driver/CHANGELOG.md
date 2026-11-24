@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added local planning for `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, dotted-path `GROUP BY`, and `COUNT` over `DISTINCT` subqueries without a Gateway query-plan request. ([#5664](https://github.com/Azure/azure-sdk-for-rust/pull/5664))
+- Added local planning for `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, and dotted-path `GROUP BY` over simple container roots and validated array JOINs without a Gateway query-plan request. ([#5664](https://github.com/Azure/azure-sdk-for-rust/pull/5664))
 - Added in-memory emulator service-style aggregate, GROUP BY, and canonical distinct-count plans and split-safe partition partials for account-free testing of the production query pipeline. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
@@ -18,6 +18,7 @@
 
 ### Bugs Fixed
 
+- Fall back to native/Gateway planning for derived-table and nested document sources, standalone array iterators, and source-less aggregates; prevent JOIN aliases from being mistaken for partition keys, reject unescaped keyword aliases, and use parsed clause boundaries for query rewrites. ([#5664](https://github.com/Azure/azure-sdk-for-rust/pull/5664))
 - Retain partition-key-range pages across 429 retries regardless of throttling caps, until success, a non-429 result, deadline, or cancellation; persistent throttling can wait indefinitely without a deadline or cancellation. ([#5595](https://github.com/Azure/azure-sdk-for-rust/pull/5595))
 - Preserve complete single-partition emulator aggregate, GROUP BY, and DISTINCT results across pages, and retain quoted aliases and floating-point literals in query rewrites. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))

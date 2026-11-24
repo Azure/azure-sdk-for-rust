@@ -43,12 +43,26 @@ impl std::error::Error for ParseError {}
 /// // Use plan::generate_query_plan() or eval::matches_query() to work with it.
 /// ```
 pub fn parse(sql: &str) -> Result<SqlProgram, ParseError> {
+    parse_with_spans(sql).map(|(program, _)| program)
+}
+
+#[derive(Default)]
+pub(crate) struct QuerySpans {
+    pub(crate) from: Option<Span>,
+    pub(crate) where_clause: Option<Span>,
+    pub(crate) group_by: Option<Span>,
+    pub(crate) order_by: Option<Span>,
+    pub(crate) offset_limit: Option<Span>,
+    pub(crate) window_prefix_end: usize,
+}
+
+pub(crate) fn parse_with_spans(sql: &str) -> Result<(SqlProgram, QuerySpans), ParseError> {
     let mut parser = Parser::new(sql);
     let program = parser.parse_program()?;
     // (#6) Surface any deferred lexer error (e.g. unterminated string literal
     // that appeared after the parser had already finished consuming).
     parser.check_pending_lex_error()?;
-    Ok(program)
+    Ok((program, parser.query_spans))
 }
 
 pub(crate) fn parse_predicate(sql: &str) -> Result<SqlScalarExpression, ParseError> {
@@ -89,6 +103,8 @@ struct Parser<'a> {
     lexer: Lexer<'a>,
     current: Token<'a>,
     nesting: usize,
+    query_spans: QuerySpans,
+    previous_end: usize,
 }
 
 impl<'a> Parser<'a> {
@@ -99,6 +115,8 @@ impl<'a> Parser<'a> {
             lexer,
             current,
             nesting: 0,
+            query_spans: QuerySpans::default(),
+            previous_end: 0,
         }
     }
 
@@ -124,6 +142,7 @@ impl<'a> Parser<'a> {
     }
 
     fn advance(&mut self) {
+        self.previous_end = self.current.span.end;
         self.current = self.lexer.next_token();
     }
 
@@ -205,13 +224,49 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_query(&mut self) -> Result<SqlQuery, ParseError> {
+        let outermost = self.nesting == 0;
         self.push_nesting()?;
         let select = self.parse_select_clause()?;
+        let start = self.current.span.start;
         let from = self.parse_opt_from_clause()?;
+        let from_span = from.as_ref().map(|_| Span {
+            start,
+            end: self.previous_end,
+        });
+        let start = self.current.span.start;
         let where_clause = self.parse_opt_where_clause()?;
+        let where_span = where_clause.as_ref().map(|_| Span {
+            start,
+            end: self.previous_end,
+        });
+        let start = self.current.span.start;
         let group_by = self.parse_opt_group_by_clause()?;
+        let group_span = group_by.as_ref().map(|_| Span {
+            start,
+            end: self.previous_end,
+        });
+        let start = self.current.span.start;
         let order_by = self.parse_opt_order_by_clause()?;
+        let order_span = order_by.as_ref().map(|_| Span {
+            start,
+            end: self.previous_end,
+        });
+        let start = self.current.span.start;
+        let window_prefix_end = self.previous_end;
         let offset_limit = self.parse_opt_offset_limit_clause()?;
+        if outermost {
+            self.query_spans = QuerySpans {
+                from: from_span,
+                where_clause: where_span,
+                group_by: group_span,
+                order_by: order_span,
+                offset_limit: offset_limit.as_ref().map(|_| Span {
+                    start,
+                    end: self.previous_end,
+                }),
+                window_prefix_end,
+            };
+        }
         self.pop_nesting();
         Ok(SqlQuery {
             select,
@@ -288,13 +343,11 @@ impl<'a> Parser<'a> {
 
     fn parse_opt_alias(&mut self) -> Result<Option<String>, ParseError> {
         if self.consume_if(TokenKind::As) {
-            return Ok(Some(self.parse_identifier_name()?));
+            return self.parse_select_alias().map(Some);
         }
         // Identifier without AS keyword (but not a keyword that starts a clause)
         if self.current.kind == TokenKind::Identifier {
-            let name = self.current.text.to_string();
-            self.advance();
-            return Ok(Some(name));
+            return self.parse_select_alias().map(Some);
         }
         if self.current.kind == TokenKind::StringLiteral {
             let name = extract_string_content(self.current.text);
@@ -302,6 +355,25 @@ impl<'a> Parser<'a> {
             return Ok(Some(name));
         }
         Ok(None)
+    }
+
+    fn parse_select_alias(&mut self) -> Result<String, ParseError> {
+        let token = self.expect(TokenKind::Identifier)?;
+        if token.text.starts_with('"') {
+            serde_json::from_str(token.text)
+                .map_err(|_| self.error("invalid quoted SELECT alias".into()))
+        } else {
+            Ok(token.text.to_owned())
+        }
+    }
+
+    fn parse_collection_alias(&mut self) -> Result<String, ParseError> {
+        if self.current.kind != TokenKind::Identifier || self.current.text.starts_with('"') {
+            return Err(self.error("expected bare collection alias".into()));
+        }
+        let name = self.current.text.to_owned();
+        self.advance();
+        Ok(name)
     }
 
     // ─── FROM ────────────────────────────────────────────────────────────
@@ -404,13 +476,11 @@ impl<'a> Parser<'a> {
 
     fn parse_opt_collection_alias(&mut self) -> Result<Option<String>, ParseError> {
         if self.consume_if(TokenKind::As) {
-            return Ok(Some(self.parse_identifier_name()?));
+            return self.parse_collection_alias().map(Some);
         }
         // Bare identifier alias (not a clause keyword)
         if self.current.kind == TokenKind::Identifier && !self.is_clause_keyword() {
-            let name = self.current.text.to_string();
-            self.advance();
-            return Ok(Some(name));
+            return self.parse_collection_alias().map(Some);
         }
         Ok(None)
     }
@@ -2052,6 +2122,56 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn aliases_reject_unescaped_keywords() {
+        for keyword in [
+            "OFFSET", "offset", "FROM", "WHERE", "GROUP", "ORDER", "LIMIT", "SELECT", "VALUE",
+            "LEFT",
+        ] {
+            for sql in [
+                format!("SELECT COUNT(1) AS {keyword} FROM c"),
+                format!("SELECT COUNT(1) {keyword} FROM c"),
+                format!("SELECT * FROM c AS {keyword}"),
+                format!("SELECT * FROM c {keyword}"),
+            ] {
+                assert!(parse(&sql).is_err(), "{sql}");
+            }
+        }
+        for sql in [
+            r#"SELECT * FROM c AS "OFFSET""#,
+            r#"SELECT * FROM c "OFFSET""#,
+        ] {
+            assert!(parse(&sql).is_err(), "{sql}");
+        }
+        for sql in [
+            r#"SELECT COUNT(1) AS "OFFSET" FROM c"#,
+            r#"SELECT COUNT(1) "OFFSET" FROM c"#,
+        ] {
+            let program = parse(sql).unwrap();
+            let SqlSelectSpec::List(items) = program.query.select.spec else {
+                panic!("SELECT list expected");
+            };
+            assert_eq!(items[0].alias.as_deref(), Some("OFFSET"));
+        }
+    }
+
+    #[test]
+    fn clause_spans_ignore_nested_queries_and_keyword_text() {
+        let sql = r#"SELECT (SELECT VALUE 1 OFFSET 7 LIMIT 8) AS "OFFSET" FROM c WHERE c.note = 'OFFSET 9 LIMIT 9' /* OFFSET 3 LIMIT 4 */ ORDER BY c.name OFFSET 1 LIMIT 2"#;
+        let (_, spans) = super::parse_with_spans(sql).unwrap();
+        let from = spans.from.unwrap();
+        let offset = spans.offset_limit.unwrap();
+        let order = spans.order_by.unwrap();
+        assert_eq!(sql[from.start..from.end].trim(), "FROM c");
+        assert_eq!(sql[offset.start..offset.end].trim(), "OFFSET 1 LIMIT 2");
+        assert_eq!(sql[order.start..order.end].trim(), "ORDER BY c.name");
+        let (_, spans) = super::parse_with_spans(
+            r#"SELECT (SELECT VALUE 1 OFFSET 7 LIMIT 8) AS "OFFSET" FROM c"#,
+        )
+        .unwrap();
+        assert!(spans.offset_limit.is_none());
     }
 
     // (#7) The whitelist in `parse_identifier_name` is the contract for

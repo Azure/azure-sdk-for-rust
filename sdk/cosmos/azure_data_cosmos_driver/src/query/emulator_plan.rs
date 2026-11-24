@@ -588,26 +588,26 @@ mod tests {
     }
 
     #[test]
-    fn rewritten_queries_preserve_quoted_collection_aliases_and_strings() {
+    fn rewritten_queries_preserve_collection_aliases_and_quoted_strings() {
         for (query, expected) in [
             (
                 r#"SELECT VALUE SUM(c.v) FROM c WHERE c["key"] = "shared""#,
                 json!([[{"item": 4}]]),
             ),
             (
-                r#"SELECT VALUE COUNT(1) FROM c AS "my alias""#,
+                "SELECT VALUE COUNT(1) FROM c AS my_alias",
                 json!([[{"item": 2}]]),
             ),
             (
-                r#"SELECT VALUE SUM("my alias".v) FROM c AS "my alias" WHERE "my alias".v > 1"#,
+                "SELECT VALUE SUM(my_alias.v) FROM c AS my_alias WHERE my_alias.v > 1",
                 json!([[{"item": 3}]]),
             ),
             (
-                r#"SELECT "my alias".key, COUNT(1) AS n FROM c AS "my alias" GROUP BY "my alias".key"#,
+                "SELECT my_alias.key, COUNT(1) AS n FROM c AS my_alias GROUP BY my_alias.key",
                 json!([{"groupByItems":[{"item":"shared"}],"payload":{"key":"shared","n":{"item":2}}}]),
             ),
             (
-                r#"SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE "my alias".key FROM c AS "my alias") AS t"#,
+                "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE my_alias.key FROM c AS my_alias) AS t",
                 json!(["shared"]),
             ),
         ] {

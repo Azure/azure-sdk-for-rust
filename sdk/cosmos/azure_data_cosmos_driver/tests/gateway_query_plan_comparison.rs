@@ -1133,11 +1133,47 @@ async fn gw_production_local_plan_supported_surface() {
         "SELECT VALUE t FROM c JOIN t IN c.tags",
         "SELECT (SELECT VALUE 1) AS x FROM c",
         "SELECT * FROM c WHERE c.pk = 'production-local-plan'",
+        "SELECT * FROM qp_pk p WHERE p.pk = 'production-local-plan'",
+        r#"SELECT c.name AS "OFFSET" FROM c OFFSET 1 LIMIT 2"#,
+        r#"SELECT c.name AS "OFFSET" FROM c ORDER BY c.name OFFSET 1 LIMIT 2"#,
     ] {
         validate_production_local_plan(sql, &[], Some(PlanOptions::default())).await;
     }
 
     validate_production_local_plan("SELECT VALUE udf.transform(c.data) FROM c", &[], None).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+async fn gw_production_source_fallback() {
+    let (driver, container) = require_driver_and(get_driver().await, c_pk().await);
+    for sql in [
+        "SELECT VALUE x FROM c.child x WHERE x.pk = 'a'",
+        "SELECT VALUE COUNT(1) FROM (SELECT c.category AS pk FROM c) t WHERE t.pk = 'a'",
+        "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE 1) t",
+        "SELECT VALUE COUNT(1)",
+    ] {
+        assert!(
+            azure_data_cosmos_driver::query::__test_only_generate_production_query_plan(
+                &query_spec_body(sql, &[]),
+                container.partition_key_definition()
+            )
+            .is_err(),
+            "{sql}"
+        );
+        fetch_gateway_plan_with_features(
+            driver,
+            container,
+            sql,
+            &[],
+            azure_data_cosmos_driver::query::SUPPORTED_QUERY_FEATURES,
+        )
+        .await
+        .unwrap_or_else(|error| panic!("Gateway must plan {sql}: {error}"));
+    }
 }
 
 async fn validate_aggregate_plan(
@@ -1207,6 +1243,8 @@ async fn gw_production_aggregate_plans() {
         "SELECT VALUE MAX(c.price) FROM c",
         "SELECT COUNT(1), COUNT(c.price), AVG(c.price), MIN(c.price), MAX(c.price) FROM c",
         "SELECT COUNT(1) n, SUM(c.price) AS total, AVG(c.price) AS mean FROM c",
+        r#"SELECT COUNT(1) AS "OFFSET" FROM c"#,
+        r#"SELECT COUNT(1) AS "OFFSET" FROM c OFFSET 1 LIMIT 2"#,
         "SELECT VALUE AVG(c.price + 1) FROM c",
         "SELECT VALUE AVG(ABS(c.price)) FROM c",
         "SELECT VALUE COUNT(1) FROM c JOIN tag IN c.tags",
@@ -1224,9 +1262,6 @@ async fn gw_production_aggregate_plans() {
         "SELECT TOP 2 c.city, COUNT(1) AS n FROM c GROUP BY c.city",
         "SELECT c.city, COUNT(1) AS n FROM c GROUP BY c.city OFFSET 1 LIMIT 2",
         "SELECT c.city, COUNT(1) AS n FROM c GROUP BY c.city ORDER BY c.city",
-        "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.city FROM c) AS t",
-        "SELECT COUNT(1) FROM (SELECT DISTINCT VALUE c.city FROM c) AS t",
-        "SELECT COUNT(1) AS n FROM (SELECT DISTINCT c.city FROM c) AS t",
     ] {
         validate_aggregate_plan(driver, container, sql, &[]).await;
     }
@@ -1241,7 +1276,6 @@ async fn gw_production_aggregate_plans() {
     for sql in [
         "SELECT VALUE SUM(c.price) FROM c WHERE c.tenant = @tenant",
         "SELECT c.city, COUNT(1) AS n FROM c WHERE c.tenant = @tenant AND c.userId IN (@first, @second) GROUP BY c.city",
-        "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.city FROM c WHERE c.tenant = @tenant) AS t",
     ] {
         validate_aggregate_plan(
             driver,
@@ -1370,7 +1404,7 @@ async fn gw_production_aggregate_results() {
         let pk = &keys[index % keys.len()];
         let id = index.to_string();
         let item = ItemReference::from_name(&container, PartitionKey::from(pk.clone()), id.clone());
-        let mut document = serde_json::json!({"id":id,"pk":pk,"category":category,"amount":amount});
+        let mut document = serde_json::json!({"id":id,"pk":pk,"category":category,"amount":amount,"tags":[category]});
         if index > 0 {
             document["optional"] = if index == 1 {
                 serde_json::Value::Null
@@ -1386,7 +1420,11 @@ async fn gw_production_aggregate_results() {
             .unwrap();
     }
     let cases = [
+        ("SELECT VALUE COUNT(1)", serde_json::json!([1])),
         ("SELECT VALUE COUNT(1) FROM c", serde_json::json!([6])),
+        (r#"SELECT COUNT(1) AS "OFFSET" FROM c"#, serde_json::json!([{"OFFSET":6}])),
+        (r#"SELECT COUNT(1) AS "OFFSET" FROM c OFFSET 1 LIMIT 2"#, serde_json::json!([])),
+        ("SELECT VALUE COUNT(1) FROM c JOIN pk IN c.tags WHERE pk = 'a'", serde_json::json!([3])),
         ("SELECT TOP 1 VALUE COUNT(1) FROM c", serde_json::json!([6])),
         ("SELECT VALUE COUNT(1) FROM c OFFSET 1 LIMIT 1", serde_json::json!([])),
         ("SELECT VALUE SUM(c.amount) FROM c", serde_json::json!([180])),
@@ -1422,7 +1460,16 @@ async fn gw_production_aggregate_results() {
     for (sql, expected) in cases {
         // The Gateway constant-folds impossible predicates into a first-range
         // request with no aggregate metadata. Compare those by results below.
-        if !sql.contains("WHERE false") && !sql.contains("AND c.pk = 'b'") {
+        if sql.contains("FROM (") || sql == "SELECT VALUE COUNT(1)" {
+            assert!(
+                azure_data_cosmos_driver::query::__test_only_generate_production_query_plan(
+                    &query_spec_body(sql, &[]),
+                    container.partition_key_definition()
+                )
+                .is_err(),
+                "{sql}"
+            );
+        } else if !sql.contains("WHERE false") && !sql.contains("AND c.pk = 'b'") {
             validate_aggregate_plan(driver, &container, sql, &[]).await;
         }
         for mode in [QueryPlanMode::GatewayOnly, QueryPlanMode::LocalPreferred] {

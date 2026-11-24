@@ -323,7 +323,10 @@ pub(crate) fn generate_query_plan_with_parameters(
             extract_pk_from_expression(
                 &where_clause.expression,
                 &pk_segments,
-                root_alias.as_deref(),
+                PkReferenceScope {
+                    root_alias: root_alias.as_deref(),
+                    allow_unqualified: !query_info.has_join,
+                },
                 parameters,
             )
         } else {
@@ -753,10 +756,16 @@ fn walk_expr_for_info(
 
 // ─── PK Extraction (unchanged logic) ────────────────────────────────────────
 
+#[derive(Clone, Copy)]
+struct PkReferenceScope<'a> {
+    root_alias: Option<&'a str>,
+    allow_unqualified: bool,
+}
+
 fn extract_pk_from_expression(
     expr: &SqlScalarExpression,
     pk_segments: &[Vec<&str>],
-    root_alias: Option<&str>,
+    root_alias: PkReferenceScope<'_>,
     parameters: &Params,
 ) -> PartitionKeyFilter {
     if pk_segments.len() == 1 {
@@ -768,7 +777,7 @@ fn extract_pk_from_expression(
 fn extract_single_pk(
     expr: &SqlScalarExpression,
     pk_path: &[&str],
-    root_alias: Option<&str>,
+    root_alias: PkReferenceScope<'_>,
     parameters: &Params,
 ) -> PartitionKeyFilter {
     match expr {
@@ -969,7 +978,7 @@ fn intersect_pk_filters(a: PartitionKeyFilter, b: PartitionKeyFilter) -> Partiti
 fn extract_hierarchical_pk(
     expr: &SqlScalarExpression,
     pk_segments: &[Vec<&str>],
-    root_alias: Option<&str>,
+    root_alias: PkReferenceScope<'_>,
     parameters: &Params,
 ) -> PartitionKeyFilter {
     // handle top-level OR by extracting HPK from each disjunct and
@@ -1161,12 +1170,16 @@ fn flatten_chain<'a>(
     }
 }
 
-fn is_pk_reference(expr: &SqlScalarExpression, pk_path: &[&str], root_alias: Option<&str>) -> bool {
+fn is_pk_reference(
+    expr: &SqlScalarExpression,
+    pk_path: &[&str],
+    scope: PkReferenceScope<'_>,
+) -> bool {
     let mut resolved_path = Vec::new();
     if !resolve_property_path(expr, &mut resolved_path) {
         return false;
     }
-    if let Some(alias) = root_alias {
+    if let Some(alias) = scope.root_alias {
         if resolved_path.first().map(String::as_str) == Some(alias) {
             return resolved_path[1..]
                 .iter()
@@ -1175,7 +1188,8 @@ fn is_pk_reference(expr: &SqlScalarExpression, pk_path: &[&str], root_alias: Opt
                 == pk_path;
         }
     }
-    resolved_path.iter().map(String::as_str).collect::<Vec<_>>() == pk_path
+    scope.allow_unqualified
+        && resolved_path.iter().map(String::as_str).collect::<Vec<_>>() == pk_path
 }
 
 #[allow(clippy::collapsible_match)] // clippy suggests a match guard, but that won't compile with &mut
