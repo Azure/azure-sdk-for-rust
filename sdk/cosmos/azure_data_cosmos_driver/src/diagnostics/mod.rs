@@ -19,11 +19,13 @@
 //! `DiagnosticsContext` which is safe to share via `Arc` without locking.
 
 mod compaction;
+mod configuration;
 mod diagnostics_context;
 mod proxy_config;
 mod request_diagnostics_builder;
 
 pub use compaction::{CompactedRun, CompactionInfo};
+pub(crate) use configuration::{ClientConfiguration, OperationConfiguration};
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
     DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineKind,

@@ -17,7 +17,10 @@ use futures::future::{pending, select, Either, Future};
 use futures::FutureExt;
 
 use crate::{
-    diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity},
+    diagnostics::{
+        DiagnosticsContextBuilder, ExecutionContext, OperationConfiguration, PipelineKind,
+        TransportSecurity,
+    },
     driver::{
         cache::ContainerRoutingMap,
         routing::{
@@ -744,19 +747,6 @@ pub(crate) async fn execute_operation_pipeline(
         .partition_topology_cache_mode()
         == PartitionTopologyCacheMode::Lazy;
 
-    // Rule 4 (RCS validation): GlobalStrong is
-    // valid only on reads against accounts whose default consistency is Strong.
-    // For writes or non-Strong accounts, server-side semantics would not be
-    // applied — fail fast client-side with BadRequest before incurring a round
-    // trip.
-    if matches!(
-        read_consistency_strategy,
-        ReadConsistencyStrategy::GlobalStrong
-    ) && operation.is_read_only()
-        && account_default_consistency != DefaultConsistencyLevel::Strong
-    {
-        return Err(global_strong_account_validation_error(diagnostics));
-    }
     let max_session_retries = options
         .max_session_retry_count()
         .copied()
@@ -773,6 +763,29 @@ pub(crate) async fn execute_operation_pipeline(
                 2
             }
         });
+
+    // Capture the values execution selected, including topology-dependent defaults.
+    let mut configuration = OperationConfiguration::from(options);
+    configuration.scope = "execution";
+    configuration.max_failover_retry_count = Some(max_failover_retries);
+    configuration.endpoint_unavailability_ttl_ms = Some(endpoint_unavailability_ttl.as_millis());
+    configuration.max_session_retry_count = Some(max_session_retries);
+    configuration.throttling_retry_options.max_retry_count = Some(max_throttle_attempts);
+    configuration
+        .throttling_retry_options
+        .max_retry_wait_time_ms = Some(max_throttle_wait_time.as_millis());
+    configuration.set_consistency(account_default_consistency, effective_consistency);
+    diagnostics.set_operation_options(configuration);
+
+    // GlobalStrong reads require a Strong account; reject before any wire request.
+    if matches!(
+        read_consistency_strategy,
+        ReadConsistencyStrategy::GlobalStrong
+    ) && operation.is_read_only()
+        && account_default_consistency != DefaultConsistencyLevel::Strong
+    {
+        return Err(global_strong_account_validation_error(diagnostics));
+    }
 
     let mut retry_state = OperationRetryState::initial(
         location_snapshot.account.generation,

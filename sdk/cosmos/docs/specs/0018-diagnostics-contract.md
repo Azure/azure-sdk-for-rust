@@ -240,6 +240,65 @@ logged/traced and peg the CPU:
 Materialization is **explicit, lazy, and per-representation**: each is paid only when a handler
 asks for it, so the expensive JSON step is never paid on a metrics-only or span-only path.
 
+### 6.1 Request and client configuration in JSON
+
+Detailed and ordinary Summary output include top-level `options` and `client`
+objects when configuration is available. These are private serialization
+projections, not new public Rust configuration types or an additional telemetry
+emission path.
+
+`options` resolves independently layered fields using the execution's
+`OperationOptionsView`, including environment kill switches and admission-pinned
+snapshots. False, zero, and empty collection overrides remain explicit. Duration
+fields use the `_ms` suffix. Unset optional values are omitted; defaulted binary
+encoding, content-response, and UTF-8 policies remain visible.
+
+`options.scope` distinguishes what is known:
+
+- `execution`: retry limits, endpoint-unavailability duration, and account/effective
+  consistency include values selected by the operation pipeline. This includes
+  metadata versus data-plane throttle defaults and partition-key-range exceptions.
+- `configured`: planning failed before execution; contextual execution defaults
+  aren't invented.
+- `metadata_bootstrap`: the off-pipeline account fetch records its resolved
+  throttling budgets. Other option policies don't imply that they were applied
+  by this special-purpose request path.
+- `last_sub_operation`: an aggregate reports the last sub-operation's
+  configuration rather than implying it describes every internal execution.
+  `options.varied: true` identifies differing or unavailable source
+  configurations. This matters for PATCH Read/Replace and feed aggregation.
+
+An inherited read strategy remains `default`, with account/effective consistency
+separately recorded when known. Availability strategy remains configured policy:
+`default` isn't a fabricated effective threshold, and an enabled strategy doesn't
+mean a request was eligible or that a hedge actually ran. Existing request and
+hedge diagnostics describe actual attempts. Missing end-to-end timeout and
+throughput settings aren't replaced by invented values.
+
+`client` contains `driver_version`, a sorted `features` array, resolved connection
+policy, and, once a driver exists, preferred regions, partition-failover settings,
+and hedge limits. Features are canonical Cargo feature names for the compiled
+driver, including default, backend, and internal flags after feature unification;
+they aren't wrapper SDK or transitive dependency inventories. Driver-only groups
+are absent from pre-driver bootstrap diagnostics.
+
+Connection and driver configuration is captured once and shared in memory.
+Request configuration is captured from the execution's immutable view, not
+re-read from mutable runtime defaults when JSON is requested. Clones and status
+restamps retain it; JSON remains lazily cached. Synthetic contexts without an
+execution/configuration source omit the objects rather than guess.
+
+Configuration projections exclude credentials, custom header names/values,
+proxy addresses, local addresses, custom user-agent strings, and fault-rule
+contents. `custom_headers_configured_count` counts the merged configured map;
+it doesn't claim those headers were sent.
+
+Both verbosity levels use named fields and enum strings without external
+dictionaries or opaque encodings. When the Summary size limit triggers its
+existing truncated fallback, the full configuration is omitted and
+`configuration_omitted: true` makes that loss explicit. Detailed output retains
+the configuration.
+
 ## 7. Where the level / threshold applies
 
 **Gating bounds high-cardinality TRANSPORT-level telemetry — it never eliminates

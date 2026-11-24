@@ -13,7 +13,7 @@ use std::{
 };
 
 use crate::{
-    diagnostics::ProxyConfig,
+    diagnostics::{ClientConfiguration, ProxyConfig},
     models::{normalize_wrapping_sdk_identifier, UserAgent, UserAgentFeatureFlags},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DiagnosticsOptions,
@@ -94,6 +94,7 @@ pub struct CosmosDriverRuntime {
 
     /// Diagnostics output configuration captured at runtime initialization.
     diagnostics_options: Arc<DiagnosticsOptions>,
+    pub(crate) client_configuration: Arc<ClientConfiguration>,
 
     /// Bootstrap HTTP transport for initial metadata probes.
     ///
@@ -739,6 +740,7 @@ impl CosmosDriverRuntimeBuilder {
         Ok(Arc::new(CosmosDriverRuntime {
             id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),
             client_options: self.client_options.unwrap_or_default(),
+            client_configuration: Arc::new(ClientConfiguration::for_runtime(&connection_pool)),
             connection_pool,
             diagnostics_options,
             bootstrap_transport,

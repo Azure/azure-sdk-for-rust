@@ -24,7 +24,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use super::compaction::{compact_requests, merge_carried_runs, CompactedRun, CompactionInfo};
+use super::{
+    compaction::{compact_requests, merge_carried_runs, CompactedRun, CompactionInfo},
+    ClientConfiguration, OperationConfiguration,
+};
 
 // =============================================================================
 // Threshold breach classification
@@ -1237,6 +1240,10 @@ enum DiagnosticsPayload<'a> {
 #[derive(Serialize)]
 struct DiagnosticsOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    options: Option<&'a OperationConfiguration>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    client: Option<&'a ClientConfiguration>,
     #[serde(flatten)]
     status: Option<CosmosStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1356,6 +1363,8 @@ struct TruncatedOutput<'a> {
     total_duration_ms: u64,
     request_count: usize,
     truncated: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    configuration_omitted: bool,
     /// Present only when the per-attempt list was compacted under a retry storm.
     ///
     /// Counts-only: the per-run rollup (`CompactionInfo::runs`, up to `cap`
@@ -1591,6 +1600,8 @@ pub(crate) struct DiagnosticsContextBuilder {
 
     /// Reference to diagnostics configuration.
     options: Arc<DiagnosticsOptions>,
+    operation_options: Option<Arc<OperationConfiguration>>,
+    client_configuration: Option<Arc<ClientConfiguration>>,
 
     /// CPU/memory monitor for capturing system usage snapshots.
     cpu_monitor: Option<CpuMemoryMonitor>,
@@ -1647,6 +1658,8 @@ impl DiagnosticsContextBuilder {
             requests: Vec::with_capacity(4), // Expect 1-4 requests in most cases
             status: None,
             options,
+            operation_options: None,
+            client_configuration: None,
             cpu_monitor: None,
             machine_id: None,
             operation_name: None,
@@ -1659,6 +1672,14 @@ impl DiagnosticsContextBuilder {
             #[cfg(test)]
             test_system_usage: None,
         }
+    }
+
+    pub(crate) fn set_operation_options(&mut self, options: OperationConfiguration) {
+        self.operation_options = Some(Arc::new(options));
+    }
+
+    pub(crate) fn set_client_configuration(&mut self, client: Arc<ClientConfiguration>) {
+        self.client_configuration = Some(client);
     }
 
     /// Sets the CPU/memory monitor for system usage snapshots.
@@ -1747,6 +1768,8 @@ impl DiagnosticsContextBuilder {
             requests: Vec::with_capacity(2),
             status: None,
             options: Arc::clone(&self.options),
+            operation_options: self.operation_options.clone(),
+            client_configuration: self.client_configuration.clone(),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
             operation_name: self.operation_name.clone(),
@@ -2180,6 +2203,8 @@ impl DiagnosticsContextBuilder {
             status: self.status,
             invalid_utf8_was_recovered: false,
             options: self.options,
+            operation_options: self.operation_options,
+            client_configuration: self.client_configuration,
             cpu_monitor: self.cpu_monitor,
             machine_id: self.machine_id,
             operation_name: self.operation_name,
@@ -2314,6 +2339,8 @@ pub struct DiagnosticsContext {
 
     /// Reference to diagnostics configuration.
     options: Arc<DiagnosticsOptions>,
+    operation_options: Option<Arc<OperationConfiguration>>,
+    client_configuration: Option<Arc<ClientConfiguration>>,
 
     /// CPU/memory monitor for capturing system usage snapshots on first serialization.
     cpu_monitor: Option<CpuMemoryMonitor>,
@@ -2509,6 +2536,8 @@ impl DiagnosticsContext {
             status,
             invalid_utf8_was_recovered: false,
             options: Arc::new(DiagnosticsOptions::default()),
+            operation_options: None,
+            client_configuration: None,
             cpu_monitor: None,
             machine_id: None,
             operation_name: operation_name.map(Arc::from),
@@ -2800,6 +2829,17 @@ impl DiagnosticsContext {
         let hedging_started = sources.iter().any(|c| c.hedging_started);
         let invalid_utf8_was_recovered = sources.iter().any(|c| c.invalid_utf8_was_recovered);
 
+        let operation_options = last.operation_options.as_ref().map(|options| {
+            let mut options = options.as_ref().clone();
+            options.scope = "last_sub_operation";
+            options.varied |= sources.iter().any(|source| {
+                source
+                    .operation_options
+                    .as_deref()
+                    .is_none_or(|source| source.varied || !source.same_settings(&options))
+            });
+            Arc::new(options)
+        });
         Some(DiagnosticsContext {
             activity_id: last.activity_id.clone(),
             duration: aggregated_duration,
@@ -2814,6 +2854,8 @@ impl DiagnosticsContext {
             status: last.status,
             invalid_utf8_was_recovered,
             options: Arc::clone(&last.options),
+            operation_options,
+            client_configuration: last.client_configuration.clone(),
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
             operation_name: last.operation_name.clone(),
@@ -3247,6 +3289,8 @@ impl DiagnosticsContext {
             status: self.status,
             invalid_utf8_was_recovered: self.invalid_utf8_was_recovered,
             options: Arc::clone(&self.options),
+            operation_options: self.operation_options.clone(),
+            client_configuration: self.client_configuration.clone(),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
             operation_name,
@@ -3391,6 +3435,18 @@ impl DiagnosticsContext {
     /// The top-level `status`, when recorded, describes the operation outcome.
     /// Request and region entries retain the original attempt statuses.
     ///
+    /// `options` records merged request configuration, including defaults resolved
+    /// during execution. Its `scope` distinguishes execution, planning configuration,
+    /// bootstrap metadata, and representative sub-operation options. Aggregates
+    /// mark differing configurations with `options.varied`.
+    ///
+    /// `client` contains the driver version, enabled driver Cargo features, and
+    /// selected connection and routing settings. Features describe the compiled
+    /// driver, not capabilities used by a particular request. Durations use
+    /// milliseconds. Header contents and credentials aren't included in these
+    /// configuration fields. Size-truncated summaries omit configuration and
+    /// report `configuration_omitted: true`.
+    ///
     /// The result is lazily cached - the first call computes the JSON,
     /// subsequent calls return the cached string (for the same verbosity level).
     ///
@@ -3476,6 +3532,8 @@ impl DiagnosticsContext {
         let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            options: self.operation_options.as_deref(),
+            client: self.client_configuration.as_deref(),
             status: self.status,
             patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
@@ -3516,6 +3574,8 @@ impl DiagnosticsContext {
 
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            options: self.operation_options.as_deref(),
+            client: self.client_configuration.as_deref(),
             status: self.status,
             patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
@@ -3545,6 +3605,8 @@ impl DiagnosticsContext {
                 total_duration_ms,
                 request_count: self.request_count(),
                 truncated: true,
+                configuration_omitted: self.operation_options.is_some()
+                    || self.client_configuration.is_some(),
                 compaction: self.compaction.as_ref().map(CompactionSummary::from),
                 message:
                     "Output truncated to fit size limit. Use Detailed verbosity for full diagnostics.",
@@ -3571,6 +3633,8 @@ impl Clone for DiagnosticsContext {
             status: self.status,
             invalid_utf8_was_recovered: self.invalid_utf8_was_recovered,
             options: Arc::clone(&self.options),
+            operation_options: self.operation_options.clone(),
+            client_configuration: self.client_configuration.clone(),
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
             operation_name: self.operation_name.clone(),
@@ -3624,6 +3688,8 @@ impl PartialEq for DiagnosticsContext {
             && self.status == other.status
             && self.invalid_utf8_was_recovered == other.invalid_utf8_was_recovered
             && self.options == other.options
+            && self.operation_options == other.operation_options
+            && self.client_configuration == other.client_configuration
             && self.operation_name == other.operation_name
             && self.patch_tracking_id == other.patch_tracking_id
             && self.hedge_diagnostics == other.hedge_diagnostics
@@ -3911,6 +3977,130 @@ pub(crate) fn percentile_sorted(values: &[u64], p: u8) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::options::{
+        ConnectionPoolOptions, ExcludedRegions, OperationOptions, OperationOptionsView,
+    };
+
+    fn configuration_context(request: &OperationOptions) -> DiagnosticsContextBuilder {
+        let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
+        builder.set_operation_options(OperationConfiguration::from(&OperationOptionsView::new(
+            None,
+            None,
+            None,
+            Some(request),
+        )));
+        let runtime = ClientConfiguration::for_runtime(&ConnectionPoolOptions::default());
+        let driver = crate::options::DriverOptions::builder(
+            crate::models::AccountReference::with_account_key(
+                url::Url::parse("https://test.documents.azure.com/").unwrap(),
+                "not-a-key",
+            ),
+        )
+        .build();
+        builder.set_client_configuration(Arc::new(runtime.for_driver(&driver)));
+        builder
+    }
+
+    #[test]
+    fn configuration_survives_hedges_clones_and_aggregate_restamping() {
+        let request = OperationOptions {
+            max_session_retry_count: Some(0),
+            ..Default::default()
+        };
+        let mut builder = configuration_context(&request);
+        let hedge = builder.clone_for_hedge_attempt().complete();
+        let original = builder.complete();
+        assert!(original.cached_json_detailed.get().is_none());
+        let original_json: serde_json::Value =
+            serde_json::from_str(original.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+                .unwrap();
+        assert_eq!(original_json["options"]["max_session_retry_count"], 0);
+        let restamped = original.clone_with_status(CosmosStatus::new(StatusCode::BadRequest));
+        for context in [&hedge, &original.clone(), &restamped] {
+            for verbosity in [
+                DiagnosticsVerbosity::Detailed,
+                DiagnosticsVerbosity::Summary,
+            ] {
+                let json: serde_json::Value =
+                    serde_json::from_str(context.to_json_string(Some(verbosity))).unwrap();
+                assert_eq!(json["options"], original_json["options"]);
+                assert_eq!(json["client"], original_json["client"]);
+            }
+        }
+        let same = Arc::new(original.clone());
+        let aggregate_same = Arc::new(
+            DiagnosticsContext::aggregate_sub_operations(&[same.clone(), same.clone()]).unwrap(),
+        );
+        let nested = DiagnosticsContext::aggregate_sub_operations(&[aggregate_same, same]).unwrap();
+        assert!(!nested.operation_options.as_ref().unwrap().varied);
+        let changed = configuration_context(&OperationOptions {
+            max_session_retry_count: Some(7),
+            ..Default::default()
+        })
+        .complete();
+        let changed = Arc::new(changed);
+        let aggregate = DiagnosticsContext::aggregate_sub_operations(&[
+            Arc::new(original),
+            Arc::clone(&changed),
+        ])
+        .unwrap();
+        let json: serde_json::Value =
+            serde_json::from_str(aggregate.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+                .unwrap();
+        assert_eq!(json["options"]["scope"], "last_sub_operation");
+        assert_eq!(json["options"]["varied"], true);
+        assert_eq!(json["options"]["max_session_retry_count"], 7);
+        assert_eq!(json["client"], original_json["client"]);
+        let nested =
+            DiagnosticsContext::aggregate_sub_operations(&[Arc::new(aggregate), changed]).unwrap();
+        assert!(nested.operation_options.as_ref().unwrap().varied);
+    }
+
+    #[test]
+    fn oversized_configuration_is_explicitly_omitted_from_summary() {
+        let mut regions = ExcludedRegions::new();
+        for index in 0..400 {
+            regions = regions.with_region(format!("region-{index:04}-long-region-name"));
+        }
+        let context = configuration_context(&OperationOptions {
+            excluded_regions: Some(regions),
+            ..Default::default()
+        })
+        .complete();
+        let detailed: serde_json::Value =
+            serde_json::from_str(context.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+                .unwrap();
+        assert_eq!(
+            detailed["options"]["excluded_regions"]
+                .as_array()
+                .unwrap()
+                .len(),
+            400
+        );
+        let summary = context.to_json_string(Some(DiagnosticsVerbosity::Summary));
+        assert!(summary.len() <= context.options.max_summary_size_bytes());
+        let summary: serde_json::Value = serde_json::from_str(summary).unwrap();
+        assert_eq!(summary["truncated"], true);
+        assert_eq!(summary["configuration_omitted"], true);
+        assert!(summary.get("options").is_none());
+        assert!(summary.get("client").is_none());
+    }
+
+    #[test]
+    fn default_configuration_fits_minimum_summary_budget() {
+        let context = configuration_context(&OperationOptions::default()).complete();
+        let json = context.to_json_string(Some(DiagnosticsVerbosity::Summary));
+        eprintln!("Default configuration summary: {} bytes", json.len());
+        assert!(
+            json.len() < 4 * 1024,
+            "default configuration summary: {} bytes",
+            json.len()
+        );
+        let json: serde_json::Value = serde_json::from_str(json).unwrap();
+        assert!(json.get("client").is_some());
+        assert!(json.get("options").is_some());
+        assert!(json.get("truncated").is_none());
+    }
 
     fn make_options() -> Arc<DiagnosticsOptions> {
         Arc::new(DiagnosticsOptions::default())

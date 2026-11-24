@@ -9,7 +9,8 @@ use crate::{
         CosmosDriverRuntime,
     },
     models::{
-        AccountEndpoint, AccountReference, ContainerProperties, ContainerReference, CosmosOperation,
+        AccountEndpoint, AccountReference, ContainerProperties, ContainerReference,
+        CosmosOperation, ItemReference, PartitionKey,
     },
     options::{
         AvailabilityStrategy, ConnectionPoolOptions, DriverOptions, HedgeThreshold,
@@ -19,6 +20,7 @@ use crate::{
     pipeline::transport::{
         cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
         http_client_factory::{HttpClientConfig, HttpClientFactory},
+        recovery::{DATA_PLANE_MAX_THROTTLE_ATTEMPTS, METADATA_MAX_THROTTLE_ATTEMPTS},
     },
 };
 use async_trait::async_trait;
@@ -314,6 +316,83 @@ fn options(count: u32, wait: Duration, hedge: bool) -> OperationOptions {
         )));
     }
     options
+}
+
+#[tokio::test]
+async fn configuration_diagnostics_capture_execution_defaults_and_runtime_generation() {
+    let (driver, _, container) = setup(false, false).await;
+    let options = OperationOptions {
+        availability_strategy: Some(AvailabilityStrategy::Disabled),
+        ..Default::default()
+    };
+    for (operation, expected_retries) in [
+        (
+            CosmosOperation::read_container(container.clone()),
+            METADATA_MAX_THROTTLE_ATTEMPTS,
+        ),
+        (
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk"),
+                "item",
+            )),
+            DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
+        ),
+    ] {
+        let error = driver
+            .execute_operation_direct(&operation, OperationOverrides::default(), &options)
+            .await
+            .unwrap_err();
+        let diagnostics = error.diagnostics().unwrap();
+        driver
+            .runtime
+            .set_default_operation_options(OperationOptions {
+                max_session_retry_count: Some(100),
+                ..Default::default()
+            });
+        let json: serde_json::Value = serde_json::from_str(
+            diagnostics.to_json_string(Some(crate::options::DiagnosticsVerbosity::Detailed)),
+        )
+        .unwrap();
+        assert_eq!(json["options"]["scope"], "execution");
+        assert_eq!(
+            json["options"]["throttling_retry_options"]["max_retry_count"],
+            expected_retries
+        );
+        assert_eq!(json["options"]["max_session_retry_count"], 2);
+        assert_eq!(json["options"]["account_consistency"], "session");
+        assert_eq!(json["options"]["effective_consistency"], "session");
+        assert_eq!(
+            json["client"]["preferred_regions"],
+            serde_json::json!(["eastus", "westus"])
+        );
+        assert_eq!(
+            json["client"]["partition_failover"]["topology_cache_mode"],
+            "lazy"
+        );
+        assert!(!diagnostics
+            .to_json_string(Some(crate::options::DiagnosticsVerbosity::Detailed))
+            .contains("dGVzdA=="));
+        driver
+            .runtime
+            .set_default_operation_options(OperationOptions::default());
+    }
+
+    let operation = CosmosOperation::read_all_partition_key_ranges(container);
+    let response = driver
+        .execute_operation_direct(&operation, OperationOverrides::default(), &options)
+        .await
+        .unwrap();
+    let json: serde_json::Value = serde_json::from_str(
+        response
+            .diagnostics()
+            .to_json_string(Some(crate::options::DiagnosticsVerbosity::Detailed)),
+    )
+    .unwrap();
+    assert_eq!(
+        json["options"]["throttling_retry_options"]["max_retry_count"],
+        0
+    );
 }
 
 #[tokio::test]

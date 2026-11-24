@@ -13,8 +13,8 @@ mod session_scope_live_tests;
 
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
-        TransportHttpVersion, TransportSecurity,
+        ClientConfiguration, DiagnosticsContextBuilder, ExecutionContext, OperationConfiguration,
+        PipelineKind, RequestSentStatus, TransportHttpVersion, TransportSecurity,
     },
     driver::{
         cache::{ContainerRoutingMap, PartitionKeyRangeCache, PkRangeFetchResult},
@@ -427,6 +427,7 @@ pub struct CosmosDriver {
     runtime: Arc<CosmosDriverRuntime>,
     /// Driver-level options including account reference.
     options: DriverOptions,
+    client_configuration: Arc<ClientConfiguration>,
     /// Per-account transport (created after HTTP/2 probe during initialization).
     /// Wrapped in `Arc<ArcSwap<...>>` so the metadata refresh callback can
     /// re-probe the HTTP version and swap the transport atomically.
@@ -847,6 +848,7 @@ impl CosmosDriver {
         );
         diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
         diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
+        diagnostics.set_client_configuration(Arc::clone(&runtime.client_configuration));
         #[cfg(feature = "fault_injection")]
         if fault_injection_enabled {
             diagnostics.set_fault_injection_enabled(true);
@@ -871,6 +873,7 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
         operation_name: Option<&'static str>,
+        configuration: OperationConfiguration,
     ) -> DiagnosticsContextBuilder {
         let endpoint = AccountEndpoint::from(account);
         let fault_injection_enabled = {
@@ -889,6 +892,8 @@ impl CosmosDriver {
             &endpoint,
             fault_injection_enabled,
         );
+        diagnostics.set_client_configuration(Arc::clone(&self.client_configuration));
+        diagnostics.set_operation_options(configuration);
         if let Some(operation_name) = operation_name {
             diagnostics.set_operation_name(operation_name);
         }
@@ -970,6 +975,22 @@ impl CosmosDriver {
             max_throttle_wait_time,
             METADATA_MAX_PER_RETRY_DELAY,
         );
+        let bootstrap_options = OperationOptions {
+            throttling_retry_options: Some(throttling_retry_options),
+            ..Default::default()
+        };
+        let mut configuration = OperationConfiguration::from(&OperationOptionsView::new(
+            None,
+            None,
+            None,
+            Some(&bootstrap_options),
+        ));
+        configuration.scope = "metadata_bootstrap";
+        configuration.throttling_retry_options.max_retry_count = Some(max_throttle_attempts);
+        configuration
+            .throttling_retry_options
+            .max_retry_wait_time_ms = Some(max_throttle_wait_time.as_millis());
+        diagnostics.set_operation_options(configuration);
         let mut throttle = ThrottleRetryProgress::default();
         let mut execution_context = ExecutionContext::Initial;
         let (response, cosmos_headers, status_code, sub_status, cosmos_status) = loop {
@@ -1969,6 +1990,7 @@ impl CosmosDriver {
         let pk_range_cache = PartitionKeyRangeCache::new();
 
         Ok(Self {
+            client_configuration: Arc::new(runtime.client_configuration.for_driver(&options)),
             runtime,
             options,
             transport,
@@ -3919,6 +3941,7 @@ impl CosmosDriver {
             &endpoint,
             fault_injection_enabled,
         );
+        diagnostics_builder.set_client_configuration(Arc::clone(&self.client_configuration));
 
         // Populate the canonical `db.operation.name` (e.g. `read_item`,
         // `query_items`) so the finalized diagnostics carry it in production —
@@ -4014,6 +4037,7 @@ impl CosmosDriver {
             &endpoint,
             fault_injection_enabled,
         );
+        retry_diagnostics.set_client_configuration(Arc::clone(&self.client_configuration));
         if let Some(operation_name) = operation.db_operation_name() {
             retry_diagnostics.set_operation_name(operation_name);
         }
@@ -4496,8 +4520,8 @@ impl CosmosDriver {
         // one-shot execute path and direct plan_operation callers. Query-plan
         // and partition-topology requests are part of the caller-visible
         // operation rather than a separate unbounded phase.
-        let configured_timeout = self
-            .operation_options_view(options)
+        let planning_options = self.operation_options_view(options);
+        let configured_timeout = planning_options
             .end_to_end_latency_policy()
             .map(|policy| policy.timeout());
         let derived_deadline = if operation.absolute_deadline().is_none() {
@@ -4544,6 +4568,7 @@ impl CosmosDriver {
                             .as_ref()
                             .expect("a planning deadline always captures an account"),
                         planning_operation_name,
+                        OperationConfiguration::from(&planning_options),
                     ),
                 ));
             }
@@ -5858,6 +5883,9 @@ mod tests {
         let diagnostics = driver.new_planning_diagnostics(
             operation.resource_reference().account(),
             operation.db_operation_name(),
+            OperationConfiguration::from(
+                &driver.operation_options_view(&OperationOptions::default()),
+            ),
         );
         let error = super::planning_timeout_error(Duration::from_secs(1), diagnostics);
 
@@ -5870,6 +5898,15 @@ mod tests {
             Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
         );
         assert!(error.diagnostics().is_some());
+        let json: serde_json::Value = serde_json::from_str(
+            error
+                .diagnostics()
+                .unwrap()
+                .to_json_string(Some(crate::options::DiagnosticsVerbosity::Detailed)),
+        )
+        .unwrap();
+        assert_eq!(json["options"]["scope"], "configured");
+        assert!(json["client"].get("preferred_regions").is_some());
     }
 
     #[tokio::test]
@@ -6999,6 +7036,17 @@ mod tests {
         let diag = err.diagnostics().expect(
             "Wire-attached diagnostics must be present once the metadata fetch is enveloped",
         );
+        let json: serde_json::Value = serde_json::from_str(
+            diag.to_json_string(Some(crate::options::DiagnosticsVerbosity::Detailed)),
+        )
+        .unwrap();
+        assert_eq!(json["options"]["scope"], "metadata_bootstrap");
+        assert_eq!(
+            json["options"]["throttling_retry_options"]["max_retry_count"],
+            METADATA_MAX_THROTTLE_ATTEMPTS
+        );
+        assert!(json["client"].get("connection").is_some());
+        assert!(json["client"].get("preferred_regions").is_none());
         assert_eq!(
             diag.requests().len(),
             1,
