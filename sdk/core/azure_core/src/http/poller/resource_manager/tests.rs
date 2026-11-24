@@ -971,6 +971,7 @@ impl StatusMonitor for StatusClassifiedMonitor {
         let Some(status) = body.properties.and_then(|properties| properties.status) else {
             return Ok(None);
         };
+        // cspell:ignore needsreview policydenied
         let status = if status.eq_ignore_ascii_case("ready") {
             PollerStatus::Succeeded
         } else if status.eq_ignore_ascii_case("needsreview")
