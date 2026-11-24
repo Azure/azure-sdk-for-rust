@@ -142,10 +142,7 @@ async fn test_stage_block_disable_validation(ctx: TestContext) -> Result<()> {
         .headers()
         .get_str(&"x-ms-content-crc64".into())
         .is_err());
-    assert!(request
-        .headers()
-        .get_str(&"x-ms-content-md5".into())
-        .is_err());
+    assert!(request.headers().get_str(&"content-md5".into()).is_err());
 
     Ok(())
 }
