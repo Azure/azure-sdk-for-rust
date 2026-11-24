@@ -33,12 +33,6 @@ pub mod topology_parity;
 pub mod user_agent;
 pub mod validation;
 
-/// Azure Live E2E profiles skip external parity that broad live lanes run on the same shared accounts.
-fn external_comparison_disabled() -> bool {
-    cfg!(test_category = "e2e")
-        && std::env::var("AZURE_COSMOS_E2E_BACKEND").is_ok_and(|backend| backend == "azureLive")
-}
-
 fn external_connection_pool(
     endpoint: &str,
 ) -> azure_data_cosmos_driver::error::Result<ConnectionPoolOptions> {

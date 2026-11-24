@@ -499,9 +499,7 @@ impl DualBackend {
 /// Returns `Ok(None)` when the env var is unset and mode is not `required`.
 async fn resolve_real_account(
 ) -> Result<Option<(Arc<CosmosDriver>, AccountReference)>, Box<dyn Error>> {
-    if super::external_comparison_disabled()
-        || std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
-    {
+    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
         return Ok(None);
     }
 

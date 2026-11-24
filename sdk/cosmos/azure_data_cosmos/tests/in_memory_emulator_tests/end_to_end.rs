@@ -2029,9 +2029,7 @@ async fn resolve_real_client_with_fault_injection(
     };
     use std::sync::Arc;
 
-    if super::external_comparison_disabled()
-        || std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
-    {
+    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
         return Ok(None);
     }
 
@@ -2091,9 +2089,7 @@ async fn resolve_real_client_with_fault_injection(
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
-    if super::external_comparison_disabled()
-        || std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
-    {
+    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
         return Ok(None);
     }
 
