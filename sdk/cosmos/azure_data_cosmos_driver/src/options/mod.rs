@@ -14,6 +14,12 @@
 //!
 //! [`ConnectionPoolOptions`] and [`DiagnosticsOptions`] are captured once at
 //! initialization time and do not participate in per-operation layered resolution.
+//!
+//! [`OperationOptions`], [`ConnectionPoolOptions`], [`PartitionFailoverOptions`],
+//! and their nested configuration types support serialization for diagnostics,
+//! not service request bodies. Serialized durations use milliseconds, and enum
+//! names use snake case. Sensitive fields are omitted. Serializing an individual
+//! options value does not resolve inherited settings or execution defaults.
 
 mod availability_strategy;
 mod binary_encoding;
@@ -34,6 +40,7 @@ mod priority;
 mod query_plan_mode;
 mod read_consistency;
 mod region;
+mod serialization;
 mod throughput_control;
 mod utf8_decoding;
 

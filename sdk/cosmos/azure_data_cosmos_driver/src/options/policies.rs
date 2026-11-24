@@ -4,6 +4,7 @@
 //! Request policy types.
 
 use crate::{emulator::is_emulator_host, models::AccountEndpoint, options::Region};
+use serde::Serialize;
 use std::time::Duration;
 
 const MIN_END_TO_END_OPERATION_TIMEOUT: Duration = Duration::from_secs(1);
@@ -12,7 +13,8 @@ const MIN_END_TO_END_OPERATION_TIMEOUT: Duration = Duration::from_secs(1);
 ///
 /// When disabled, reduces networking and CPU load by not sending the payload
 /// back over the network. Does not impact RU usage.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ContentResponseOnWrite {
     /// Content response is enabled (response body returned).
     Enabled,
@@ -64,9 +66,13 @@ impl std::fmt::Display for ContentResponseOnWrite {
 ///
 /// Specifies the maximum time an operation can take, including all retries.
 #[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct EndToEndOperationLatencyPolicy {
     /// Maximum end-to-end timeout for the operation.
+    #[serde(
+        rename = "end_to_end_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     timeout: Duration,
 }
 
@@ -94,7 +100,8 @@ impl From<Duration> for EndToEndOperationLatencyPolicy {
 }
 
 /// List of regions to exclude from request routing.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(transparent)]
 pub struct ExcludedRegions(Vec<Region>);
 
 impl ExcludedRegions {
@@ -136,7 +143,8 @@ impl<T: Into<Region>> FromIterator<T> for ExcludedRegions {
 /// By default, certificate validation is enabled. Disabling it is **dangerous** and should only be
 /// used when connecting to the local Cosmos DB emulator, which uses a self-signed certificate.
 #[non_exhaustive]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ServerCertificateValidation {
     /// Certificate validation is required
     #[default]
@@ -162,7 +170,8 @@ impl ServerCertificateValidation {
 /// this option is the supported mechanism for asserting a specific TLS backend.
 /// The default is [`TlsBackend::Rustls`].
 #[non_exhaustive]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TlsBackend {
     /// Use the `rustls` TLS backend.
     #[default]

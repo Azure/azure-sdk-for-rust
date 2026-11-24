@@ -10,6 +10,8 @@
 
 use std::time::Duration;
 
+use serde::Serialize;
+
 /// Minimum time the SDK waits for the primary request before issuing a hedged
 /// request to a secondary region.
 ///
@@ -29,8 +31,11 @@ use std::time::Duration;
 ///
 /// assert!(HedgeThreshold::new(Duration::ZERO).is_none());
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct HedgeThreshold(Duration);
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
+#[serde(transparent)]
+pub struct HedgeThreshold(
+    #[serde(serialize_with = "super::serialization::duration_as_millis")] Duration,
+);
 
 impl HedgeThreshold {
     /// Creates a new [`HedgeThreshold`] from a [`Duration`].
@@ -57,9 +62,10 @@ impl HedgeThreshold {
 /// Currently the only knob is the threshold; additional fields (e.g. retry
 /// caps, hedged-request limits) may be added in future revisions. Construct
 /// via [`HedgingStrategy::new`].
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
 #[non_exhaustive]
 pub struct HedgingStrategy {
+    #[serde(rename = "threshold_ms")]
     threshold: HedgeThreshold,
 }
 
@@ -76,7 +82,8 @@ impl HedgingStrategy {
 }
 
 /// Strategy controlling whether the SDK issues hedged cross-region requests.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
+#[serde(tag = "policy", rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum AvailabilityStrategy {
     /// Hedge eligible requests using the supplied [`HedgingStrategy`].

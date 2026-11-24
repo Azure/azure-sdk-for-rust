@@ -767,13 +767,15 @@ pub(crate) async fn execute_operation_pipeline(
     // Capture the values execution selected, including topology-dependent defaults.
     let mut configuration = OperationConfiguration::from(options);
     configuration.scope = "execution";
-    configuration.max_failover_retry_count = Some(max_failover_retries);
-    configuration.endpoint_unavailability_ttl_ms = Some(endpoint_unavailability_ttl.as_millis());
-    configuration.max_session_retry_count = Some(max_session_retries);
-    configuration.throttling_retry_options.max_retry_count = Some(max_throttle_attempts);
-    configuration
+    configuration.options.max_failover_retry_count = Some(max_failover_retries);
+    configuration.options.endpoint_unavailability_ttl = Some(endpoint_unavailability_ttl);
+    configuration.options.max_session_retry_count = Some(max_session_retries);
+    let throttling = configuration
+        .options
         .throttling_retry_options
-        .max_retry_wait_time_ms = Some(max_throttle_wait_time.as_millis());
+        .get_or_insert_default();
+    throttling.max_retry_count = Some(max_throttle_attempts);
+    throttling.max_retry_wait_time = Some(max_throttle_wait_time);
     configuration.set_consistency(account_default_consistency, effective_consistency);
     diagnostics.set_operation_options(configuration);
 

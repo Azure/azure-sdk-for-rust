@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::models::DefaultConsistencyLevel;
+use serde::Serialize;
 
 /// Read consistency strategies supported by Azure Cosmos DB.
 ///
@@ -25,7 +26,8 @@ use crate::models::DefaultConsistencyLevel;
 ///
 /// See [Cosmos DB consistency levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels)
 /// for the underlying semantics.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum ReadConsistencyStrategy {
     /// Reset to the default consistency-level or account behavior at the layer where this

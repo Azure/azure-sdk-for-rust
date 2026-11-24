@@ -1,11 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use serde::Serialize;
+
 /// Controls how invalid UTF-8 in response JSON strings is handled.
 ///
 /// This setting applies after a response is received and before its JSON is
 /// deserialized. It doesn't make malformed JSON valid.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum Utf8DecodingMode {
     /// Rejects response strings that contain invalid UTF-8.

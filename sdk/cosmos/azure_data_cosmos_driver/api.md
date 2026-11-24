@@ -2531,7 +2531,7 @@ pub mod models {
     }
 }
 pub mod options {
-    #[derive(Clone, Debug, Eq, PartialEq)]
+    #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct BinaryEncodingOptions {
         pub enabled: bool,
@@ -2545,7 +2545,7 @@ pub mod options {
     impl Default for BinaryEncodingOptions {
         fn default() -> Self;
     }
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct ConnectionPoolOptions {
     }
@@ -2720,7 +2720,7 @@ pub mod options {
         pub fn with_resource_name_validation(self, enabled: bool) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
-    #[derive(Clone, Debug, Eq, PartialEq)]
+    #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct EndToEndOperationLatencyPolicy {
     }
@@ -2731,7 +2731,8 @@ pub mod options {
     impl From<Duration> for EndToEndOperationLatencyPolicy {
         fn from(timeout: Duration) -> Self;
     }
-    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]
+    #[serde(transparent)]
     pub struct ExcludedRegions(/* private fields */);
     impl ExcludedRegions {
         pub fn is_empty(&self) -> bool;
@@ -2743,13 +2744,14 @@ pub mod options {
     impl<T: Into<crate::options::Region>> FromIterator<T> for ExcludedRegions {
         fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self;
     }
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Serialize)]
+    #[serde(transparent)]
     pub struct HedgeThreshold(/* private fields */);
     impl HedgeThreshold {
         pub const fn get(self) -> Duration;
         pub const fn new(duration: Duration) -> Option<Self>;
     }
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct HedgingOptions {
     }
@@ -2769,7 +2771,7 @@ pub mod options {
         pub fn new() -> Self;
         pub fn with_max_concurrent_metadata_attempts(self, value: usize) -> Self;
     }
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct HedgingStrategy {
     }
@@ -2777,25 +2779,41 @@ pub mod options {
         pub const fn new(threshold: HedgeThreshold) -> Self;
         pub const fn threshold(&self) -> HedgeThreshold;
     }
-    #[derive(Clone, Debug, Default)]
+    #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct OperationOptions {
         #[cfg(feature = "unstable_patch")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub patch_strategy: Option<crate::options::PatchStrategy>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub content_response_on_write: Option<crate::options::ContentResponseOnWrite>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub throughput_control: Option<ThroughputControlOptions>,
+        #[serde(flatten)]
         pub end_to_end_latency_policy: Option<crate::options::EndToEndOperationLatencyPolicy>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub max_failover_retry_count: Option<u32>,
+        #[serde(rename = "endpoint_unavailability_ttl_ms", skip_serializing_if = "Option::is_none", serialize_with = "super::serialization::optional_duration_as_millis")]
         pub endpoint_unavailability_ttl: Option<std::time::Duration>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub session_capturing_disabled: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub max_session_retry_count: Option<u32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub throttling_retry_options: Option<ThrottlingRetryOptions>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub hedging_enabled: Option<bool>,
+        #[serde(serialize_with = "serialize_availability_strategy")]
         pub availability_strategy: Option<crate::options::AvailabilityStrategy>,
+        #[serde(skip)]
         pub custom_headers: Option<std::collections::HashMap<azure_core::http::headers::HeaderName, azure_core::http::headers::HeaderValue>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub binary_encoding: Option<crate::options::BinaryEncodingOptions>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub utf8_decoding_mode: Option<crate::options::Utf8DecodingMode>,
     }
     #[automatically_derived]
@@ -2847,6 +2865,7 @@ pub mod options {
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         #[cfg(feature = "unstable_patch")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
@@ -2854,7 +2873,7 @@ pub mod options {
         pub fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
         pub fn utf8_decoding_mode(&self) -> Option<&Utf8DecodingMode>;
     }
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct PartitionFailoverOptions {
     }
@@ -3042,10 +3061,12 @@ pub mod options {
     impl<'de> Deserialize<'de> for Region {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
-    #[derive(Clone, Debug, Default)]
+    #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct ThrottlingRetryOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub max_retry_count: Option<u32>,
+        #[serde(rename = "max_retry_wait_time_ms", skip_serializing_if = "Option::is_none", serialize_with = "super::serialization::optional_duration_as_millis")]
         pub max_retry_wait_time: Option<std::time::Duration>,
     }
     #[automatically_derived]
@@ -3072,10 +3093,12 @@ pub mod options {
         pub fn max_retry_wait_time(&self) -> Option<&Duration>;
         pub fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
     }
-    #[derive(Clone, Debug, Default)]
+    #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct ThroughputControlOptions {
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub throughput_bucket: Option<u32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub priority_level: Option<crate::options::PriorityLevel>,
     }
     #[automatically_derived]
@@ -3148,13 +3171,15 @@ pub mod options {
         type Error = &'static str;
         fn try_from(value: u8) -> Result<Self, <Self as >::Error>;
     }
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
+    #[serde(tag = "policy", rename_all = "snake_case")]
     pub enum AvailabilityStrategy {
         Hedging(HedgingStrategy),
         Disabled,
     }
-    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, serde::Serialize)]
+    #[serde(rename_all = "snake_case")]
     pub enum ContentResponseOnWrite {
         Enabled,
         #[default]
@@ -3201,8 +3226,9 @@ pub mod options {
         Global,
         Local,
     }
-    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Serialize)]
     #[non_exhaustive]
+    #[serde(rename_all = "snake_case")]
     pub enum PartitionTopologyCacheMode {
         #[default]
         Eager,
@@ -3212,8 +3238,9 @@ pub mod options {
         type Err = String;
         fn from_str(value: &str) -> Result<Self, <Self as >::Err>;
     }
-    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
+    #[serde(rename_all = "snake_case")]
     pub enum PatchStrategy {
         #[default]
         Auto,
@@ -3230,8 +3257,9 @@ pub mod options {
         type Err = CosmosError;
         fn from_str(value: &str) -> Result<Self, <Self as >::Err>;
     }
-    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
+    #[serde(rename_all = "snake_case")]
     pub enum PriorityLevel {
         #[default]
         High,
@@ -3264,8 +3292,9 @@ pub mod options {
         type Err = CosmosError;
         fn from_str(value: &str) -> Result<Self, <Self as >::Err>;
     }
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
+    #[serde(rename_all = "snake_case")]
     pub enum ReadConsistencyStrategy {
         Default,
         Eventual,
@@ -3283,21 +3312,24 @@ pub mod options {
         type Err = CosmosError;
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
     }
-    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
+    #[serde(rename_all = "snake_case")]
     pub enum ServerCertificateValidation {
         #[default]
         Required,
         RequiredUnlessEmulator,
     }
-    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
+    #[serde(rename_all = "snake_case")]
     pub enum TlsBackend {
         #[default]
         Rustls,
     }
-    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
+    #[serde(rename_all = "snake_case")]
     pub enum Utf8DecodingMode {
         #[default]
         Strict,

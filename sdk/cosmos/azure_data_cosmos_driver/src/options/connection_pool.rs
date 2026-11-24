@@ -4,6 +4,7 @@
 use std::{net::IpAddr, time::Duration};
 
 use azure_data_cosmos_macros::CosmosOptions;
+use serde::Serialize;
 
 use super::env_parsing::{
     resolve_duration_ms, resolve_from_env, resolve_optional_duration_ms, resolve_optional_from_env,
@@ -38,6 +39,8 @@ fn default_max_http2_connections_for_parallelism(parallelism: usize) -> usize {
 /// This type is immutable after construction - use [`ConnectionPoolOptionsBuilder`]
 /// to create instances with custom values.
 ///
+/// Serialization uses millisecond duration fields and omits the local bind address.
+///
 /// # Example
 ///
 /// ```rust
@@ -55,20 +58,49 @@ fn default_max_http2_connections_for_parallelism(parallelism: usize) -> usize {
 /// assert_eq!(options.max_connect_timeout(), Duration::from_secs(3));
 /// ```
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct ConnectionPoolOptions {
     proxy_allowed: bool,
 
+    #[serde(
+        rename = "min_connect_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     min_connect_timeout: Duration,
+    #[serde(
+        rename = "max_connect_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     max_connect_timeout: Duration,
 
+    #[serde(
+        rename = "min_dataplane_request_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     min_dataplane_request_timeout: Duration,
+    #[serde(
+        rename = "max_dataplane_request_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     max_dataplane_request_timeout: Duration,
+    #[serde(
+        rename = "min_metadata_request_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     min_metadata_request_timeout: Duration,
+    #[serde(
+        rename = "max_metadata_request_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     max_metadata_request_timeout: Duration,
 
     max_idle_connections_per_endpoint: usize,
 
+    #[serde(
+        rename = "idle_connection_timeout_ms",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "super::serialization::optional_duration_as_millis"
+    )]
     idle_connection_timeout: Option<Duration>,
 
     max_http2_streams_per_client: u32,
@@ -76,16 +108,48 @@ pub struct ConnectionPoolOptions {
     target_http2_streams_per_client: u32,
     max_http2_connections_per_endpoint: usize,
     min_http2_connections_per_endpoint: usize,
+    #[serde(
+        rename = "idle_http2_client_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     idle_http2_client_timeout: Duration,
+    #[serde(
+        rename = "http2_health_check_interval_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     http2_health_check_interval: Duration,
     http2_consecutive_failure_threshold: u32,
+    #[serde(
+        rename = "http2_eviction_grace_period_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     http2_eviction_grace_period: Duration,
+    #[serde(
+        rename = "http2_keep_alive_interval_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     http2_keep_alive_interval: Duration,
+    #[serde(
+        rename = "http2_keep_alive_timeout_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     http2_keep_alive_timeout: Duration,
+    #[serde(
+        rename = "tcp_keepalive_time_ms",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "super::serialization::optional_duration_as_millis"
+    )]
     tcp_keepalive_time: Option<Duration>,
+    #[serde(
+        rename = "tcp_keepalive_interval_ms",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "super::serialization::optional_duration_as_millis"
+    )]
     tcp_keepalive_interval: Option<Duration>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     tcp_keepalive_retries: Option<u32>,
 
+    #[serde(rename = "http2_allowed")]
     is_http2_allowed: bool,
 
     /// Effective Gateway V2 opt-out after configuration and HTTP/2 gating.
@@ -96,6 +160,7 @@ pub struct ConnectionPoolOptions {
     #[cfg(feature = "rustls")]
     tls_backend: TlsBackend,
 
+    #[serde(skip)]
     local_address: Option<IpAddr>,
 }
 

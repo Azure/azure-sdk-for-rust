@@ -3,6 +3,8 @@
 
 //! Driver-level tuning for cross-region hedging.
 
+use serde::Serialize;
+
 /// Driver-wide limits on cross-region hedging.
 ///
 /// Whether an individual operation hedges at all is decided per operation by
@@ -34,7 +36,7 @@
 ///
 /// [`AvailabilityStrategy`]: crate::options::AvailabilityStrategy
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct HedgingOptions {
     max_concurrent_metadata_attempts: usize,
 }

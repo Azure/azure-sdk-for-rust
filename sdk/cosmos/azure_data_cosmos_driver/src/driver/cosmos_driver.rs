@@ -986,10 +986,12 @@ impl CosmosDriver {
             Some(&bootstrap_options),
         ));
         configuration.scope = "metadata_bootstrap";
-        configuration.throttling_retry_options.max_retry_count = Some(max_throttle_attempts);
-        configuration
+        let throttling = configuration
+            .options
             .throttling_retry_options
-            .max_retry_wait_time_ms = Some(max_throttle_wait_time.as_millis());
+            .get_or_insert_default();
+        throttling.max_retry_count = Some(max_throttle_attempts);
+        throttling.max_retry_wait_time = Some(max_throttle_wait_time);
         diagnostics.set_operation_options(configuration);
         let mut throttle = ThrottleRetryProgress::default();
         let mut execution_context = ExecutionContext::Initial;

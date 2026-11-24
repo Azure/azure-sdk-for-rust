@@ -9,6 +9,7 @@ use std::time::Duration;
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
+use serde::{ser::SerializeStruct, Serialize, Serializer};
 
 #[cfg(feature = "unstable_patch")]
 use crate::options::PatchStrategy;
@@ -36,11 +37,16 @@ use crate::options::{
 ///
 /// A field set to `None` means "inherit from a lower-priority level."
 /// A field set to `Some(value)` overrides all lower levels.
-#[derive(CosmosOptions, Clone, Debug)]
+///
+/// Serialization omits custom headers and pinned resolution layers. Durations
+/// use milliseconds, and unset fields are omitted unless they describe the
+/// default availability policy.
+#[derive(CosmosOptions, Clone, Debug, PartialEq, Eq, Serialize)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct OperationOptions {
     #[option(skip)]
+    #[serde(skip)]
     pub(crate) resolution_snapshot: Option<Arc<OperationResolutionSnapshot>>,
     /// How PATCH operations are executed.
     ///
@@ -52,6 +58,7 @@ pub struct OperationOptions {
     /// ignored whenever the resolved strategy uses the server path.
     #[cfg(feature = "unstable_patch")]
     #[option(env = "AZURE_COSMOS_PATCH_STRATEGY")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub patch_strategy: Option<PatchStrategy>,
 
     /// Read consistency strategy for this request.
@@ -59,12 +66,14 @@ pub struct OperationOptions {
     /// Controls the consistency guarantee for read operations. Set to `None` to
     /// inherit the account or runtime default.
     #[option(env = "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
 
     /// Regions to exclude from request routing.
     ///
     /// When set, the SDK will not route this request to the specified regions.
     /// Set to `Some(empty)` to clear exclusions; `None` inherits from a lower level.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub excluded_regions: Option<ExcludedRegions>,
 
     /// Whether write responses include the resource body.
@@ -73,21 +82,30 @@ pub struct OperationOptions {
     /// [`ContentResponseOnWrite::Disabled`] suppresses the body to reduce bandwidth.
     /// `None` inherits from a lower level (default: disabled).
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
     /// Throughput-control tuning for this request.
     #[option(nested)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub throughput_control: Option<ThroughputControlOptions>,
 
     /// End-to-end timeout policy for this request.
+    #[serde(flatten)]
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
 
     /// Maximum number of region failover retries.
     #[option(env = "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_failover_retry_count: Option<u32>,
 
     /// How long an endpoint is considered unavailable after a failure.
     #[option(env = "AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS", parser = parse_milliseconds)]
+    #[serde(
+        rename = "endpoint_unavailability_ttl_ms",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "super::serialization::optional_duration_as_millis"
+    )]
     pub endpoint_unavailability_ttl: Option<Duration>,
 
     /// Disables automatic session token management.
@@ -102,10 +120,12 @@ pub struct OperationOptions {
     /// without a read-your-writes guarantee. Topology-loading failures still return
     /// errors. Classic Gateway retains token passthrough. Scoping an explicit
     /// token does not read or update the session cache.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub session_capturing_disabled: Option<bool>,
 
     /// Maximum number of session-consistency retries on 404/1002 errors.
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_session_retry_count: Option<u32>,
 
     /// Retry behavior for requests throttled by the service (HTTP 429,
@@ -122,6 +142,7 @@ pub struct OperationOptions {
     /// operation can spend on retries (across throttling, failover, hedging,
     /// etc.), configure [`end_to_end_latency_policy`](Self::end_to_end_latency_policy).
     #[option(nested)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub throttling_retry_options: Option<ThrottlingRetryOptions>,
     /// Master switch that enables or disables cross-region read hedging.
     ///
@@ -146,6 +167,7 @@ pub struct OperationOptions {
     /// value and [`Self::availability_strategy`]). It is intended as a
     /// fleet-wide incident override and should normally be left unset.
     #[option(env = "AZURE_COSMOS_HEDGING_ENABLED", overridable)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hedging_enabled: Option<bool>,
 
     /// Cross-region availability strategy controlling whether eligible
@@ -160,6 +182,7 @@ pub struct OperationOptions {
     /// whenever the latter resolves to `Some(_)` (for example via
     /// `AZURE_COSMOS_HEDGING_ENABLED`): `Some(false)` forces hedging off and
     /// `Some(true)` forces it on, regardless of the strategy configured here.
+    #[serde(serialize_with = "serialize_availability_strategy")]
     pub availability_strategy: Option<AvailabilityStrategy>,
 
     /// Extra headers for purposes not represented by Cosmos-specific options.
@@ -170,6 +193,7 @@ pub struct OperationOptions {
     /// Use typed SDK options for consistency, session and routing, throughput,
     /// and other Cosmos settings. Do not reject custom headers at runtime or
     /// invent a header denylist.
+    #[serde(skip)]
     pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
 
     /// Cosmos binary JSON encoding for this operation.
@@ -179,6 +203,7 @@ pub struct OperationOptions {
     /// honored uniformly for the Rust SDK and FFI callers. `None` inherits from
     /// a lower level (default: binary encoding enabled). See
     /// [`BinaryEncodingOptions`].
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub binary_encoding: Option<BinaryEncodingOptions>,
 
     /// How invalid UTF-8 in JSON response bodies is handled.
@@ -187,10 +212,25 @@ pub struct OperationOptions {
     /// uses [`Utf8DecodingMode::Strict`]. Lossy decoding preserves binary
     /// response negotiation and replaces malformed UTF-8 sequences before JSON
     /// deserialization.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub utf8_decoding_mode: Option<Utf8DecodingMode>,
 }
 
-#[derive(Debug)]
+fn serialize_availability_strategy<S: Serializer>(
+    strategy: &Option<AvailabilityStrategy>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    match strategy {
+        Some(strategy) => strategy.serialize(serializer),
+        None => {
+            let mut output = serializer.serialize_struct("AvailabilityStrategy", 1)?;
+            output.serialize_field("policy", "default")?;
+            output.end()
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub(crate) struct OperationResolutionSnapshot {
     env_override: Arc<OperationOptions>,
     env: Arc<OperationOptions>,
@@ -265,7 +305,7 @@ impl OperationOptions {
 /// result, the operation's absolute deadline, or cancellation by dropping the
 /// operation future. Without a deadline or cancellation, persistent throttling
 /// can wait indefinitely. Incomplete routing maps are never published.
-#[derive(CosmosOptions, Clone, Debug)]
+#[derive(CosmosOptions, Clone, Debug, PartialEq, Eq, Serialize)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct ThrottlingRetryOptions {
@@ -289,6 +329,7 @@ pub struct ThrottlingRetryOptions {
     /// — see [`max_retry_wait_time`](Self::max_retry_wait_time) — is the
     /// limiter rather than the count.)
     #[option(env = "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub max_retry_count: Option<u32>,
 
     /// Maximum cumulative time to spend waiting across throttle (HTTP 429)
@@ -301,6 +342,11 @@ pub struct ThrottlingRetryOptions {
     ///
     /// **Default**: 30 seconds.
     /// Partition-key-range metadata page reads are exempt; see the type's scope.
+    #[serde(
+        rename = "max_retry_wait_time_ms",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "super::serialization::optional_duration_as_millis"
+    )]
     pub max_retry_wait_time: Option<Duration>,
 }
 
@@ -315,18 +361,20 @@ pub struct ThrottlingRetryOptions {
 /// operation layers. When set, the driver sends it in the corresponding
 /// `x-ms-cosmos-throughput-bucket` or `x-ms-cosmos-priority-level` header;
 /// otherwise that header is omitted.
-#[derive(CosmosOptions, Clone, Debug)]
+#[derive(CosmosOptions, Clone, Debug, PartialEq, Eq, Serialize)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct ThroughputControlOptions {
     /// Direct override for the `x-ms-cosmos-throughput-bucket` header.
     ///
     /// `None` inherits from a lower layer, then omits the header if unset.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub throughput_bucket: Option<u32>,
 
     /// Direct override for the `x-ms-cosmos-priority-level` header.
     ///
     /// `None` inherits from a lower layer, then omits the header if unset.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub priority_level: Option<PriorityLevel>,
 }
 

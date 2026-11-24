@@ -5,6 +5,7 @@
 ### Features Added
 
 - Added merged request options, enabled driver Cargo features, and selected client configuration to diagnostics JSON, with explicit omission when summaries are size-truncated. ([#5668](https://github.com/Azure/azure-sdk-for-rust/pull/5668))
+- Added serialization support to driver configuration types, omitting sensitive fields and formatting durations in milliseconds. ([#5668](https://github.com/Azure/azure-sdk-for-rust/pull/5668))
 - Added client-side merging of cross-partition aggregates, `GROUP BY`, and distinct counts from native or Gateway query plans, preserving live iteration and split recovery without introducing a retained-state memory cap. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added server-side PATCH filter predicates to `PatchInstructions` through the standard `condition` request envelope, with explicit rejection when execution resolves to client-side read-modify-write. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))

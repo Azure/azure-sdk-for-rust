@@ -3,6 +3,8 @@
 
 //! [`BinaryEncodingOptions`] — driver-level Cosmos binary JSON encoding options.
 
+use serde::Serialize;
+
 /// Options controlling Cosmos **binary JSON** on the wire for an operation.
 ///
 /// These options are **schema-agnostic**, so they live in the driver. They are
@@ -45,7 +47,7 @@
 /// assert!(options.enabled);
 /// assert!(options.request_text_response);
 /// ```
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[non_exhaustive]
 pub struct BinaryEncodingOptions {
     /// Whether Cosmos binary JSON is used on the wire for the operation.

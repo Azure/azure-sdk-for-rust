@@ -4,9 +4,9 @@
 use crate::{
     models::DefaultConsistencyLevel,
     options::{
-        AvailabilityStrategy, ConnectionPoolOptions, ContentResponseOnWrite, DriverOptions,
-        OperationOptionsView, PartitionFailoverOptions, PartitionTopologyCacheMode, PriorityLevel,
-        ReadConsistencyStrategy, Region, ServerCertificateValidation, Utf8DecodingMode,
+        ConnectionPoolOptions, DriverOptions, HedgingOptions, OperationOptions,
+        OperationOptionsView, PartitionFailoverOptions, ReadConsistencyStrategy, Region,
+        ThrottlingRetryOptions, ThroughputControlOptions,
     },
 };
 use serde::Serialize;
@@ -49,7 +49,7 @@ fn serialize_features<S: serde::Serializer>(_: &(), serializer: S) -> Result<S::
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct ClientConfiguration {
-    connection: Arc<ConnectionConfiguration>,
+    connection: Arc<ConnectionPoolOptions>,
     driver: Option<DriverConfiguration>,
 }
 
@@ -60,7 +60,7 @@ impl Serialize for ClientConfiguration {
             driver_version: &'static str,
             #[serde(serialize_with = "serialize_features")]
             features: (),
-            connection: &'a ConnectionConfiguration,
+            connection: &'a ConnectionPoolOptions,
             #[serde(flatten)]
             driver: Option<&'a DriverConfiguration>,
         }
@@ -77,7 +77,7 @@ impl Serialize for ClientConfiguration {
 impl ClientConfiguration {
     pub(crate) fn for_runtime(pool: &ConnectionPoolOptions) -> Self {
         Self {
-            connection: Arc::new(ConnectionConfiguration::from(pool)),
+            connection: Arc::new(pool.clone()),
             driver: None,
         }
     }
@@ -87,14 +87,8 @@ impl ClientConfiguration {
             connection: Arc::clone(&self.connection),
             driver: Some(DriverConfiguration {
                 preferred_regions: options.preferred_regions().to_vec(),
-                partition_failover: PartitionFailoverConfiguration::from(
-                    options.partition_failover_options(),
-                ),
-                hedging: HedgeLimits {
-                    max_concurrent_metadata_attempts: options
-                        .hedging_options()
-                        .max_concurrent_metadata_attempts(),
-                },
+                partition_failover: options.partition_failover_options().clone(),
+                hedging: options.hedging_options().clone(),
             }),
         }
     }
@@ -103,119 +97,8 @@ impl ClientConfiguration {
 #[derive(Debug, PartialEq, Eq, Serialize)]
 struct DriverConfiguration {
     preferred_regions: Vec<Region>,
-    partition_failover: PartitionFailoverConfiguration,
-    hedging: HedgeLimits,
-}
-
-#[derive(Debug, PartialEq, Eq, Serialize)]
-struct HedgeLimits {
-    max_concurrent_metadata_attempts: usize,
-}
-
-#[derive(Debug, PartialEq, Eq, Serialize)]
-struct PartitionFailoverConfiguration {
-    topology_cache_mode: &'static str,
-    circuit_breaker_enabled: bool,
-    read_failure_threshold: u32,
-    write_failure_threshold: u32,
-    counter_reset_window_ms: u128,
-    partition_unavailability_duration_ms: u128,
-    failback_sweep_interval_ms: u128,
-    consecutive_hedge_win_threshold: u32,
-}
-
-impl From<&PartitionFailoverOptions> for PartitionFailoverConfiguration {
-    fn from(options: &PartitionFailoverOptions) -> Self {
-        Self {
-            topology_cache_mode: match options.partition_topology_cache_mode() {
-                PartitionTopologyCacheMode::Eager => "eager",
-                PartitionTopologyCacheMode::Lazy => "lazy",
-            },
-            circuit_breaker_enabled: options.circuit_breaker_enabled(),
-            read_failure_threshold: options.read_failure_threshold(),
-            write_failure_threshold: options.write_failure_threshold(),
-            counter_reset_window_ms: options.counter_reset_window().as_millis(),
-            partition_unavailability_duration_ms: options
-                .partition_unavailability_duration()
-                .as_millis(),
-            failback_sweep_interval_ms: options.failback_sweep_interval().as_millis(),
-            consecutive_hedge_win_threshold: options.consecutive_hedge_win_threshold(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Serialize)]
-struct ConnectionConfiguration {
-    proxy_allowed: bool,
-    min_connect_timeout_ms: u128,
-    max_connect_timeout_ms: u128,
-    min_dataplane_request_timeout_ms: u128,
-    max_dataplane_request_timeout_ms: u128,
-    min_metadata_request_timeout_ms: u128,
-    max_metadata_request_timeout_ms: u128,
-    max_idle_connections_per_endpoint: usize,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    idle_connection_timeout_ms: Option<u128>,
-    max_http2_streams_per_client: u32,
-    http2_fan_out_threshold_percent: u8,
-    max_http2_connections_per_endpoint: usize,
-    min_http2_connections_per_endpoint: usize,
-    idle_http2_client_timeout_ms: u128,
-    http2_health_check_interval_ms: u128,
-    http2_consecutive_failure_threshold: u32,
-    http2_eviction_grace_period_ms: u128,
-    http2_keep_alive_interval_ms: u128,
-    http2_keep_alive_timeout_ms: u128,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tcp_keepalive_time_ms: Option<u128>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tcp_keepalive_interval_ms: Option<u128>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tcp_keepalive_retries: Option<u32>,
-    http2_allowed: bool,
-    gateway_v2_disabled: bool,
-    server_certificate_validation: &'static str,
-    #[cfg(feature = "rustls")]
-    tls_backend: &'static str,
-}
-
-impl From<&ConnectionPoolOptions> for ConnectionConfiguration {
-    fn from(pool: &ConnectionPoolOptions) -> Self {
-        Self {
-            proxy_allowed: pool.proxy_allowed(),
-            min_connect_timeout_ms: pool.min_connect_timeout().as_millis(),
-            max_connect_timeout_ms: pool.max_connect_timeout().as_millis(),
-            min_dataplane_request_timeout_ms: pool.min_dataplane_request_timeout().as_millis(),
-            max_dataplane_request_timeout_ms: pool.max_dataplane_request_timeout().as_millis(),
-            min_metadata_request_timeout_ms: pool.min_metadata_request_timeout().as_millis(),
-            max_metadata_request_timeout_ms: pool.max_metadata_request_timeout().as_millis(),
-            max_idle_connections_per_endpoint: pool.max_idle_connections_per_endpoint(),
-            idle_connection_timeout_ms: pool.idle_connection_timeout().map(|d| d.as_millis()),
-            max_http2_streams_per_client: pool.max_http2_streams_per_client(),
-            http2_fan_out_threshold_percent: pool.http2_fan_out_threshold_percent(),
-            max_http2_connections_per_endpoint: pool.max_http2_connections_per_endpoint(),
-            min_http2_connections_per_endpoint: pool.min_http2_connections_per_endpoint(),
-            idle_http2_client_timeout_ms: pool.idle_http2_client_timeout().as_millis(),
-            http2_health_check_interval_ms: pool.http2_health_check_interval().as_millis(),
-            http2_consecutive_failure_threshold: pool.http2_consecutive_failure_threshold(),
-            http2_eviction_grace_period_ms: pool.http2_eviction_grace_period().as_millis(),
-            http2_keep_alive_interval_ms: pool.http2_keep_alive_interval().as_millis(),
-            http2_keep_alive_timeout_ms: pool.http2_keep_alive_timeout().as_millis(),
-            tcp_keepalive_time_ms: pool.tcp_keepalive_time().map(|d| d.as_millis()),
-            tcp_keepalive_interval_ms: pool.tcp_keepalive_interval().map(|d| d.as_millis()),
-            tcp_keepalive_retries: pool.tcp_keepalive_retries(),
-            http2_allowed: pool.is_http2_allowed(),
-            gateway_v2_disabled: pool.gateway_v2_disabled(),
-            server_certificate_validation: match pool.server_certificate_validation() {
-                ServerCertificateValidation::Required => "required",
-                ServerCertificateValidation::RequiredUnlessEmulator => "required_unless_emulator",
-            },
-            #[cfg(feature = "rustls")]
-            tls_backend: match pool.tls_backend() {
-                crate::options::TlsBackend::Rustls => "rustls",
-            },
-        }
-    }
+    partition_failover: PartitionFailoverOptions,
+    hedging: HedgingOptions,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -223,145 +106,64 @@ pub(crate) struct OperationConfiguration {
     pub(crate) scope: &'static str,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub(crate) varied: bool,
-    read_consistency_strategy: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) account_consistency: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) effective_consistency: Option<&'static str>,
-    excluded_regions: Vec<Region>,
-    content_response_on_write: &'static str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    throughput_control: Option<ThroughputConfiguration>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    end_to_end_timeout_ms: Option<u128>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) max_failover_retry_count: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) endpoint_unavailability_ttl_ms: Option<u128>,
-    session_capturing_disabled: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) max_session_retry_count: Option<u32>,
-    pub(crate) throttling_retry_options: ThrottlingConfiguration,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    hedging_enabled: Option<bool>,
-    availability_strategy: AvailabilityConfiguration,
     custom_headers_configured_count: usize,
-    binary_encoding: BinaryConfiguration,
-    utf8_decoding_mode: &'static str,
-    #[cfg(feature = "unstable_patch")]
-    patch_strategy: &'static str,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-struct ThroughputConfiguration {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    throughput_bucket: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    priority_level: Option<&'static str>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub(crate) struct ThrottlingConfiguration {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) max_retry_count: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) max_retry_wait_time_ms: Option<u128>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-struct AvailabilityConfiguration {
-    policy: &'static str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    threshold_ms: Option<u128>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-struct BinaryConfiguration {
-    enabled: bool,
-    request_text_response: bool,
+    #[serde(flatten)]
+    pub(crate) options: OperationOptions,
 }
 
 impl From<&OperationOptionsView<'_>> for OperationConfiguration {
     fn from(view: &OperationOptionsView<'_>) -> Self {
         let throughput = view.throughput_control();
         let throughput_bucket = throughput.throughput_bucket().copied();
-        let priority_level = throughput.priority_level().map(|p| match p {
-            PriorityLevel::High => "high",
-            PriorityLevel::Low => "low",
-        });
+        let priority_level = throughput.priority_level().copied();
         let throttling = view.throttling_retry_options();
-        let binary = view.binary_encoding().cloned().unwrap_or_default();
         Self {
             scope: "configured",
             varied: false,
-            read_consistency_strategy: match view.read_consistency_strategy() {
-                None | Some(ReadConsistencyStrategy::Default) => "default",
-                Some(ReadConsistencyStrategy::Eventual) => "eventual",
-                Some(ReadConsistencyStrategy::Session) => "session",
-                Some(ReadConsistencyStrategy::LatestCommitted) => "latest_committed",
-                Some(ReadConsistencyStrategy::GlobalStrong) => "global_strong",
-            },
             account_consistency: None,
             effective_consistency: None,
-            excluded_regions: view
-                .excluded_regions()
-                .map(|r| r.iter().cloned().collect())
-                .unwrap_or_default(),
-            content_response_on_write: match view
-                .content_response_on_write()
-                .copied()
-                .unwrap_or_default()
-            {
-                ContentResponseOnWrite::Enabled => "enabled",
-                ContentResponseOnWrite::Disabled => "disabled",
-            },
-            throughput_control: (throughput_bucket.is_some() || priority_level.is_some())
-                .then_some(ThroughputConfiguration {
-                    throughput_bucket,
-                    priority_level,
-                }),
-            end_to_end_timeout_ms: view
-                .end_to_end_latency_policy()
-                .map(|p| p.timeout().as_millis()),
-            max_failover_retry_count: view.max_failover_retry_count().copied(),
-            endpoint_unavailability_ttl_ms: view
-                .endpoint_unavailability_ttl()
-                .map(|d| d.as_millis()),
-            session_capturing_disabled: view.session_capturing_disabled().copied().unwrap_or(false),
-            max_session_retry_count: view.max_session_retry_count().copied(),
-            throttling_retry_options: ThrottlingConfiguration {
-                max_retry_count: throttling.max_retry_count().copied(),
-                max_retry_wait_time_ms: throttling.max_retry_wait_time().map(|d| d.as_millis()),
-            },
-            hedging_enabled: view.hedging_enabled().copied(),
-            availability_strategy: match view.availability_strategy() {
-                Some(AvailabilityStrategy::Disabled) => AvailabilityConfiguration {
-                    policy: "disabled",
-                    threshold_ms: None,
-                },
-                Some(AvailabilityStrategy::Hedging(strategy)) => AvailabilityConfiguration {
-                    policy: "hedging",
-                    threshold_ms: Some(strategy.threshold().get().as_millis()),
-                },
-                None => AvailabilityConfiguration {
-                    policy: "default",
-                    threshold_ms: None,
-                },
-            },
             custom_headers_configured_count: view.custom_headers().map_or(0, |h| h.len()),
-            binary_encoding: BinaryConfiguration {
-                enabled: binary.enabled,
-                request_text_response: binary.request_text_response,
-            },
-            utf8_decoding_mode: match view.utf8_decoding_mode().copied().unwrap_or_default() {
-                Utf8DecodingMode::Strict => "strict",
-                Utf8DecodingMode::Lossy => "lossy",
-            },
-            #[cfg(feature = "unstable_patch")]
-            patch_strategy: match view.patch_strategy().copied().unwrap_or_default() {
-                crate::options::PatchStrategy::Auto => "auto",
-                crate::options::PatchStrategy::ClientSide => "client_side",
-                crate::options::PatchStrategy::ServerSide => "server_side",
+            // Exhaustive initializers make new options require a diagnostics decision.
+            options: OperationOptions {
+                resolution_snapshot: None,
+                custom_headers: None,
+                #[cfg(feature = "unstable_patch")]
+                patch_strategy: Some(view.patch_strategy().copied().unwrap_or_default()),
+                read_consistency_strategy: Some(
+                    view.read_consistency_strategy()
+                        .copied()
+                        .unwrap_or(ReadConsistencyStrategy::Default),
+                ),
+                excluded_regions: Some(view.excluded_regions().cloned().unwrap_or_default()),
+                content_response_on_write: Some(
+                    view.content_response_on_write()
+                        .copied()
+                        .unwrap_or_default(),
+                ),
+                throughput_control: (throughput_bucket.is_some() || priority_level.is_some())
+                    .then_some(ThroughputControlOptions {
+                        throughput_bucket,
+                        priority_level,
+                    }),
+                end_to_end_latency_policy: view.end_to_end_latency_policy().cloned(),
+                max_failover_retry_count: view.max_failover_retry_count().copied(),
+                endpoint_unavailability_ttl: view.endpoint_unavailability_ttl().copied(),
+                session_capturing_disabled: Some(
+                    view.session_capturing_disabled().copied().unwrap_or(false),
+                ),
+                max_session_retry_count: view.max_session_retry_count().copied(),
+                throttling_retry_options: Some(ThrottlingRetryOptions {
+                    max_retry_count: throttling.max_retry_count().copied(),
+                    max_retry_wait_time: throttling.max_retry_wait_time().copied(),
+                }),
+                hedging_enabled: view.hedging_enabled().copied(),
+                availability_strategy: view.availability_strategy().copied(),
+                binary_encoding: Some(view.binary_encoding().cloned().unwrap_or_default()),
+                utf8_decoding_mode: Some(view.utf8_decoding_mode().copied().unwrap_or_default()),
             },
         }
     }
@@ -397,8 +199,17 @@ impl OperationConfiguration {
 #[cfg(test)]
 mod tests {
     use super::{enabled_features, ClientConfiguration, OperationConfiguration, FEATURES};
-    use crate::options::{OperationOptions, OperationOptionsView, ThroughputControlOptions};
-    use std::{collections::BTreeSet, sync::Arc};
+    use crate::{
+        models::AccountReference,
+        options::{
+            AvailabilityStrategy, BinaryEncodingOptions, ConnectionPoolOptions,
+            ContentResponseOnWrite, DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions,
+            HedgeThreshold, HedgingOptions, HedgingStrategy, OperationOptions,
+            OperationOptionsView, PartitionFailoverOptions, PriorityLevel, ReadConsistencyStrategy,
+            ThrottlingRetryOptions, ThroughputControlOptions, Utf8DecodingMode,
+        },
+    };
+    use std::{collections::BTreeSet, sync::Arc, time::Duration};
 
     #[test]
     fn feature_inventory_matches_manifest() {
@@ -412,8 +223,7 @@ mod tests {
         let inventory: BTreeSet<_> = FEATURES.iter().map(|(name, _)| *name).collect();
         assert_eq!(inventory, declared);
         assert!(FEATURES.windows(2).all(|pair| pair[0].0 < pair[1].0));
-        let client =
-            ClientConfiguration::for_runtime(&crate::options::ConnectionPoolOptions::default());
+        let client = ClientConfiguration::for_runtime(&ConnectionPoolOptions::default());
         let json = serde_json::to_value(client).unwrap();
         assert_eq!(
             json["features"],
@@ -428,7 +238,7 @@ mod tests {
             max_session_retry_count: Some(5),
             throughput_control: Some(ThroughputControlOptions {
                 throughput_bucket: Some(4),
-                priority_level: Some(crate::options::PriorityLevel::Low),
+                priority_level: Some(PriorityLevel::Low),
             }),
             ..Default::default()
         });
@@ -452,6 +262,9 @@ mod tests {
             OperationOptionsView::new(None, Some(Arc::clone(&runtime)), None, Some(&request));
         let snapshot = OperationConfiguration::from(&view);
         drop(view);
+        assert!(snapshot.options.custom_headers.is_none());
+        assert!(snapshot.options.resolution_snapshot.is_none());
+        assert!(!serde_json::to_string(&request).unwrap().contains("secret"));
         let json = serde_json::to_value(snapshot).unwrap();
         assert_eq!(json["max_session_retry_count"], 0);
         assert_eq!(
@@ -465,10 +278,125 @@ mod tests {
     }
 
     #[test]
+    fn canonical_options_preserve_diagnostics_units_and_policy_shape() {
+        let request = OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::LatestCommitted),
+            excluded_regions: Some(ExcludedRegions::new().with_region("westus")),
+            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+            throughput_control: Some(ThroughputControlOptions {
+                throughput_bucket: Some(0),
+                priority_level: Some(PriorityLevel::Low),
+            }),
+            end_to_end_latency_policy: Some(EndToEndOperationLatencyPolicy::new(
+                Duration::from_millis(1_234),
+            )),
+            max_failover_retry_count: Some(0),
+            endpoint_unavailability_ttl: Some(Duration::from_micros(1_234)),
+            session_capturing_disabled: Some(false),
+            max_session_retry_count: Some(0),
+            throttling_retry_options: Some(ThrottlingRetryOptions {
+                max_retry_count: Some(0),
+                max_retry_wait_time: Some(Duration::ZERO),
+            }),
+            hedging_enabled: Some(false),
+            availability_strategy: Some(AvailabilityStrategy::Hedging(HedgingStrategy::new(
+                HedgeThreshold::new(Duration::from_millis(333)).unwrap(),
+            ))),
+            binary_encoding: Some(
+                BinaryEncodingOptions::new()
+                    .with_enabled(false)
+                    .with_request_text_response(true),
+            ),
+            utf8_decoding_mode: Some(Utf8DecodingMode::Lossy),
+            ..Default::default()
+        };
+        let snapshot = OperationConfiguration::from(&OperationOptionsView::new(
+            None,
+            None,
+            None,
+            Some(&request),
+        ));
+        let json = serde_json::to_value(snapshot).unwrap();
+        let mut expected = serde_json::json!({
+            "scope": "configured",
+            "custom_headers_configured_count": 0,
+            "read_consistency_strategy": "latest_committed",
+            "excluded_regions": ["westus"],
+            "content_response_on_write": "enabled",
+            "throughput_control": {"throughput_bucket": 0, "priority_level": "low"},
+            "end_to_end_timeout_ms": 1234,
+            "max_failover_retry_count": 0,
+            "endpoint_unavailability_ttl_ms": 1,
+            "session_capturing_disabled": false,
+            "max_session_retry_count": 0,
+            "throttling_retry_options": {"max_retry_count": 0, "max_retry_wait_time_ms": 0},
+            "hedging_enabled": false,
+            "availability_strategy": {"policy": "hedging", "threshold_ms": 333},
+            "binary_encoding": {"enabled": false, "request_text_response": true},
+            "utf8_decoding_mode": "lossy"
+        });
+        if cfg!(feature = "unstable_patch") {
+            expected["patch_strategy"] = serde_json::json!("auto");
+        }
+        assert_eq!(json, expected);
+
+        let disabled = OperationOptions {
+            availability_strategy: Some(AvailabilityStrategy::Disabled),
+            ..Default::default()
+        };
+        assert_eq!(
+            serde_json::to_value(disabled).unwrap()["availability_strategy"],
+            serde_json::json!({"policy": "disabled"})
+        );
+    }
+
+    #[test]
+    fn client_uses_canonical_options_without_exposing_local_address() {
+        let pool = ConnectionPoolOptions::builder()
+            .with_local_address("192.0.2.1".parse().unwrap())
+            .build()
+            .unwrap();
+        let partition_failover = PartitionFailoverOptions::builder()
+            .with_circuit_breaker_enabled_override(false)
+            .build_from_env(&|_| None)
+            .unwrap();
+        let hedging = HedgingOptions::builder()
+            .with_max_concurrent_metadata_attempts(0)
+            .build();
+        let driver = DriverOptions::builder(AccountReference::with_account_key(
+            "https://example.documents.azure.com/".parse().unwrap(),
+            "secret-account-key",
+        ))
+        .with_partition_failover_options(partition_failover.clone())
+        .with_hedging_options(hedging.clone())
+        .build();
+        let runtime = ClientConfiguration::for_runtime(&pool);
+        let json = serde_json::to_value(runtime.for_driver(&driver)).unwrap();
+        assert_eq!(json["connection"], serde_json::to_value(&pool).unwrap());
+        assert_eq!(
+            json["connection"]["target_http2_streams_per_client"],
+            pool.target_http2_streams_per_client()
+        );
+        assert_eq!(
+            json["partition_failover"],
+            serde_json::to_value(partition_failover).unwrap()
+        );
+        assert_eq!(
+            json["partition_failover"]["circuit_breaker_enabled_override"],
+            false
+        );
+        assert_eq!(json["hedging"], serde_json::to_value(hedging).unwrap());
+        let serialized = json.to_string();
+        assert!(!serialized.contains("192.0.2.1"));
+        assert!(!serialized.contains("local_address"));
+        assert!(!serialized.contains("secret-account-key"));
+    }
+
+    #[test]
     fn projection_honors_pinned_layers_and_kill_switches() {
         let pinned = OperationOptions {
             hedging_enabled: Some(true),
-            excluded_regions: Some(crate::options::ExcludedRegions::new()),
+            excluded_regions: Some(ExcludedRegions::new()),
             ..Default::default()
         }
         .with_resolution_snapshot(
@@ -486,13 +414,15 @@ mod tests {
             }),
             Arc::new(OperationOptions {
                 max_session_retry_count: Some(8),
-                excluded_regions: Some(
-                    crate::options::ExcludedRegions::new().with_region("westus"),
-                ),
+                excluded_regions: Some(ExcludedRegions::new().with_region("westus")),
                 ..Default::default()
             }),
         );
+        let pinned_json = serde_json::to_value(&pinned).unwrap();
+        assert!(pinned_json.get("resolution_snapshot").is_none());
+        assert!(pinned_json.get("max_session_retry_count").is_none());
         let snapshot = OperationConfiguration::from(&pinned.resolution_snapshot_view().unwrap());
+        assert!(snapshot.options.resolution_snapshot.is_none());
         let json = serde_json::to_value(snapshot).unwrap();
         assert_eq!(json["hedging_enabled"], false);
         assert_eq!(json["max_session_retry_count"], 8);

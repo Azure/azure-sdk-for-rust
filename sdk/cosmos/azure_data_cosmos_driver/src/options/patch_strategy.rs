@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use serde::Serialize;
+
 /// Selects how a patch operation is executed against Azure Cosmos DB.
 ///
 /// A patch can run two ways:
@@ -18,7 +20,8 @@
 /// reconcile the outcome before submitting another patch.
 ///
 /// [`PatchInstructions::is_retry_safe`]: crate::models::PatchInstructions::is_retry_safe
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum PatchStrategy {
     /// Let the driver choose (default).

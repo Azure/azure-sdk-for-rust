@@ -5,13 +5,16 @@
 
 use std::fmt::{self, Display};
 
+use serde::Serialize;
+
 /// Request priority for priority-based execution.
 ///
 /// When enabled at the account level, low priority requests are throttled
 /// before high priority requests once provisioned throughput is exhausted.
 ///
 /// See [Priority-based execution](https://learn.microsoft.com/azure/cosmos-db/priority-based-execution)
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
+#[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum PriorityLevel {
     /// High priority request (default behavior).

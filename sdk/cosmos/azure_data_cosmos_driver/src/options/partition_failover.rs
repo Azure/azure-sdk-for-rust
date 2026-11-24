@@ -6,6 +6,8 @@
 
 use std::time::Duration;
 
+use serde::Serialize;
+
 use super::env_parsing::{
     parse_duration_millis_from_env, parse_from_env, parse_optional_bool_from_env, ValidationBounds,
 };
@@ -17,7 +19,8 @@ use super::env_parsing::{
 /// [`Lazy`](Self::Lazy) can introduce a request-latency spike when the complete
 /// topology is first needed.
 #[non_exhaustive]
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum PartitionTopologyCacheMode {
     /// Load partition topology while resolving a container.
     #[default]
@@ -54,6 +57,9 @@ impl std::str::FromStr for PartitionTopologyCacheMode {
 /// unexpectedly; lazy loading can add a full-cache latency spike to the first
 /// operation that needs it.
 ///
+/// Serialized durations use milliseconds. An active circuit-breaker incident
+/// override is included separately from the configured enablement.
+///
 /// # Example
 ///
 /// ```rust
@@ -70,15 +76,29 @@ impl std::str::FromStr for PartitionTopologyCacheMode {
 /// assert_eq!(options.partition_unavailability_duration(), Duration::from_secs(10));
 /// ```
 #[non_exhaustive]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct PartitionFailoverOptions {
+    #[serde(rename = "topology_cache_mode")]
     partition_topology_cache_mode: PartitionTopologyCacheMode,
     circuit_breaker_enabled: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     circuit_breaker_enabled_override: Option<bool>,
     read_failure_threshold: u32,
     write_failure_threshold: u32,
+    #[serde(
+        rename = "counter_reset_window_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     counter_reset_window: Duration,
+    #[serde(
+        rename = "partition_unavailability_duration_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     partition_unavailability_duration: Duration,
+    #[serde(
+        rename = "failback_sweep_interval_ms",
+        serialize_with = "super::serialization::duration_as_millis"
+    )]
     failback_sweep_interval: Duration,
     consecutive_hedge_win_threshold: u32,
 }

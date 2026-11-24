@@ -243,9 +243,10 @@ asks for it, so the expensive JSON step is never paid on a metrics-only or span-
 ### 6.1 Request and client configuration in JSON
 
 Detailed and ordinary Summary output include top-level `options` and `client`
-objects when configuration is available. These are private serialization
-projections, not new public Rust configuration types or an additional telemetry
-emission path.
+objects when configuration is available. Snapshots reuse the original serializable
+configuration types, with private wrappers for diagnostics metadata and selected
+client groups. They don't introduce parallel configuration models or an additional
+telemetry emission path.
 
 `options` resolves independently layered fields using the execution's
 `OperationOptionsView`, including environment kill switches and admission-pinned
@@ -280,7 +281,9 @@ policy, and, once a driver exists, preferred regions, partition-failover setting
 and hedge limits. Features are canonical Cargo feature names for the compiled
 driver, including default, backend, and internal flags after feature unification;
 they aren't wrapper SDK or transitive dependency inventories. Driver-only groups
-are absent from pre-driver bootstrap diagnostics.
+are absent from pre-driver bootstrap diagnostics. Connection policy includes the
+computed HTTP/2 fan-out stream target; partition-failover settings include an active
+circuit-breaker incident override separately from the configured enablement.
 
 Connection and driver configuration is captured once and shared in memory.
 Request configuration is captured from the execution's immutable view, not
@@ -288,7 +291,13 @@ re-read from mutable runtime defaults when JSON is requested. Clones and status
 restamps retain it; JSON remains lazily cached. Synthetic contexts without an
 execution/configuration source omit the objects rather than guess.
 
-Configuration projections exclude credentials, custom header names/values,
+Request snapshots initialize `OperationOptions` and its layered nested groups
+exhaustively, so adding a field requires an explicit capture decision at compile
+time. Other configuration groups serialize their original types directly, so new
+fields aren't silently lost in a separate diagnostics copy. Sensitive-field
+exclusions and duration formatting live with the original option definitions.
+
+Configuration serialization excludes credentials, custom header names/values,
 proxy addresses, local addresses, custom user-agent strings, and fault-rule
 contents. `custom_headers_configured_count` counts the merged configured map;
 it doesn't claim those headers were sent.
