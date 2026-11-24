@@ -485,6 +485,9 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
 # Skip emulator setup when a live account is already configured. Federated live
 # legs intentionally have no connection string because local auth is disabled.
 if ($env:AZURE_COSMOS_CONNECTION_STRING) {
+    if ($env:AZURE_COSMOS_E2E_BACKEND -eq 'azureLive' -and -not $env:AZURE_COSMOS_TEST_MODE) {
+        $env:AZURE_COSMOS_TEST_MODE = 'required'
+    }
     Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
     return
 }
