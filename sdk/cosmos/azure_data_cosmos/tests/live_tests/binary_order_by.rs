@@ -46,6 +46,7 @@ use serde_json::Value;
 use std::{
     collections::BTreeSet,
     error::Error,
+    io::{stderr, Write},
     num::NonZeroU32,
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -56,8 +57,8 @@ use std::{
 
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
 
-const THROUGHPUT_APPROVAL: &str = "AZURE_COSMOS_ORDER_BY_LIVE_THROUGHPUT";
 const PLAN_MODE: &str = "AZURE_COSMOS_ORDER_BY_LIVE_PLAN_MODE";
+// Each container needs multiple physical partitions for the ORDER BY comparison.
 const THROUGHPUT: u64 = 20_000;
 const ITEM_COUNT: i64 = 160;
 const PAGE_SIZE: u32 = 7;
@@ -377,6 +378,19 @@ async fn validate_ranges(
         .collect())
 }
 
+// Whole documents are typed like the SDK path, dropping service system properties.
+fn driver_values(items: Vec<Bytes>, case: &QueryCase) -> TestResult<Vec<Value>> {
+    let body = ResponseBody::Items(items);
+    if !case.whole_document {
+        return Ok(body.into_items()?);
+    }
+    Ok(body
+        .into_items::<LiveItem>()?
+        .iter()
+        .map(serde_json::to_value)
+        .collect::<Result<_, _>>()?)
+}
+
 async fn check_driver_output(
     driver: &CosmosDriver,
     container: &ContainerReference,
@@ -429,7 +443,7 @@ async fn check_driver_output(
                 retained.get_or_insert_with(|| item.clone());
             }
         }
-        actual.extend(ResponseBody::Items(items).into_items::<Value>()?);
+        actual.extend(driver_values(items, case)?);
     }
     drop(plan);
     if let Some(item) = retained {
@@ -532,15 +546,9 @@ async fn run_sdk_typed<T: DeserializeOwned + Serialize + Send + 'static>(
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "live"),
-    ignore = "requires live credentials and explicit 40,000 RU/s provisioning approval"
+    ignore = "requires a live account; provisions two 20,000 RU/s containers"
 )]
 async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResult {
-    // Selecting live tests is not approval to provision 40,000 RU/s.
-    // Require a separate cost opt-in before creating either container.
-    require(
-        std::env::var(THROUGHPUT_APPROVAL).as_deref() == Ok("20000"),
-        format!("set {THROUGHPUT_APPROVAL}=20000 only after approving two temporary 20,000 RU/s containers"),
-    )?;
     let connection =
         framework::resolve_connection_string().ok_or("live credentials are required")?;
     require(
@@ -559,7 +567,13 @@ async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResul
     let modes = planning_modes(selected_mode.as_deref())?;
     TestClient::run_with_unique_db(
         async |context, database| {
-            println!("Owned live validation database: {}", context.db_name());
+            // Bypass libtest capture so a cancelled job still identifies its resources.
+            writeln!(
+                stderr(),
+                "Owned live validation database: {} on {}",
+                context.db_name(),
+                context.client().endpoint().origin().ascii_serialization()
+            )?;
             let _ = create_container(context, database, "order-by-text").await?;
             let _ = create_container(context, database, "order-by-binary").await?;
             let text_client = build_sdk_client(&connection, false).await?;
@@ -706,8 +720,12 @@ async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResul
 
 #[cfg(test)]
 mod tests {
-    use super::{cases, compare, items, planning_modes, values, DRIVER_CASES, ITEM_COUNT};
+    use super::{
+        cases, compare, driver_values, items, planning_modes, values, DRIVER_CASES, ITEM_COUNT,
+    };
+    use azure_core::Bytes;
     use azure_data_cosmos::options::QueryPlanMode;
+    use serde_json::json;
 
     #[test]
     fn planning_mode_selection_preserves_full_default_matrix_and_rejects_invalid_values() {
@@ -745,6 +763,29 @@ mod tests {
                     .all(|item| fixture_values.contains(item)));
             }
         }
+    }
+
+    #[test]
+    fn driver_whole_documents_ignore_service_properties() {
+        let fixture = items();
+        let cases = cases(&fixture);
+        let ascending = cases.iter().find(|case| case.name == "ascending").unwrap();
+        let expected = values(&fixture[..1]);
+        let mut served = expected[0].clone();
+        let served_fields = served.as_object_mut().unwrap();
+        served_fields.insert("number".into(), json!(9_000_000_000_i64));
+        served_fields.insert("_rid".into(), json!("AAAAAYAAAAEBAAAAAAAAAA=="));
+        served_fields.insert("_ts".into(), json!(1_795_547_418));
+        let item = Bytes::from(serde_json::to_vec(&served).unwrap());
+        assert_eq!(
+            driver_values(vec![item.clone()], ascending).unwrap(),
+            expected
+        );
+        let window = cases
+            .iter()
+            .find(|case| case.name == "distinct-window")
+            .unwrap();
+        assert_eq!(driver_values(vec![item], window).unwrap(), vec![served]);
     }
 
     #[test]
