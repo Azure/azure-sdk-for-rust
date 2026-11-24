@@ -530,10 +530,7 @@ async fn run_sdk_typed<T: DeserializeOwned + Serialize + Send + 'static>(
 }
 
 #[tokio::test]
-#[cfg_attr(
-    not(test_category = "live"),
-    ignore = "requires live credentials and explicit 40,000 RU/s provisioning approval"
-)]
+#[ignore = "requires live credentials and explicit 40,000 RU/s provisioning approval"]
 async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResult {
     // Selecting live tests is not approval to provision 40,000 RU/s.
     // Require a separate cost opt-in before creating either container.

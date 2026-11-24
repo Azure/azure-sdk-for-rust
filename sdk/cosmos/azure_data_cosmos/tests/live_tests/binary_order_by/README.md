@@ -11,6 +11,9 @@ Load the connection string without printing it. The throughput variable is an
 explicit cost opt-in, not a configurable throughput setting; selecting live or
 ignored tests alone does not authorize provisioning these containers.
 
+The test remains ignored even with `test_category="live"` enabled. Run only the
+named test with `--ignored --exact` as shown below, after obtaining cost approval.
+
 ```powershell
 $env:AZURE_COSMOS_CONNECTION_STRING = (Get-Content -LiteralPath '<local-connection-string-file>' -Raw).Trim()
 $env:AZURE_COSMOS_TEST_MODE = 'required'
