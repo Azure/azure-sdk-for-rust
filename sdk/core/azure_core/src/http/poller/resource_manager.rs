@@ -10,7 +10,10 @@ use crate::{
     http::{
         check_success,
         headers::{HeaderName, Headers, ACCEPT, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
-        poller::{PollerContinuation, PollerResult, PollerState, PollerStatus, StatusMonitor},
+        poller::{
+            PollerContinuation, PollerResult, PollerState, PollerStatus, StatusMonitor,
+            StatusResponseKind,
+        },
         Context, Method, Pipeline, PipelineSendOptions, Poller, RawResponse, Request, Response,
         StatusCode, Url,
     },
@@ -213,12 +216,17 @@ impl<M: StatusMonitor> Copy for FinalStateVia<M> {}
 /// Polling and final GET requests use the original request's `api-version` query parameter,
 /// replacing any version supplied by the service and adding it when absent.
 ///
-/// With `azure-asyncoperation`, the initial response uses `properties.provisioningState`,
-/// except for POST actions, whose initial resource state does not determine action completion.
-/// Subsequent monitor responses use top-level `status`. With `operation-location`, both initial
-/// and subsequent responses use top-level `status`; a terminal initial status skips monitor GETs.
-/// Other resource responses use only `properties.provisioningState`; unrelated resource `status`
-/// fields are ignored.
+/// When [`StatusMonitor::status_from_response()`] returns `None`, `azure-asyncoperation` uses
+/// `properties.provisioningState` in the initial response, except for POST actions, whose initial
+/// resource state does not determine action completion. Subsequent monitor responses use top-level
+/// `status`. With `operation-location`, both initial and subsequent responses use top-level
+/// `status`; a terminal initial status skips monitor GETs. Other resource responses use only
+/// `properties.provisioningState`; unrelated resource `status` fields are ignored.
+///
+/// Before these built-in status rules, the helper calls
+/// [`StatusMonitor::status_from_response()`] with the source of the current response. A returned
+/// status overrides the built-in rules; `None` preserves them. The [`StatusResponseKind`] describes
+/// the current response and is independent of `final_state_via`, which selects the final result.
 ///
 /// Location polling continues after HTTP 408, 429, 500, 502, 503, or 504 responses, even after
 /// the pipeline's retries are exhausted, and honors retry delays from those responses.
@@ -481,7 +489,7 @@ impl PollingInfo {
         })
     }
 
-    fn status<M>(
+    fn status<M: StatusMonitor>(
         &self,
         response: &Response<M>,
         initial: bool,
@@ -507,6 +515,24 @@ impl PollingInfo {
             && original_method == Method::Post
         {
             return Ok(PollerStatus::InProgress);
+        }
+
+        let kind = if initial {
+            StatusResponseKind::Initial
+        } else {
+            match self.method {
+                PollingMethod::AzureAsyncOperation => StatusResponseKind::AzureAsyncOperation,
+                PollingMethod::OperationLocation => StatusResponseKind::OperationLocation,
+                PollingMethod::Location => StatusResponseKind::Location,
+                PollingMethod::Body => StatusResponseKind::OriginalUrl,
+                PollingMethod::Nop => unreachable!("no-polling responses return above"),
+            }
+        };
+        if let Some(status) = M::status_from_response(&response.to_raw_response(), kind)? {
+            return Ok(match status {
+                PollerStatus::UnknownValue(_) => PollerStatus::InProgress,
+                status => status,
+            });
         }
 
         #[derive(serde::Deserialize)]

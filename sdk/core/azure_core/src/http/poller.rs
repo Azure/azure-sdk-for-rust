@@ -131,6 +131,24 @@ impl<'de> Deserialize<'de> for PollerStatus {
     }
 }
 
+/// Identifies the source of a response being classified during polling.
+///
+/// This describes the current response, not how the final result is selected.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum StatusResponseKind {
+    /// The response to the original request.
+    Initial,
+    /// A polling response from the `azure-asyncoperation` URL.
+    AzureAsyncOperation,
+    /// A polling response from the `operation-location` URL.
+    OperationLocation,
+    /// A polling response from the `location` URL.
+    Location,
+    /// A polling response from the original request URL.
+    OriginalUrl,
+}
+
 /// Options to create the [`Poller`].
 #[derive(Debug, Clone)]
 pub struct PollerOptions<'a> {
@@ -268,6 +286,29 @@ pub trait StatusMonitor {
 
     /// Gets the [`PollerStatus`] from the status monitor.
     fn status(&self) -> PollerStatus;
+
+    /// Classifies a response without deserializing the public monitor model.
+    ///
+    /// Returns `Some` to supply the operation status, or `None` to use the polling helper's
+    /// protocol rules. The default returns `None`.
+    ///
+    /// Return `Some(PollerStatus::InProgress)` when a recognized status field contains an
+    /// unrecognized value. Returning `None` uses protocol fallbacks, which may treat a missing
+    /// status as success.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an applicable response cannot be decoded.
+    fn status_from_response(
+        response: &crate::http::RawResponse,
+        kind: StatusResponseKind,
+    ) -> crate::Result<Option<PollerStatus>>
+    where
+        Self: Sized,
+    {
+        let _ = (response, kind);
+        Ok(None)
+    }
 }
 
 mod types {
@@ -297,6 +338,10 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 /// A `Poller` implements both [`IntoFuture`] and [`Stream`].
 /// You can `await` a `Poller` to get the final model upon successful completion; or,
 /// you can call [`next`](StreamExt::next) or [`try_next`](futures::stream::TryStreamExt::try_next) on a mutable `Poller` to poll status manually.
+///
+/// Intermediate response bodies remain raw until a caller deserializes a streamed response.
+/// A [`StatusMonitor`] can classify them without requiring them to match its public monitor model.
+/// Awaiting the poller returns the typed final [`StatusMonitor::Output`].
 ///
 /// # Examples
 ///

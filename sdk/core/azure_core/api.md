@@ -1409,10 +1409,20 @@ pub mod http {
         impl<'de> Deserialize<'de> for PollerStatus {
             fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
         }
+        #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+        #[non_exhaustive]
+        pub enum StatusResponseKind {
+            Initial,
+            AzureAsyncOperation,
+            OperationLocation,
+            Location,
+            OriginalUrl,
+        }
         pub trait StatusMonitor {
             type Format: Format + Send;
             type Output;
             fn status(&self) -> PollerStatus;
+            fn status_from_response(response: &crate::http::RawResponse, kind: StatusResponseKind) -> crate::Result<Option<PollerStatus>> where Self: Sized;
         }
         pub type PollerResultFuture<M, F> = std::pin::Pin<Box<dyn Future<Output = crate::Result<super::PollerResult<M, F>>> + Send + 'static>>;
         #[cfg(all(feature = "test", feature = "unstable_fake"))]

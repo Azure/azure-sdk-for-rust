@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     error::{ErrorKind, ErrorResponse},
-    http::poller::{PollerStatus, StatusMonitor},
+    http::poller::{PollerStatus, StatusMonitor, StatusResponseKind},
     http::{
         headers::{
             HeaderName, Headers, ACCEPT, CLIENT_REQUEST_ID, CONTENT_LENGTH, CONTENT_TYPE,
@@ -940,6 +940,93 @@ fn unexpected_extraction(
     _response: Response<ArmOperationStatus>,
 ) -> crate::Result<Response<ArmResource>> {
     panic!("result extraction must not run")
+}
+
+#[derive(serde::Deserialize)]
+struct StatusClassifiedMonitor;
+
+impl StatusMonitor for StatusClassifiedMonitor {
+    type Output = ArmResource;
+    type Format = JsonFormat;
+
+    fn status(&self) -> PollerStatus {
+        PollerStatus::InProgress
+    }
+
+    fn status_from_response(
+        response: &RawResponse,
+        _kind: StatusResponseKind,
+    ) -> crate::Result<Option<PollerStatus>> {
+        #[derive(serde::Deserialize)]
+        struct Envelope {
+            properties: Option<Properties>,
+        }
+
+        #[derive(serde::Deserialize)]
+        struct Properties {
+            status: Option<String>,
+        }
+
+        let body: Envelope = crate::json::from_json(response.body())?;
+        let Some(status) = body.properties.and_then(|properties| properties.status) else {
+            return Ok(None);
+        };
+        let status = if status.eq_ignore_ascii_case("ready") {
+            PollerStatus::Succeeded
+        } else if status.eq_ignore_ascii_case("needsreview")
+            || status.eq_ignore_ascii_case("policydenied")
+        {
+            PollerStatus::Failed
+        } else {
+            PollerStatus::from(status.as_str())
+        };
+        Ok(Some(match status {
+            PollerStatus::UnknownValue(_) => PollerStatus::InProgress,
+            status => status,
+        }))
+    }
+}
+
+struct SourceClassifiedMonitor;
+
+impl StatusMonitor for SourceClassifiedMonitor {
+    type Output = ArmResource;
+    type Format = JsonFormat;
+
+    fn status(&self) -> PollerStatus {
+        PollerStatus::InProgress
+    }
+
+    fn status_from_response(
+        _response: &RawResponse,
+        kind: StatusResponseKind,
+    ) -> crate::Result<Option<PollerStatus>> {
+        Ok(Some(match kind {
+            StatusResponseKind::Initial => PollerStatus::InProgress,
+            StatusResponseKind::AzureAsyncOperation => PollerStatus::Succeeded,
+            StatusResponseKind::OperationLocation => PollerStatus::Failed,
+            StatusResponseKind::Location => PollerStatus::Canceled,
+            StatusResponseKind::OriginalUrl => PollerStatus::UnknownValue("future".to_owned()),
+        }))
+    }
+}
+
+struct AlwaysFailedMonitor;
+
+impl StatusMonitor for AlwaysFailedMonitor {
+    type Output = ArmResource;
+    type Format = JsonFormat;
+
+    fn status(&self) -> PollerStatus {
+        PollerStatus::InProgress
+    }
+
+    fn status_from_response(
+        _response: &RawResponse,
+        _kind: StatusResponseKind,
+    ) -> crate::Result<Option<PollerStatus>> {
+        Ok(Some(PollerStatus::Failed))
+    }
 }
 
 #[test]
@@ -2690,5 +2777,278 @@ async fn polling_and_final_urls_always_use_the_client_api_version() {
                 );
             }
         }
+    }
+}
+
+#[test]
+fn response_classification_receives_the_actual_response_source() {
+    let response: Response<SourceClassifiedMonitor> =
+        RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"{}".as_slice()).into();
+    for (method, initial, original_method, expected) in [
+        (
+            PollingMethod::AzureAsyncOperation,
+            true,
+            Method::Put,
+            PollerStatus::InProgress,
+        ),
+        (
+            PollingMethod::AzureAsyncOperation,
+            false,
+            Method::Put,
+            PollerStatus::Succeeded,
+        ),
+        (
+            PollingMethod::OperationLocation,
+            false,
+            Method::Put,
+            PollerStatus::Failed,
+        ),
+        (
+            PollingMethod::Location,
+            false,
+            Method::Put,
+            PollerStatus::Canceled,
+        ),
+        (
+            PollingMethod::Body,
+            false,
+            Method::Put,
+            PollerStatus::InProgress,
+        ),
+    ] {
+        let polling = PollingInfo {
+            method,
+            location: None,
+            operation_url: None,
+        };
+        assert_eq!(
+            polling.status(&response, initial, original_method).unwrap(),
+            expected
+        );
+    }
+}
+
+#[test]
+fn default_classification_preserves_protocol_fallback_and_special_cases() {
+    let response = RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"{}".as_slice());
+    assert_eq!(
+        <ArmOperationStatus as StatusMonitor>::status_from_response(
+            &response,
+            StatusResponseKind::Initial
+        )
+        .unwrap(),
+        None
+    );
+
+    let no_content: Response<AlwaysFailedMonitor> =
+        RawResponse::from_bytes(StatusCode::NoContent, Headers::new(), b"".as_slice()).into();
+    let location = PollingInfo {
+        method: PollingMethod::Location,
+        location: None,
+        operation_url: None,
+    };
+    assert_eq!(
+        location.status(&no_content, false, Method::Put).unwrap(),
+        PollerStatus::Succeeded
+    );
+
+    let initial_post: Response<AlwaysFailedMonitor> =
+        RawResponse::from_bytes(StatusCode::Accepted, Headers::new(), b"!".as_slice()).into();
+    let async_operation = PollingInfo {
+        method: PollingMethod::AzureAsyncOperation,
+        location: None,
+        operation_url: None,
+    };
+    assert_eq!(
+        async_operation
+            .status(&initial_post, true, Method::Post)
+            .unwrap(),
+        PollerStatus::InProgress
+    );
+}
+
+#[test]
+fn malformed_overridden_status_responses_propagate_errors() {
+    let response: Response<StatusClassifiedMonitor> =
+        RawResponse::from_bytes(StatusCode::Ok, Headers::new(), b"!".as_slice()).into();
+    let polling = PollingInfo {
+        method: PollingMethod::Location,
+        location: None,
+        operation_url: None,
+    };
+    assert!(polling.status(&response, false, Method::Put).is_err());
+}
+
+#[test]
+fn standard_terminal_statuses_remain_case_insensitive() {
+    for (status, expected) in [
+        ("sUcCeEdEd", PollerStatus::Succeeded),
+        ("fAiLeD", PollerStatus::Failed),
+        ("cAnCeLeD", PollerStatus::Canceled),
+        ("CaNcElLeD", PollerStatus::Canceled),
+    ] {
+        let body = format!(r#"{{"properties":{{"status":"{status}"}}}}"#);
+        let response = RawResponse::from_bytes(StatusCode::Ok, Headers::new(), body);
+        assert_eq!(
+            StatusClassifiedMonitor::status_from_response(&response, StatusResponseKind::Location)
+                .unwrap(),
+            Some(expected)
+        );
+    }
+}
+
+#[tokio::test]
+async fn nested_custom_failure_statuses_fail_location_polling() {
+    for status in ["NeedsReview", "PolicyDenied"] {
+        let mut initial_headers = Headers::new();
+        initial_headers.insert(LOCATION, "/operations/1?api-version=original");
+        initial_headers.insert(RETRY_AFTER_MS, "0");
+        let mut progress_headers = Headers::new();
+        progress_headers.insert(RETRY_AFTER_MS, "0");
+        let (pipeline, pending) = scripted_pipeline(vec![
+                    (
+                        Method::Put,
+                        RESOURCE_URL,
+                        AsyncRawResponse::from_bytes(
+                            StatusCode::Accepted,
+                            initial_headers,
+                            br#"{"properties":{"status":"Working"}}"#.as_slice(),
+                        ),
+                    ),
+                    (
+                        Method::Get,
+                        POLLING_URL,
+                        AsyncRawResponse::from_bytes(
+                            StatusCode::Accepted,
+                            progress_headers,
+                            br#"{"properties":{"status":"StillWorking"}}"#.as_slice(),
+                        ),
+                    ),
+                    (
+                        Method::Get,
+                        POLLING_URL,
+                        AsyncRawResponse::from_bytes(
+                            StatusCode::Ok,
+                            Headers::new(),
+                            format!(
+                                r#"{{"properties":{{"status":"{status}"}},"error":{{"code":"{status}","message":"operation rejected"}}}}"#
+                            )
+                            .into_bytes(),
+                        ),
+                    ),
+                ]);
+        let poller: Poller<StatusClassifiedMonitor> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Put),
+            None,
+            None,
+        );
+        let error = poller.await.unwrap_err();
+        assert!(matches!(error.kind(), ErrorKind::HttpResponse { .. }));
+        assert!(error.to_string().contains("operation rejected"));
+        assert!(pending.lock().unwrap().is_empty());
+    }
+}
+
+#[tokio::test]
+async fn custom_operation_success_keeps_final_state_selection_independent() {
+    let (pipeline, pending) = scripted_pipeline(vec![
+        (
+            Method::Post,
+            RESOURCE_URL,
+            operation_response(OPERATION_LOCATION, true),
+        ),
+        (
+            Method::Get,
+            POLLING_URL,
+            monitor_response(br#"{"properties":{"status":"rEaDy"}}"#),
+        ),
+        (
+            Method::Get,
+            LOCATION_URL,
+            monitor_response(br#"{"id":"finished"}"#),
+        ),
+    ]);
+    let poller: Poller<StatusClassifiedMonitor> = new_poller(
+        pipeline,
+        Request::new(RESOURCE_URL.parse().unwrap(), Method::Post),
+        Some(FinalStateVia::Location),
+        None,
+    );
+    assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+    assert!(pending.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn unknown_http_200_statuses_continue_until_success() {
+    let mut initial_headers = Headers::new();
+    initial_headers.insert(LOCATION, "/operations/1?api-version=original");
+    initial_headers.insert(RETRY_AFTER_MS, "0");
+    let (pipeline, pending) = scripted_pipeline(vec![
+        (
+            Method::Put,
+            RESOURCE_URL,
+            AsyncRawResponse::from_bytes(
+                StatusCode::Accepted,
+                initial_headers,
+                br#"{"properties":{"status":"Working"}}"#.as_slice(),
+            ),
+        ),
+        (
+            Method::Get,
+            POLLING_URL,
+            monitor_response(br#"{"properties":{"status":"VendorQueued"}}"#),
+        ),
+        (
+            Method::Get,
+            POLLING_URL,
+            monitor_response(br#"{"properties":{"status":"sUcCeEdEd"},"id":"finished"}"#),
+        ),
+    ]);
+    let poller: Poller<StatusClassifiedMonitor> = new_poller(
+        pipeline,
+        Request::new(RESOURCE_URL.parse().unwrap(), Method::Put),
+        None,
+        None,
+    );
+    assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+    assert!(pending.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn mixed_case_cancellation_spellings_remain_terminal() {
+    for status in ["cAnCeLeD", "CaNcElLeD"] {
+        let mut initial_headers = Headers::new();
+        initial_headers.insert(LOCATION, "/operations/1?api-version=original");
+        initial_headers.insert(RETRY_AFTER_MS, "0");
+        let (pipeline, pending) = scripted_pipeline(vec![
+            (
+                Method::Put,
+                RESOURCE_URL,
+                AsyncRawResponse::from_bytes(
+                    StatusCode::Accepted,
+                    initial_headers,
+                    br#"{"properties":{"status":"Working"}}"#.as_slice(),
+                ),
+            ),
+            (
+                Method::Get,
+                POLLING_URL,
+                AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    format!(r#"{{"properties":{{"status":"{status}"}}}}"#).into_bytes(),
+                ),
+            ),
+        ]);
+        let poller: Poller<StatusClassifiedMonitor> = new_poller(
+            pipeline,
+            Request::new(RESOURCE_URL.parse().unwrap(), Method::Put),
+            None,
+            None,
+        );
+        let error = poller.await.unwrap_err();
+        assert_eq!(error.kind(), &ErrorKind::Other);
+        assert!(pending.lock().unwrap().is_empty());
     }
 }

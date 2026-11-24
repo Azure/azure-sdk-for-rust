@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `http::poller::StatusResponseKind` and the default `StatusMonitor::status_from_response()` extension point for classifying raw polling responses by source.
+
 ### Breaking Changes
 
 ### Bugs Fixed
