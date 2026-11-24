@@ -378,6 +378,19 @@ async fn validate_ranges(
         .collect())
 }
 
+// Whole documents are typed like the SDK path, dropping service system properties.
+fn driver_values(items: Vec<Bytes>, case: &QueryCase) -> TestResult<Vec<Value>> {
+    let body = ResponseBody::Items(items);
+    if !case.whole_document {
+        return Ok(body.into_items()?);
+    }
+    Ok(body
+        .into_items::<LiveItem>()?
+        .iter()
+        .map(serde_json::to_value)
+        .collect::<Result<_, _>>()?)
+}
+
 async fn check_driver_output(
     driver: &CosmosDriver,
     container: &ContainerReference,
@@ -430,7 +443,7 @@ async fn check_driver_output(
                 retained.get_or_insert_with(|| item.clone());
             }
         }
-        actual.extend(ResponseBody::Items(items).into_items::<Value>()?);
+        actual.extend(driver_values(items, case)?);
     }
     drop(plan);
     if let Some(item) = retained {
@@ -707,8 +720,12 @@ async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResul
 
 #[cfg(test)]
 mod tests {
-    use super::{cases, compare, items, planning_modes, values, DRIVER_CASES, ITEM_COUNT};
+    use super::{
+        cases, compare, driver_values, items, planning_modes, values, DRIVER_CASES, ITEM_COUNT,
+    };
+    use azure_core::Bytes;
     use azure_data_cosmos::options::QueryPlanMode;
+    use serde_json::json;
 
     #[test]
     fn planning_mode_selection_preserves_full_default_matrix_and_rejects_invalid_values() {
@@ -746,6 +763,29 @@ mod tests {
                     .all(|item| fixture_values.contains(item)));
             }
         }
+    }
+
+    #[test]
+    fn driver_whole_documents_ignore_service_properties() {
+        let fixture = items();
+        let cases = cases(&fixture);
+        let ascending = cases.iter().find(|case| case.name == "ascending").unwrap();
+        let expected = values(&fixture[..1]);
+        let mut served = expected[0].clone();
+        let served_fields = served.as_object_mut().unwrap();
+        served_fields.insert("number".into(), json!(9_000_000_000_i64));
+        served_fields.insert("_rid".into(), json!("AAAAAYAAAAEBAAAAAAAAAA=="));
+        served_fields.insert("_ts".into(), json!(1_795_547_418));
+        let item = Bytes::from(serde_json::to_vec(&served).unwrap());
+        assert_eq!(
+            driver_values(vec![item.clone()], ascending).unwrap(),
+            expected
+        );
+        let window = cases
+            .iter()
+            .find(|case| case.name == "distinct-window")
+            .unwrap();
+        assert_eq!(driver_values(vec![item], window).unwrap(), vec![served]);
     }
 
     #[test]

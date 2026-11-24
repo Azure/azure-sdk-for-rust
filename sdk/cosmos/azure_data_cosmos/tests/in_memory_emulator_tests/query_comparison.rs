@@ -134,7 +134,9 @@ impl QueryComparisonHarness {
 }
 
 async fn resolve_external_backend() -> Result<Option<Backend>, Box<dyn Error>> {
-    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
+    if super::external_comparison_disabled()
+        || std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
+    {
         return Ok(None);
     }
 

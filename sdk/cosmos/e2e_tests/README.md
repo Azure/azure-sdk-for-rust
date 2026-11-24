@@ -77,7 +77,9 @@ pattern instead of expanding the profile schema.
 The scheduled matrices in `e2e-consistency-matrix.json` and
 `e2e-read-consistency-override-matrix.json` select every setup cell through
 Gateway V1 and Gateway V2. Profile-driven jobs use the isolated `e2e` test
-category.
+category. Azure Live profile jobs run the public in-memory emulator suites
+in-memory only; broad live jobs and hosted-emulator jobs keep their external
+parity checks.
 
 The blocking `e2e-core-operations-matrix.json` selects the single
 `coreOperations` setup cell through both hosted gateways.

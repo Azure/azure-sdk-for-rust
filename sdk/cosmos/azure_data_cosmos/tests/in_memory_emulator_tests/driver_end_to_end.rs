@@ -1433,7 +1433,9 @@ async fn try_real_failover_comparison(
     use azure_data_cosmos_driver::options::DriverOptionsBuilder;
     use std::sync::Arc;
 
-    if std::env::var("AZURE_COSMOS_AUTH_MODE").is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
+    if super::external_comparison_disabled()
+        || std::env::var("AZURE_COSMOS_AUTH_MODE")
+            .is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
     {
         return None;
     }

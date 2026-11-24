@@ -1910,7 +1910,14 @@ impl CosmosDriver {
         // path because freshness is owned by this loop.
         #[cfg(feature = "tokio")]
         location_state_store.start_account_refresh_loop(
-            super::routing::background_refresh_interval(&|name| std::env::var(name).ok()),
+            // Lib unit tests ignore the E2E override so job-wide env cannot perturb paused clocks.
+            super::routing::background_refresh_interval(&|name| {
+                if cfg!(test) {
+                    None
+                } else {
+                    std::env::var(name).ok()
+                }
+            }),
         );
 
         // Spawn the background endpoint-probe loop. This makes account-level
