@@ -260,17 +260,12 @@ impl OperationOptions {
 /// operation can spend on retries, configure
 /// [`OperationOptions::end_to_end_latency_policy`].
 ///
-/// Partition-key-range metadata page reads ignore both budgets, including zero.
-/// A cache-owned fill retains completed pages and retries the active page on 429
-/// until success or a non-429 result. Caller deadlines and cancellation stop
-/// only that caller's wait; they do not stop the shared fill.
-///
-/// Invalidating the container's cached topology, disposing of the cache, or
-/// dropping the final external owner of the [`CosmosDriver`](crate::CosmosDriver)
-/// aborts the pending fill. While an external owner remains, persistent
-/// throttling and token acquisition can wait indefinitely. Individual transport
-/// attempts retain their configured timeouts. Incomplete routing maps are never
-/// published.
+/// Partition-key-range metadata reads are not bounded by these retry budgets.
+/// The SDK retains successful pages and continues retrying throttled pages even
+/// after a caller stops waiting. Retries stop when the metadata request succeeds,
+/// fails for another reason, or the client/cache is invalidated or disposed.
+/// Throttling and credential acquisition may wait indefinitely while the client
+/// remains active; transport timeouts still apply.
 #[derive(CosmosOptions, Clone, Debug)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
