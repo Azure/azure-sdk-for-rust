@@ -57,10 +57,11 @@ use std::sync::Arc;
 use async_trait::async_trait;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{FeedRange, RequestCharge};
+use crate::models::{FeedRange, RequestCharge, SessionToken};
 
 use super::distinct_hash::{hash_value, Hash128};
 use super::query_plan::DistinctType;
+use super::query_response::merge_session_token;
 use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{skip_take_page, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
 
@@ -116,6 +117,8 @@ pub(crate) struct Distinct {
     /// re-bounds its record list to `max_request_diagnostics`, so a long run of
     /// all-duplicate pages cannot grow the artifact without limit.
     suppressed_diagnostics: RecoveryDiagnostics,
+    /// Session progress from every page consumed since the last emitted page.
+    pending_session_token: Option<SessionToken>,
     /// The most recently suppressed page, kept as a template so accumulated
     /// charge/diagnostics can still be flushed as a final empty page if the
     /// child drains without ever surfacing a terminal page.
@@ -168,6 +171,7 @@ impl Distinct {
             exhausted: false,
             suppressed_charge: RequestCharge::default(),
             suppressed_diagnostics: RecoveryDiagnostics::default(),
+            pending_session_token: None,
             pending_flush: None,
             emit_binary,
             poisoned: false,
@@ -197,6 +201,7 @@ impl Distinct {
     ) -> PipelineResponse {
         let mut headers = response.headers().clone();
         headers.item_count = Some(emitted as u32);
+        headers.session_token = self.pending_session_token.take();
         if self.suppressed_charge != RequestCharge::default() {
             let base = headers.request_charge.unwrap_or_default();
             headers.request_charge = Some(base + self.suppressed_charge);
@@ -224,6 +229,7 @@ impl Distinct {
     fn clear_suppressed(&mut self) {
         self.suppressed_charge = RequestCharge::default();
         self.suppressed_diagnostics = RecoveryDiagnostics::default();
+        self.pending_session_token = None;
         self.pending_flush = None;
     }
 
@@ -250,6 +256,7 @@ impl Distinct {
         let mut headers = template.headers().clone();
         headers.item_count = Some(0);
         headers.request_charge = Some(self.suppressed_charge);
+        headers.session_token = self.pending_session_token.take();
         let response = PipelineResponse::new(
             PipelineBody::from_items(Vec::new()),
             headers,
@@ -277,6 +284,10 @@ impl Distinct {
         response: PipelineResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
+        merge_session_token(
+            &mut self.pending_session_token,
+            response.headers().session_token.as_ref(),
+        )?;
         // An ordered merge hands over pre-split items, already in the output
         // encoding; a raw feed page is split as text, then re-encoded below.
         let (items, needs_encode) = match response.body() {
@@ -325,19 +336,16 @@ impl Distinct {
 
     /// The error a poisoned node returns from every subsequent call.
     ///
-    /// Deliberately the same status as the failure that caused it: the poison
-    /// is that fault made durable. The cause is deterministic — replaying the
-    /// same child page fails the same way — so the message points at the
-    /// encoding rather than suggesting a retry.
+    /// The child's consumed position cannot safely be resumed after a payload
+    /// or metadata failure.
     fn poisoned_error() -> crate::error::CosmosError {
         crate::error::CosmosError::builder()
             .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(
                 "DISTINCT node is unusable: a page was consumed from its child but could not be \
                  processed, so the deduplication map and the child's resume position no longer \
-                 agree and no continuation token can be minted; the page holds a document the \
-                 negotiated encoding cannot represent, so retrying is futile — re-run the query \
-                 with a text response instead",
+                 agree and no continuation token can be minted; restart the query after \
+                 addressing the original page-processing error",
             )
             .build()
     }

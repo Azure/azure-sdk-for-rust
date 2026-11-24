@@ -203,7 +203,7 @@ mod tests {
                             assert_eq!(program.to_string_lossy(), "cmd");
                             assert_eq!(args[0], "/C");
                             assert!(args[1].starts_with(&format!(
-                                "cd {system_root} && az account get-access-token -o json"
+                                "cd /d {system_root} && az account get-access-token -o json"
                             )));
                         } else {
                             assert_eq!(program, "/bin/sh");

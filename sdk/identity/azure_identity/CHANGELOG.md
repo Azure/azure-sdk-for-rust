@@ -1,5 +1,17 @@
 # Release History
 
+## 1.1.0-beta.3 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+- Fixed CLI credentials running outside the system directory on Windows when the working directory is on another drive ([#5631](https://github.com/Azure/azure-sdk-for-rust/issues/5631)).
+
+### Other Changes
+
 ## 1.1.0-beta.2 (2026-11-05)
 
 ### Breaking Changes

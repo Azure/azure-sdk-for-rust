@@ -166,4 +166,17 @@ mod tests {
         assert_eq!(err.hresult(), Some(u32::MAX));
         assert!(!err.diagnostic_code().contains("secret"));
     }
+
+    #[test]
+    fn range_resolution_preserves_source_without_logging_partition_values() {
+        let source = crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("private partition value")
+            .build();
+        let error = QueryPlanError::InvalidQueryRanges { source };
+        assert_eq!(error.diagnostic_code(), "invalid_query_ranges");
+        assert_eq!(error.hresult(), None);
+        assert!(std::error::Error::source(&error).is_some());
+        assert!(!error.diagnostic_code().contains("private"));
+    }
 }

@@ -190,7 +190,7 @@ mod tests {
                         assert_eq!(program.to_string_lossy(), "cmd");
                         assert_eq!(args[0], "/C");
                         assert!(args[1].starts_with(&format!(
-                            "cd {system_root} && azd auth token -o json --no-prompt"
+                            "cd /d {system_root} && azd auth token -o json --no-prompt"
                         )));
                     } else {
                         assert_eq!(program, "/bin/sh");

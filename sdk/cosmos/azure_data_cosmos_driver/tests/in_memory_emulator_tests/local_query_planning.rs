@@ -295,7 +295,7 @@ fn expected_gateway_plans(handled_by_native: bool) -> usize {
 }
 
 #[tokio::test]
-async fn unsupported_families_fall_back_to_gateway_once() {
+async fn advanced_families_plan_natively_or_fall_back_once() {
     let (_emulator, recorder, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
@@ -307,14 +307,20 @@ async fn unsupported_families_fall_back_to_gateway_once() {
         (
             "aggregate",
             "SELECT VALUE COUNT(1) FROM c",
-            FallbackOutcome::Error,
+            FallbackOutcome::Plan,
             true,
         ),
         (
             "group_by",
             "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
-            FallbackOutcome::Error,
-            false,
+            FallbackOutcome::Plan,
+            true,
+        ),
+        (
+            "canonical_dcount",
+            "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.pk FROM c) AS t",
+            FallbackOutcome::Plan,
+            true,
         ),
         (
             "dcount",
