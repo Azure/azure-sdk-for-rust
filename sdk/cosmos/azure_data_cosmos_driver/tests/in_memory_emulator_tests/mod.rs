@@ -7,6 +7,7 @@ pub mod account_metadata_refresh;
 pub mod aggregate;
 pub mod batch;
 pub mod binary_response_format;
+pub mod checkpoint_scope;
 #[cfg(feature = "fault_injection")]
 pub mod container_recreation;
 pub mod control_plane;

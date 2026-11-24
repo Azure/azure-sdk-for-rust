@@ -75,12 +75,13 @@ outlives the list. Free each handle with `cosmos_feed_range_free`, the list with
 `cosmos_string_free`.
 
 For a query or change feed, set `operation.feed_range` to a discovered range or
-one built with `cosmos_feed_range_from_epk`. Submit copies the range. Point
-ranges can give incorrect overlap or subset results at boundaries. Queries and
-change feeds reject explicit equal-bound EPK ranges, not ranges created from a
-complete logical partition key. Do not widen a rejected range. To resume, use a
-checkpoint with the same container and scope. A serialized range preserves only
-bounds, not progress or the logical partition key.
+one built with `cosmos_feed_range_from_epk`. Submit copies the range.
+Equal-bound ranges relate as single EPK points. Queries and change feeds reject
+explicit equal-bound EPK ranges, not ranges created from a complete logical
+partition key. Do not widen a rejected range. To resume, use a checkpoint with
+the same container and scope; a different scope fails before any request, but
+checkpoints from earlier releases cannot be scope-checked. A serialized range
+preserves only bounds, not progress or the logical partition key.
 
 Use a matching header and native library; these APIs are not in v0.3.0.
 

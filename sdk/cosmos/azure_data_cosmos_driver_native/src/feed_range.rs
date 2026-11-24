@@ -425,6 +425,11 @@ mod tests {
             ("10", "20", "00", "10", false, false),
             ("00", "10", "10", "20", false, false),
             ("10", "30", "20", "40", false, true),
+            ("10", "10", "10", "10", true, true),
+            ("10", "10", "10", "20", true, true),
+            ("20", "20", "10", "20", false, false),
+            ("10", "20", "10", "10", false, true),
+            ("10", "20", "20", "20", false, false),
         ] {
             let mut range = ptr::null_mut();
             let mut other = ptr::null_mut();
@@ -448,6 +453,48 @@ mod tests {
             cosmos_feed_range_free(range);
             cosmos_feed_range_free(other);
         }
+    }
+
+    #[test]
+    fn logical_partition_points_relate_by_their_effective_key() {
+        let success = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
+        let logical = FeedRangeHandle::into_raw(DriverFeedRange::for_partition(
+            PartitionKey::from("tenant"),
+            &PartitionKeyDefinition::from("/pk"),
+        ));
+        let mut info = CosmosFeedRangeInfo::default();
+        assert_eq!(cosmos_feed_range_inspect(logical, &mut info), success);
+        // SAFETY: inspection returns live owned strings.
+        let point = unsafe {
+            let min = CStr::from_ptr(info.min_inclusive).to_bytes().to_vec();
+            assert_eq!(min, CStr::from_ptr(info.max_exclusive).to_bytes());
+            min
+        };
+        cosmos_string_free(info.min_inclusive);
+        cosmos_string_free(info.max_exclusive);
+        let relate = |other: *const FeedRangeHandle| {
+            let mut result = CosmosFeedRangeRelation::default();
+            assert_eq!(
+                cosmos_feed_range_relate(logical, other, &mut result),
+                success
+            );
+            (result.is_subset, result.overlaps)
+        };
+        assert_eq!(relate(logical), (1, 1));
+        for (min, max, expected) in [
+            (point.as_slice(), point.as_slice(), (1, 1)),
+            (point.as_slice(), b"FF".as_slice(), (1, 1)),
+            (b"".as_slice(), point.as_slice(), (0, 0)),
+        ] {
+            let mut other = ptr::null_mut();
+            assert_eq!(
+                cosmos_feed_range_from_epk(view(min), view(max), &mut other),
+                success
+            );
+            assert_eq!(relate(other), expected);
+            cosmos_feed_range_free(other);
+        }
+        cosmos_feed_range_free(logical);
     }
 
     #[test]

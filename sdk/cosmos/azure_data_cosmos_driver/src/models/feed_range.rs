@@ -206,16 +206,45 @@ impl FeedRange {
     }
 
     /// Returns `true` if this feed range is entirely contained within `other`.
+    ///
+    /// A point range (`min_inclusive == max_exclusive`) is contained in an interval
+    /// when `min_inclusive <= point < max_exclusive`, and in a point only when equal.
     pub fn is_subset_of(&self, other: &FeedRange) -> bool {
-        other.min_inclusive() <= self.min_inclusive()
-            && other.max_exclusive() >= self.max_exclusive()
+        match (self.is_point(), other.is_point()) {
+            (true, _) => other.contains_epk(self.min_inclusive()),
+            (false, true) => false,
+            (false, false) => {
+                other.min_inclusive() <= self.min_inclusive()
+                    && other.max_exclusive() >= self.max_exclusive()
+            }
+        }
     }
 
     /// Returns `true` if this feed range and `other` share any portion of the EPK space.
     ///
-    /// Two feed ranges overlap when one starts before the other ends and vice versa.
+    /// Two intervals overlap when one starts before the other ends and vice versa.
+    /// A point range overlaps another range when that range contains the point.
     pub fn overlaps(&self, other: &FeedRange) -> bool {
-        self.min_inclusive() < other.max_exclusive() && other.min_inclusive() < self.max_exclusive()
+        match (self.is_point(), other.is_point()) {
+            (true, _) => other.contains_epk(self.min_inclusive()),
+            (false, true) => self.contains_epk(other.min_inclusive()),
+            (false, false) => {
+                self.min_inclusive() < other.max_exclusive()
+                    && other.min_inclusive() < self.max_exclusive()
+            }
+        }
+    }
+
+    fn is_point(&self) -> bool {
+        self.min_inclusive() == self.max_exclusive()
+    }
+
+    fn contains_epk(&self, epk: &EffectivePartitionKey) -> bool {
+        if self.is_point() {
+            self.min_inclusive() == epk
+        } else {
+            self.min_inclusive() <= epk && epk < self.max_exclusive()
+        }
     }
 
     fn to_json(&self) -> FeedRangeJson {
@@ -414,6 +443,28 @@ mod tests {
         )?;
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
+        Ok(())
+    }
+
+    #[test]
+    fn point_ranges_use_half_open_containment() -> crate::error::Result<()> {
+        let range = |min: &str, max: &str| -> crate::error::Result<FeedRange> {
+            FeedRange::new(
+                EffectivePartitionKey::try_from(min)?,
+                EffectivePartitionKey::try_from(max)?,
+            )
+        };
+        for (a, b, subset, overlap) in [
+            (range("10", "10")?, range("10", "10")?, true, true),
+            (range("10", "10")?, range("20", "20")?, false, false),
+            (range("10", "10")?, range("10", "20")?, true, true),
+            (range("20", "20")?, range("10", "20")?, false, false),
+            (range("10", "20")?, range("10", "10")?, false, true),
+            (range("10", "20")?, range("20", "20")?, false, false),
+        ] {
+            assert_eq!(a.is_subset_of(&b), subset, "{a:?} subset of {b:?}");
+            assert_eq!(a.overlaps(&b), overlap, "{a:?} overlaps {b:?}");
+        }
         Ok(())
     }
 
