@@ -123,8 +123,8 @@ pub(crate) enum PipelineNodeState {
         ///
         /// `directions` alone is far too weak a discriminator — every
         /// single-column `ASC` query shares it — and
-        /// `ContinuationToken::is_valid_for_operation` only checks the
-        /// operation kind and container RID. Unlike an opaque backend
+        /// `TokenState::is_valid_for_operation` cannot check the query body
+        /// or feed scope. Unlike an opaque backend
         /// continuation (which the service itself binds to the query that
         /// minted it), this node's value boundary is turned into a resume
         /// predicate *client-side*, and a resumed node treats its saved

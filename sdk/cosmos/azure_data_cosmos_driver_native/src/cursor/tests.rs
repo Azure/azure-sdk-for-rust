@@ -46,6 +46,251 @@ use std::{
     time::Duration,
 };
 
+#[test]
+fn discovery_force_refresh_and_detached_list_lifetimes() {
+    use crate::completion::cosmos_completion_take_feed_ranges;
+    use crate::feed_range::{cosmos_feed_range_list_free, cosmos_feed_range_parse};
+    use crate::submit::cosmos_container_read_feed_ranges_submit;
+    let gate = Arc::new(fixture::Gate::default());
+    let fixture = Fixture::from_handles(fixture::scripted_gated(true, Some(Arc::clone(&gate))), 2);
+    let queue = cosmos_completion_queue_create(fixture.runtime, ptr::null());
+    let mut rejected = COSMOS_STATUS_SUCCESS;
+    assert!(cosmos_container_read_feed_ranges_submit(
+        fixture.driver,
+        fixture.container,
+        0,
+        fixture.queue,
+        42,
+        &mut rejected,
+    )
+    .is_null());
+    assert_eq!(
+        rejected,
+        CosmosErrorCode::CosmosErrorCodeQueueFormat.as_status_code()
+    );
+    let initial = gate.routing_reads.load(Ordering::SeqCst);
+    for refresh in [0, 1] {
+        let mut status = COSMOS_STATUS_SUCCESS;
+        let op = cosmos_container_read_feed_ranges_submit(
+            fixture.driver,
+            fixture.container,
+            refresh,
+            queue,
+            42,
+            &mut status,
+        );
+        assert_eq!(status, COSMOS_STATUS_SUCCESS);
+        fixture.drive(op);
+        let mut completion = MaybeUninit::<CosmosCompletion>::uninit();
+        assert_eq!(
+            cosmos_completion_queue_wait(queue, completion.as_mut_ptr(), 1, 0),
+            1
+        );
+        // SAFETY: wait returned one initialized completion.
+        let mut completion = unsafe { completion.assume_init() };
+        assert_eq!(completion.user_data, 42);
+        assert_eq!(completion.status, COSMOS_STATUS_SUCCESS);
+        let list = cosmos_completion_take_feed_ranges(&mut completion);
+        assert!(cosmos_completion_take_feed_ranges(&mut completion).is_null());
+        completion.free_inner();
+        cosmos_operation_handle_free(op);
+        assert!(!list.is_null());
+        // SAFETY: the detached list outlives the completion; copy before freeing it.
+        let serialized = unsafe {
+            assert_eq!((*list).count, 2);
+            let ranges = std::slice::from_raw_parts((*list).ranges, (*list).count);
+            assert_eq!(
+                std::ffi::CStr::from_ptr(ranges[1].min_inclusive).to_bytes(),
+                b"80"
+            );
+            assert_eq!(
+                std::ffi::CStr::from_ptr(ranges[1].max_exclusive).to_bytes(),
+                b"FF"
+            );
+            assert_eq!(ranges[1].is_logical_partition, 0);
+            std::ffi::CStr::from_ptr(ranges[1].serialized)
+                .to_bytes()
+                .to_vec()
+        };
+        cosmos_feed_range_list_free(list);
+        let mut range = ptr::null_mut();
+        assert_eq!(
+            cosmos_feed_range_parse(view(&serialized), &mut range),
+            COSMOS_STATUS_SUCCESS
+        );
+        assert_eq!(
+            crate::feed_range::FeedRangeHandle::from_ptr(range)
+                .unwrap()
+                .inner
+                .min_inclusive()
+                .to_hex(),
+            "80"
+        );
+        cosmos_feed_range_free(range);
+        assert_eq!(
+            gate.routing_reads.load(Ordering::SeqCst),
+            initial + refresh as usize
+        );
+    }
+    gate.routing_failure.store(true, Ordering::Release);
+    let op = cosmos_container_read_feed_ranges_submit(
+        fixture.driver,
+        fixture.container,
+        1,
+        queue,
+        42,
+        ptr::null_mut(),
+    );
+    fixture.drive(op);
+    let mut completion = MaybeUninit::<CosmosCompletion>::uninit();
+    assert_eq!(
+        cosmos_completion_queue_wait(queue, completion.as_mut_ptr(), 1, 0),
+        1
+    );
+    // SAFETY: wait returned one initialized completion.
+    let mut completion = unsafe { completion.assume_init() };
+    assert_eq!(completion.status, COSMOS_STATUS_SUCCESS);
+    let list = cosmos_completion_take_feed_ranges(&mut completion);
+    completion.free_inner();
+    cosmos_operation_handle_free(op);
+    assert!(!list.is_null());
+    // SAFETY: the list has been detached and remains live.
+    assert_eq!(unsafe { (*list).count }, 2);
+    cosmos_feed_range_list_free(list);
+    cosmos_completion_queue_free(queue);
+}
+
+#[test]
+fn discovery_without_resolvable_topology_fails_with_topology_substatus() {
+    use crate::completion::cosmos_completion_take_feed_ranges;
+    use crate::submit::cosmos_container_read_feed_ranges_submit;
+    let warm = Fixture::scripted();
+    let container = ContainerRefHandle::from_ptr(warm.container)
+        .unwrap()
+        .inner
+        .clone();
+    // A second driver has a cold routing cache; its transport serves no ranges.
+    let gate = Arc::new(fixture::Gate::default());
+    gate.empty_routing.store(true, Ordering::Release);
+    let (runtime, driver) = fixture::scripted_gated(true, Some(Arc::clone(&gate)));
+    let cold = Fixture {
+        runtime,
+        driver,
+        container: ContainerRefHandle::into_raw(container),
+        queue: cosmos_completion_queue_create(runtime, ptr::null()),
+        partition_key: Box::into_raw(Box::new(PartitionKeyHandle {
+            inner: azure_data_cosmos_driver::models::PartitionKey::from("pk-0"),
+        })),
+    };
+    let op = cosmos_container_read_feed_ranges_submit(
+        cold.driver,
+        cold.container,
+        0,
+        cold.queue,
+        7,
+        ptr::null_mut(),
+    );
+    cold.drive(op);
+    let mut completion = MaybeUninit::<CosmosCompletion>::uninit();
+    assert_eq!(
+        cosmos_completion_queue_wait(cold.queue, completion.as_mut_ptr(), 1, 0),
+        1
+    );
+    // SAFETY: wait returned one initialized completion.
+    let mut completion = unsafe { completion.assume_init() };
+    assert_eq!(completion.user_data, 7);
+    assert_eq!(completion.status.0 >> 16, 503);
+    assert_eq!(completion.status.0 & 0xffff, 20305);
+    assert!(gate.routing_reads.load(Ordering::SeqCst) > 0);
+    assert!(cosmos_completion_take_feed_ranges(&mut completion).is_null());
+    completion.free_inner();
+    cosmos_operation_handle_free(op);
+}
+
+#[test]
+fn epk_scopes_keep_exact_bounds_and_rejections_never_widen_including_points() {
+    use crate::feed_range::cosmos_feed_range_from_epk;
+    for (min, max) in [("10", "20"), ("10", "10")] {
+        for mode in [0, 1, 2] {
+            let gate = Arc::new(fixture::Gate::default());
+            *gate.expected_scope.lock().unwrap() = Some((min.to_owned(), max.to_owned()));
+            let fixture =
+                Fixture::from_handles(fixture::scripted_gated(true, Some(Arc::clone(&gate))), 2);
+            let mut range = ptr::null_mut();
+            assert_eq!(
+                cosmos_feed_range_from_epk(view(min.as_bytes()), view(max.as_bytes()), &mut range),
+                COSMOS_STATUS_SUCCESS
+            );
+            let mut request = fixture.request();
+            request.operation.partition_key = ptr::null();
+            request.operation.feed_range = range;
+            request.change_feed_mode = mode;
+            request.operation.kind = if mode == 0 { 17 } else { 0 };
+            request.start_from = u32::from(mode != 0);
+            let body = br#"{"query":"SELECT TOP 6 * FROM c ORDER BY c.rank"}"#;
+            let mut options = cosmos_operation_options_default();
+            options.query_plan_mode = 2;
+            request.operation.options = &options;
+            if mode == 0 {
+                request.operation.body = body.as_ptr();
+                request.operation.body_len = body.len();
+            }
+            let opened = fixture.receive(cosmos_cursor_open_submit(
+                fixture.driver,
+                &request,
+                fixture.queue,
+                0,
+                ptr::null_mut(),
+            ));
+            // SAFETY: receive transfers ownership of a completion allocated by the queue.
+            let status = unsafe { opened.as_ref() }
+                .expect("scoped cursor open returned a null completion")
+                .common
+                .status;
+            if min == max {
+                assert_eq!(status.0 & 0xffff, if mode == 0 { 20302 } else { 20305 });
+                assert_eq!(gate.scoped_reads.load(Ordering::SeqCst), 0);
+                cosmos_cursor_completion_free(opened);
+                cosmos_feed_range_free(range);
+                continue;
+            }
+            // SAFETY: this test owns the completion until after diagnostics are read.
+            let message = unsafe { opened.as_ref() }
+                .expect("scoped cursor open returned a null completion")
+                .common
+                .message;
+            let message = (!message.is_null()).then(|| {
+                // SAFETY: a non-null message is NUL-terminated and owned by the live completion.
+                unsafe { std::ffi::CStr::from_ptr(message) }
+            });
+            assert_eq!(
+                status, COSMOS_STATUS_SUCCESS,
+                "min={min} max={max} mode={mode}: {message:?}",
+            );
+            let cursor = cosmos_cursor_completion_take_cursor(opened);
+            cosmos_cursor_completion_free(opened);
+            cosmos_feed_range_free(range);
+            let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+            // SAFETY: this test owns the live completion until it is freed below.
+            let completion =
+                unsafe { page.as_ref() }.expect("scoped cursor next returned a null completion");
+            if mode == 0 {
+                assert_eq!(completion.common.status, COSMOS_STATUS_SUCCESS);
+            } else {
+                assert_eq!(completion.common.http_status_code, 400);
+                assert_eq!(completion.common.status.0 & 0xffff, 1001);
+                assert_eq!(completion.common.is_from_wire, 1);
+            }
+            assert!(gate.scoped_reads.load(Ordering::SeqCst) >= 1);
+            if mode != 0 {
+                assert_eq!(gate.scoped_reads.load(Ordering::SeqCst), 1);
+            }
+            cosmos_cursor_completion_free(page);
+            cosmos_cursor_free(cursor);
+        }
+    }
+}
+
 #[tokio::test]
 async fn wrapped_faults_survive_cursor_error_delivery() {
     use super::Delivery;

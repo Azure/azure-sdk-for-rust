@@ -1029,11 +1029,6 @@ typedef struct cosmos_driver_t cosmos_driver_t;
 typedef struct cosmos_driver_options_t cosmos_driver_options_t;
 
 /**
- * The C ABI handle for a feed range (`cosmos_feed_range_t`).
- */
-typedef struct cosmos_feed_range_t cosmos_feed_range_t;
-
-/**
  * The C ABI handle for an in-flight (or just-completed) operation
  * (`cosmos_operation_handle_t`).
  *
@@ -1221,6 +1216,53 @@ typedef struct cosmos_bytes_t {
    */
   uintptr_t len;
 } cosmos_bytes_t;
+
+/**
+ * Feed-range bounds, logical partition-key identity, and bounds-only serialization.
+ *
+ * Read directly from a feed-range handle's `info` field or a list entry.
+ * Strings are read-only and borrowed from their owner; copy them before it is freed.
+ *
+ * Bounds are uppercase hexadecimal with trailing `00` padding preserved. Compare ranges
+ * with `cosmos_feed_range_relate()`, not string equality: `3A00` and `3A0000` are one EPK.
+ */
+typedef struct cosmos_feed_range_info_t {
+  /**
+   * NUL-terminated hexadecimal inclusive minimum, including the empty minimum.
+   */
+  const char *min_inclusive;
+  /**
+   * NUL-terminated hexadecimal exclusive maximum. Bounds equal after ignoring trailing
+   * `00` bytes denote one EPK.
+   */
+  const char *max_exclusive;
+  /**
+   * 1 if the handle retains logical partition-key identity; otherwise 0.
+   */
+  uint8_t is_logical_partition;
+  /**
+   * NUL-terminated canonical serialization for [`cosmos_feed_range_parse()`].
+   * Preserves bounds only, not logical partition-key identity or continuation state.
+   */
+  const char *serialized;
+} cosmos_feed_range_info_t;
+
+/**
+ * Rust-owned discovery result with a contiguous array of range information.
+ *
+ * The array and its strings are read-only and valid until [`cosmos_feed_range_list_free()`].
+ * Copy every needed string before freeing the list; do not free entries or strings separately.
+ */
+typedef struct cosmos_feed_range_list_t {
+  /**
+   * Borrowed entries, or NULL when `count` is zero.
+   */
+  const struct cosmos_feed_range_info_t *ranges;
+  /**
+   * Number of entries addressable from `ranges`.
+   */
+  uintptr_t count;
+} cosmos_feed_range_list_t;
 
 /**
  * Payload half of the [`CosmosValue`] tagged union. Only the field selected
@@ -1513,6 +1555,22 @@ typedef struct cosmos_partition_key_component_t {
    */
   union cosmos_partition_key_component_value_t value;
 } cosmos_partition_key_component_t;
+
+/**
+ * The C ABI handle for a feed range (`cosmos_feed_range_t`).
+ *
+ * `info` and its strings are read-only and valid until [`cosmos_feed_range_free()`].
+ * Copy any needed string before freeing; never modify or free the strings.
+ *
+ * Use only pointers returned by this library. The struct is the prefix of a larger
+ * allocation: never allocate it, copy it by value, or pass a copy to any API.
+ */
+typedef struct cosmos_feed_range_t {
+  /**
+   * Bounds, logical partition-key identity, and canonical serialization.
+   */
+  struct cosmos_feed_range_info_t info;
+} cosmos_feed_range_t;
 
 /**
  * A single custom request/operation header. Both views are
@@ -2097,6 +2155,20 @@ typedef struct cosmos_driver_options_config_v2_t {
 } cosmos_driver_options_config_v2_t;
 
 /**
+ * The driver's effective-bound subset and overlap results, encoded as 0 or 1.
+ */
+typedef struct cosmos_feed_range_relation_t {
+  /**
+   * Whether the first range is a subset of the second range.
+   */
+  uint8_t is_subset;
+  /**
+   * Whether the ranges overlap.
+   */
+  uint8_t overlaps;
+} cosmos_feed_range_relation_t;
+
+/**
  * One selected logical key, with an item id only for item selection.
  */
 typedef struct cosmos_read_many_identity_t {
@@ -2325,6 +2397,15 @@ void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
  * undefined behavior.
  */
 void cosmos_bytes_free(struct cosmos_bytes_t bytes);
+
+/**
+ * Detaches an owned discovery list once; returns NULL for other or already-detached completions.
+ *
+ * The list, its contiguous entries, and their strings outlive the completion.
+ * Read `ranges` and `count` directly; an empty list has NULL `ranges` and zero `count`.
+ * Copy all needed strings before freeing the list with `cosmos_feed_range_list_free`.
+ */
+struct cosmos_feed_range_list_t *cosmos_completion_take_feed_ranges(struct cosmos_completion_t *completion);
 
 /**
  * Returns the effective PATCH tracking UUID carried by a completion.
@@ -2849,6 +2930,41 @@ struct cosmos_fault_injection_result_t cosmos_fault_injection_result_default(voi
 struct cosmos_fault_injection_rule_t cosmos_fault_injection_rule_default(void);
 
 /**
+ * Frees a discovery list, its entries, and all referenced strings. NULL is a no-op.
+ *
+ * `list` must be an unmodified list returned by `cosmos_completion_take_feed_ranges`
+ * that has not already been freed. Any pointers into it become invalid.
+ */
+void cosmos_feed_range_list_free(struct cosmos_feed_range_list_t *list);
+
+/**
+ * Constructs a range from even-length hexadecimal EPK bounds, including the empty minimum.
+ *
+ * Inverted or malformed bounds fail. Equal bounds represent one EPK, matching the driver.
+ */
+cosmos_status_code_t cosmos_feed_range_from_epk(struct cosmos_string_view_t min,
+                                                struct cosmos_string_view_t max,
+                                                struct cosmos_feed_range_t **out);
+
+/**
+ * Parses the driver's base64-encoded JSON range representation, copying the input.
+ *
+ * Parsing restores effective bounds only, not logical partition identity.
+ */
+cosmos_status_code_t cosmos_feed_range_parse(struct cosmos_string_view_t serialized,
+                                             struct cosmos_feed_range_t **out);
+
+/**
+ * Compares effective bounds using the driver's existing subset and overlap semantics.
+ *
+ * `out` must point to writable, aligned storage for one [`CosmosFeedRangeRelation`].
+ * Failure zeroes the output; neither input handle is consumed.
+ */
+cosmos_status_code_t cosmos_feed_range_relate(const struct cosmos_feed_range_t *range,
+                                              const struct cosmos_feed_range_t *other,
+                                              struct cosmos_feed_range_relation_t *out);
+
+/**
  * Constructs a feed range covering the entire EPK key space. Mirrors
  * [`azure_data_cosmos_driver::models::FeedRange::full`].
  *
@@ -3102,6 +3218,19 @@ struct cosmos_runtime_options_t cosmos_runtime_options_default(void);
 cosmos_status_code_t cosmos_runtime_build(const struct cosmos_runtime_options_t *options,
                                           struct cosmos_runtime_t **out_runtime,
                                           struct cosmos_error_t **out_error);
+
+/**
+ * Discovers ranges using the driver's routing cache and an ordinary completion queue.
+ *
+ * `force_refresh` must be 0 or 1. Detach the result with
+ * `cosmos_completion_take_feed_ranges`; unresolved topology fails with HTTP 503 and sub-status 20305.
+ */
+struct cosmos_operation_handle_t *cosmos_container_read_feed_ranges_submit(const struct cosmos_driver_t *driver,
+                                                                           const struct cosmos_container_ref_t *container,
+                                                                           uint8_t force_refresh,
+                                                                           struct cosmos_completion_queue_t *queue,
+                                                                           intptr_t user_data,
+                                                                           cosmos_status_code_t *out_pre_error);
 
 /**
  * Submits a feed-capable operation for asynchronous execution, binding to

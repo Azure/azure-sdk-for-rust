@@ -348,6 +348,7 @@ pub struct CosmosCompletion {
 /// it as an opaque forward-declared struct the C side only ever holds by
 /// pointer.
 pub struct CosmosCompletionBacking {
+    feed_ranges: Option<Box<crate::feed_range::OwnedFeedRangeList>>,
     response: Option<CosmosResponse>,
     headers: OwnedResponseHeaders,
     message: Option<CString>,
@@ -361,6 +362,7 @@ pub struct CosmosCompletionBacking {
 /// handed to the host, converted to an FFI [`CosmosCompletion`] at drain time
 /// by [`PendingCompletion::into_ffi`].
 pub(crate) struct PendingCompletion {
+    feed_ranges: Option<Box<crate::feed_range::OwnedFeedRangeList>>,
     outcome: CosmosCompletionOutcome,
     status: CosmosStatusCode,
     user_data: isize,
@@ -413,6 +415,7 @@ impl PendingCompletion {
     ) -> Self {
         let patch_tracking_id = op_inner.patch_tracking_id();
         Self {
+            feed_ranges: None,
             outcome,
             status,
             user_data,
@@ -507,6 +510,32 @@ impl PendingCompletion {
         p
     }
 
+    pub(crate) fn ok_feed_ranges(
+        user_data: isize,
+        op_inner: Arc<OperationInner>,
+        ranges: Vec<azure_data_cosmos_driver::models::FeedRange>,
+    ) -> azure_data_cosmos_driver::error::Result<Self> {
+        let list = crate::feed_range::OwnedFeedRangeList::new(ranges).map_err(|error| {
+            DriverCosmosError::builder()
+                .with_status(
+                    CosmosErrorCode::CosmosErrorCodeInternalError
+                        .to_status()
+                        .unwrap(),
+                )
+                .with_message("failed to encode feed-range discovery strings")
+                .with_source(error)
+                .build()
+        })?;
+        let mut p = Self::base(
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+            COSMOS_STATUS_SUCCESS,
+            user_data,
+            op_inner,
+        );
+        p.feed_ranges = Some(Box::new(list));
+        Ok(p)
+    }
+
     /// Error completion. When `include_details` is set the rich error fields
     /// (message, wire status, headers, backtrace) are flattened inline;
     /// otherwise only the packed `status` is populated.
@@ -587,6 +616,7 @@ impl PendingCompletion {
             .map_or(std::ptr::null_mut(), ContainerRefHandle::into_raw);
 
         let backing = Box::new(CosmosCompletionBacking {
+            feed_ranges: self.feed_ranges,
             response: self.response,
             headers: self.headers,
             message: self.message,
@@ -628,6 +658,28 @@ impl PendingCompletion {
             container,
             backing: Box::into_raw(backing),
         }
+    }
+}
+
+/// Detaches an owned discovery list once; returns NULL for other or already-detached completions.
+///
+/// The list, its contiguous entries, and their strings outlive the completion.
+/// Read `ranges` and `count` directly; an empty list has NULL `ranges` and zero `count`.
+/// Copy all needed strings before freeing the list with `cosmos_feed_range_list_free`.
+#[no_mangle]
+pub extern "C" fn cosmos_completion_take_feed_ranges(
+    completion: *mut CosmosCompletion,
+) -> *mut crate::feed_range::FeedRangeListHandle {
+    // SAFETY: non-NULL completion and backing are live library-owned allocations.
+    unsafe {
+        completion
+            .as_mut()
+            .and_then(|completion| completion.backing.as_mut())
+            .and_then(|backing| backing.feed_ranges.take())
+            .map_or(
+                std::ptr::null_mut(),
+                crate::feed_range::OwnedFeedRangeList::into_raw,
+            )
     }
 }
 
@@ -1544,6 +1596,25 @@ mod tests {
     use crate::runtime::__test_only_create_default_runtime;
     use std::ffi::CStr;
     use std::mem::MaybeUninit;
+
+    #[test]
+    fn empty_feed_range_completion_detaches_a_non_null_list() {
+        let pending =
+            PendingCompletion::ok_feed_ranges(42, Arc::new(OperationInner::new()), Vec::new())
+                .unwrap();
+        let mut completion = pending.into_ffi();
+        assert_eq!(completion.status, COSMOS_STATUS_SUCCESS);
+        let list = cosmos_completion_take_feed_ranges(&mut completion);
+        assert!(!list.is_null());
+        assert!(cosmos_completion_take_feed_ranges(&mut completion).is_null());
+        completion.free_inner();
+        // SAFETY: the empty list remains live after freeing its source completion.
+        unsafe {
+            assert_eq!((*list).count, 0);
+            assert!((*list).ranges.is_null());
+        }
+        crate::feed_range::cosmos_feed_range_list_free(list);
+    }
 
     #[tokio::test]
     async fn wrapped_service_completions_preserve_status_diagnostics_and_body() {

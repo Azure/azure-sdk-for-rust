@@ -17,6 +17,13 @@
 //! only support `c1.` reject `c2.` checkpoints.
 //! Unsupported versions are rejected with a clear error.
 //!
+//! Resume with the same container, query, and feed scope. Client tokens validate
+//! operation kind, container RID, and change-feed mode, but do not record the
+//! original scope. Changing scope can silently change the resumed work.
+//! Streaming `ORDER BY` checkpoints with a query fingerprint also validate the
+//! query and scope; older ones without it only check saved-range containment
+//! and pipeline shape.
+//!
 //! Tokens without a `c<N>.` prefix are treated as opaque server-issued
 //! continuation strings and are only valid for trivial operations
 //! (single-partition or non-query operations) where the SDK can pass them
@@ -257,7 +264,15 @@ impl TokenState {
         .or(self.change_feed_start.as_ref())
     }
 
-    /// Validates that this token state is compatible with the provided query
+    /// Validates the operation kind, container RID, and change-feed mode.
+    ///
+    /// This does not validate query text or feed scope. Callers must reuse both;
+    /// streaming `ORDER BY` planning separately checks its query fingerprint.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an incompatible operation kind, change-feed mode,
+    /// or container, or an operation without a container.
     pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> crate::error::Result<()> {
         let expected = TokenOperation::for_operation(operation)?;
         if self.operation != expected {

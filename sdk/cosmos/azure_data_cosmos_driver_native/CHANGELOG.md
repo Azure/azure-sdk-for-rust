@@ -1,5 +1,17 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added native feed-range discovery as a Rust-owned flat array of bounds, identity, and canonical serialization with one list free, plus EPK construction, feed-range handles that expose their bounds, logical flag, and bounds-only serialization directly, and subset/overlap relations. ([#5662](https://github.com/Azure/azure-sdk-for-rust/pull/5662))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added

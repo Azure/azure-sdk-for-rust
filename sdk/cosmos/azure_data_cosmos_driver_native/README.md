@@ -65,6 +65,49 @@ for the full design.
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 | Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
+## Feed ranges
+
+Discover ranges with `cosmos_container_read_feed_ranges_submit` on an ordinary
+completion queue. A failed refresh can return cached ranges. Detach the list with
+`cosmos_completion_take_feed_ranges`, then read its `ranges` array and `count`
+directly. Each entry contains NUL-terminated bounds, a logical-partition flag,
+and canonical bounds-only `serialized` text. Copy all needed strings into
+host-owned storage, then call `cosmos_feed_range_list_free` once; never free
+individual entries or their strings. An empty successful list has `count == 0`
+and `ranges == NULL`; a NULL list means no discovery result. Detached lists
+outlive their completions.
+
+Every `cosmos_feed_range_t` handle exposes the same information directly as
+`range->info`, with no native call: NUL-terminated `min_inclusive` and
+`max_exclusive`, `is_logical_partition`, and canonical bounds-only `serialized`
+text. The strings are read-only, borrowed from the handle, and valid until
+`cosmos_feed_range_free`; copy what you need and never modify or free them.
+`info` bounds equal the bounds of `cosmos_feed_range_parse(info.serialized)`.
+Use only handle pointers returned by the library; never allocate or copy the
+struct by value. Bounds are uppercase hexadecimal with trailing `00` padding
+preserved, so `3A00` and `3A0000` are one EPK: compare ranges with
+`cosmos_feed_range_relate`, not string equality.
+
+For a query or change feed, parse a copied `serialized` text with
+`cosmos_feed_range_parse`, or construct a range with `cosmos_feed_range_from_epk`
+or `cosmos_feed_range_for_partition_key`. Set `operation.feed_range` to that
+handle; submit copies it. Free handles with `cosmos_feed_range_free`.
+Equal-bound ranges relate as single EPK points. Queries and change feeds reject
+explicit equal-bound EPK ranges, not ranges created from a complete logical
+partition key. Do not widen a rejected range. A serialized range preserves only
+bounds, not progress or the logical partition key.
+
+To resume, callers must reuse the same container, query, and feed scope.
+Client-issued checkpoints validate operation kind, container RID, and change-feed
+mode, but do not record or generally validate the original scope. Changing the
+scope can expand or otherwise change the resumed work without an error.
+Streaming `ORDER BY` checkpoints with a query fingerprint are an exception:
+they validate the query and scope; older ones without it only check saved-range
+containment and pipeline shape. Opaque server tokens are passed through only
+where supported and do not provide client-side scope validation.
+
+Use a matching header and native library; these APIs are not in v0.3.0.
+
 ## Read-many cursors
 
 Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,

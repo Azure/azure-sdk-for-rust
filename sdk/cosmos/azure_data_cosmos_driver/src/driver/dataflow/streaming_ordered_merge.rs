@@ -812,8 +812,8 @@ impl PipelineNode for StreamingOrderedMerge {
 ///
 /// The scope is part of the fingerprint because nothing else binds it. A
 /// resumed node treats its saved ranges as authoritative, and
-/// `ContinuationToken::is_valid_for_operation` checks only the operation kind
-/// and container RID — so replaying a token under a different
+/// `TokenState::is_valid_for_operation` does not validate query text or scope —
+/// so replaying a token under a different
 /// `FeedScope` (a different explicit range, or a different partial
 /// hierarchical partition key prefix) would otherwise read outside the
 /// requested scope, or silently return only the scope the token was minted
