@@ -15,7 +15,7 @@ use super::{
     BlobContainerClientGetPropertiesResult, BlobContainerClientReleaseLeaseResult,
     BlobContainerClientRenewLeaseResult, BlobServiceClientGetAccountInfoResult, BlobType,
     BlockBlobClientCommitBlockListResult, BlockBlobClientStageBlockFromUrlResult,
-    BlockBlobClientStageBlockResult, BlockBlobClientUploadBlobFromUrlResult,
+    BlockBlobClientStageBlockInternalResult, BlockBlobClientUploadBlobFromUrlResult,
     BlockBlobClientUploadInternalResult, BlockList, CopyStatus, ImmutabilityPolicyMode,
     LeaseDuration, LeaseState, LeaseStatus, PageBlobClientClearPagesResult,
     PageBlobClientCreateResult, PageBlobClientResizeResult, PageBlobClientSetSequenceNumberResult,
@@ -1970,15 +1970,15 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
     }
 }
 
-/// Provides access to typed response headers for `BlockBlobClient::stage_block()`
+/// Provides access to typed response headers for `BlockBlobClient::stage_block_internal()`
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// use azure_core::{Result, http::{Response, NoFormat}};
-/// use azure_storage_blob::models::{BlockBlobClientStageBlockResult, BlockBlobClientStageBlockResultHeaders};
+/// use azure_storage_blob::models::{BlockBlobClientStageBlockInternalResult, BlockBlobClientStageBlockInternalResultHeaders};
 /// async fn example() -> Result<()> {
-///     let response: Response<BlockBlobClientStageBlockResult, NoFormat> = unimplemented!();
+///     let response: Response<BlockBlobClientStageBlockInternalResult, NoFormat> = unimplemented!();
 ///     // Access response headers
 ///     if let Some(content_md5) = response.content_md5()? {
 ///         println!("content-md5: {:?}", content_md5);
@@ -1992,7 +1992,7 @@ impl BlockBlobClientStageBlockFromUrlResultHeaders
 ///     Ok(())
 /// }
 /// ```
-pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
+pub(crate) trait BlockBlobClientStageBlockInternalResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
@@ -2000,8 +2000,8 @@ pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
     fn is_server_encrypted(&self) -> Result<Option<bool>>;
 }
 
-impl BlockBlobClientStageBlockResultHeaders
-    for Response<BlockBlobClientStageBlockResult, NoFormat>
+impl BlockBlobClientStageBlockInternalResultHeaders
+    for Response<BlockBlobClientStageBlockInternalResult, NoFormat>
 {
     /// The blob content MD5 hash. Only returned if the full blob is read.
     fn content_md5(&self) -> Result<Option<Vec<u8>>> {
@@ -2728,7 +2728,7 @@ mod private {
         BlobContainerClientGetAccountInfoResult, BlobContainerClientGetPropertiesResult,
         BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseResult,
         BlobServiceClientGetAccountInfoResult, BlockBlobClientCommitBlockListResult,
-        BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockResult,
+        BlockBlobClientStageBlockFromUrlResult, BlockBlobClientStageBlockInternalResult,
         BlockBlobClientUploadBlobFromUrlResult, BlockBlobClientUploadInternalResult, BlockList,
         PageBlobClientClearPagesResult, PageBlobClientCreateResult, PageBlobClientResizeResult,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlResult,
@@ -2762,7 +2762,7 @@ mod private {
     impl Sealed for Response<BlobServiceClientGetAccountInfoResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientCommitBlockListResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientStageBlockFromUrlResult, NoFormat> {}
-    impl Sealed for Response<BlockBlobClientStageBlockResult, NoFormat> {}
+    impl Sealed for Response<BlockBlobClientStageBlockInternalResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat> {}
     impl Sealed for Response<BlockBlobClientUploadInternalResult, NoFormat> {}
     impl Sealed for Response<BlockList, XmlFormat> {}

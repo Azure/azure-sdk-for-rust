@@ -528,9 +528,9 @@ pub struct BlockBlobClientCommitBlockListResult;
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockFromUrlResult;
 
-/// Contains results for `BlockBlobClient::stage_block()`
+/// Contains results for `BlockBlobClient::stage_block_internal()`
 #[derive(SafeDebug)]
-pub struct BlockBlobClientStageBlockResult;
+pub(crate) struct BlockBlobClientStageBlockInternalResult;
 
 /// Contains results for `BlockBlobClient::upload_blob_from_url()`
 #[derive(SafeDebug)]

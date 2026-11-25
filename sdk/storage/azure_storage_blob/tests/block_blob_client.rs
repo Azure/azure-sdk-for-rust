@@ -610,6 +610,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
             &block_id,
             u64::try_from(content.len())?,
             RequestContent::from(content.clone()),
+            #[allow(deprecated)]
             Some(BlockBlobClientStageBlockOptions {
                 transactional_content_md5: Some(vec![0u8; 16]),
                 ..Default::default()
@@ -627,6 +628,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
             &block_id,
             u64::try_from(content.len())?,
             RequestContent::from(content.clone()),
+            #[allow(deprecated)]
             Some(BlockBlobClientStageBlockOptions {
                 transactional_content_md5: Some(correct_md5),
                 ..Default::default()
@@ -640,6 +642,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
             &block_id,
             u64::try_from(content.len())?,
             RequestContent::from(content.clone()),
+            #[allow(deprecated)]
             Some(BlockBlobClientStageBlockOptions {
                 transactional_content_crc64: Some(vec![0u8; 8]),
                 ..Default::default()
@@ -657,6 +660,7 @@ async fn test_stage_block_transactional_checksums(ctx: TestContext) -> Result<()
             &block_id,
             u64::try_from(content.len())?,
             RequestContent::from(content),
+            #[allow(deprecated)]
             Some(BlockBlobClientStageBlockOptions {
                 transactional_content_crc64: Some(correct_crc64),
                 ..Default::default()

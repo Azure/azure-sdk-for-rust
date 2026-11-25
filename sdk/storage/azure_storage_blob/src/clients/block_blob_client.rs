@@ -4,12 +4,14 @@
 pub use crate::generated::clients::{BlockBlobClient, BlockBlobClientOptions};
 
 use crate::{
+    content_validation::{self, StorageUploadBody},
     generated::models::{
         BlockBlobClientCommitBlockListResultHeaders, BlockBlobClientUploadInternalOptions,
         BlockBlobClientUploadInternalResultHeaders,
     },
     models::{
-        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockInternalOptions,
+        BlockBlobClientStageBlockOptions, BlockBlobClientStageBlockResult,
         BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
@@ -17,11 +19,12 @@ use crate::{
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
+    error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Body, NoFormat, Pipeline, RequestContent, Url,
+        Body, NoFormat, Pipeline, RequestContent, Response, Url,
     },
-    tracing, Bytes, Result, Uuid,
+    tracing, Bytes, Error, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::sync::Arc;
@@ -148,8 +151,11 @@ impl BlockBlobClient {
             lease_id: options.lease_id.clone(),
             method_options: options.method_options.clone(),
             timeout: options.per_request_timeout,
+            #[allow(deprecated, reason = "Manual `None` to avoid `..Default::default()`")]
             transactional_content_crc64: None,
+            #[allow(deprecated, reason = "Manual `None` to avoid `..Default::default()`")]
             transactional_content_md5: None,
+            content_validation: None,
         };
         let commit_block_list_options = BlockBlobClientCommitBlockListOptions {
             blob_cache_control: options.blob_cache_control,
@@ -192,6 +198,99 @@ impl BlockBlobClient {
                 "Upload completed without setting result.",
             )
         })
+    }
+
+    /// Creates a new block of data to be committed as part of a blob.
+    ///
+    /// # Arguments
+    ///
+    /// * `block_id` - A Base64 value that identifies the block. Prior to encoding, the string must be less than or equal to 64
+    ///   bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the same size for
+    ///   each block.
+    /// * `content_length` - The length of the request.
+    /// * `body` - The body of the request.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// ## Response Headers
+    ///
+    /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientStageBlockResultHeaders`] trait, which provides
+    /// access to response headers. For example:
+    ///
+    /// ```ignore
+    /// use azure_core::{Result, http::{Response, NoFormat}};
+    /// use azure_storage_blob::models::{BlockBlobClientStageBlockResult, BlockBlobClientStageBlockResultHeaders};
+    /// async fn example() -> Result<()> {
+    ///     let response: Response<BlockBlobClientStageBlockResult, NoFormat> = unimplemented!();
+    ///     // Access response headers
+    ///     if let Some(content_md5) = response.content_md5()? {
+    ///         println!("content-md5: {:?}", content_md5);
+    ///     }
+    ///     if let Some(content_crc64) = response.content_crc64()? {
+    ///         println!("x-ms-content-crc64: {:?}", content_crc64);
+    ///     }
+    ///     if let Some(encryption_key_sha256) = response.encryption_key_sha256()? {
+    ///         println!("x-ms-encryption-key-sha256: {:?}", encryption_key_sha256);
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
+    /// ### Available headers
+    /// * [`content_md5`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_md5) - content-md5
+    /// * [`content_crc64`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::content_crc64) - x-ms-content-crc64
+    /// * [`encryption_key_sha256`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::encryption_key_sha256) - x-ms-encryption-key-sha256
+    /// * [`encryption_scope`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::encryption_scope) - x-ms-encryption-scope
+    /// * [`is_server_encrypted`()](crate::generated::models::BlockBlobClientStageBlockResultHeaders::is_server_encrypted) - x-ms-request-server-encrypted
+    ///
+    /// [`BlockBlobClientStageBlockResultHeaders`]: crate::generated::models::BlockBlobClientStageBlockResultHeaders
+    #[tracing::function("Storage.Blob.BlockBlobClient.stageBlock")]
+    pub async fn stage_block(
+        &self,
+        block_id: &[u8],
+        content_length: u64,
+        body: RequestContent<Bytes, NoFormat>,
+        options: Option<BlockBlobClientStageBlockOptions<'_>>,
+    ) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>> {
+        let options = options.unwrap_or_default();
+        let mut content_length = content_length;
+        let content_validation_options = options.content_validation;
+
+        #[allow(deprecated, reason = "Accepting possible deprecated user input.")]
+        let mut options = BlockBlobClientStageBlockInternalOptions {
+            encryption_algorithm: options.encryption_algorithm,
+            encryption_key: options.encryption_key,
+            encryption_key_sha256: options.encryption_key_sha256,
+            encryption_scope: options.encryption_scope,
+            lease_id: options.lease_id,
+            method_options: options.method_options,
+            timeout: options.timeout,
+            transactional_content_crc64: options.transactional_content_crc64,
+            transactional_content_md5: options.transactional_content_md5,
+            structured_body_type: None,
+            structured_content_length: None,
+            // avoid `..Default::default()` to ensure new generated options are caught in future
+        };
+
+        let body = content_validation::apply_upload_content_validation(
+            body.into(),
+            content_validation_options,
+            &mut options.transactional_content_crc64,
+            &mut options.transactional_content_md5,
+            &mut options.structured_body_type,
+            &mut options.structured_content_length,
+        )?;
+        if let StorageUploadBody::StructuredMessage(body) = &body {
+            content_length = body.len().ok_or_else(|| {
+                Error::with_message(
+                    ErrorKind::Other,
+                    "Expected structured message to have known length.",
+                )
+            })?;
+        }
+
+        self.stage_block_internal(block_id, content_length, body.into(), Some(options))
+            .await
+            .map(|r| r.to_raw_response().into())
     }
 }
 

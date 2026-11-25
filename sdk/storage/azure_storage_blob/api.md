@@ -168,13 +168,13 @@ pub mod clients {
     }
     impl BlockBlobClient {
         pub fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlockBlobClientOptions>) -> Result<Self>;
+        pub async fn stage_block(&self, block_id: &[u8], content_length: u64, body: RequestContent<Bytes, NoFormat>, options: Option<BlockBlobClientStageBlockOptions<'_>>) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>>;
         pub async fn upload(&self, content: RequestContent<Bytes, NoFormat>, options: Option<BlockBlobClientUploadOptions<'_>>) -> Result<BlockBlobClientUploadResult>;
         pub fn url(&self) -> &Url;
     }
     impl BlockBlobClient {
         pub async fn commit_block_list(&self, blocks: RequestContent<BlockLookupList, XmlFormat>, options: Option<BlockBlobClientCommitBlockListOptions<'_>>) -> Result<Response<BlockBlobClientCommitBlockListResult, NoFormat>>;
         pub async fn get_block_list(&self, list_type: BlockListType, options: Option<BlockBlobClientGetBlockListOptions<'_>>) -> Result<Response<BlockList, XmlFormat>>;
-        pub async fn stage_block(&self, block_id: &[u8], content_length: u64, body: RequestContent<Bytes, NoFormat>, options: Option<BlockBlobClientStageBlockOptions<'_>>) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>>;
         pub async fn stage_block_from_url(&self, block_id: &[u8], content_length: u64, source_url: String, options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>>;
         pub async fn upload_blob_from_url(&self, copy_source: String, options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>>;
     }
@@ -1072,7 +1072,8 @@ pub mod models {
     pub struct BlockBlobClientStageBlockFromUrlResult;
     #[derive(Clone, Debug, Default)]
     pub struct BlockBlobClientStageBlockOptions<'a> {
-        pub encryption_algorithm: Option<super::EncryptionAlgorithmType>,
+        pub content_validation: Option<UploadContentValidation>,
+        pub encryption_algorithm: Option<crate::models::EncryptionAlgorithmType>,
         pub encryption_key: Option<String>,
         pub encryption_key_sha256: Option<String>,
         pub encryption_scope: Option<String>,
@@ -1906,6 +1907,13 @@ pub mod models {
     impl<'de> Deserialize<'de> for super::DeleteSnapshotsOptionType {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
+    #[derive(Clone, Debug, Default)]
+    pub enum DownloadContentValidation {
+        #[default]
+        Auto,
+        None,
+        Crc64Nvme,
+    }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum EncryptionAlgorithmType {
         Aes256,
@@ -2408,6 +2416,13 @@ pub mod models {
     impl<'de> Deserialize<'de> for super::StorageErrorCode {
         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, <D as >::Error> where D: Deserializer<'de>;
     }
+    #[derive(Clone, Debug, Default)]
+    pub enum UploadContentValidation {
+        #[default]
+        Auto,
+        None,
+        Crc64Nvme(Option<[u8; 8]>),
+    }
     pub trait AppendBlobClientAppendBlockFromUrlResultHeaders: private::Sealed {
         fn blob_append_offset(&self) -> Result<Option<String>>;
         fn blob_committed_block_count(&self) -> Result<Option<i32>>;
@@ -2598,7 +2613,7 @@ pub mod models {
         fn encryption_scope(&self) -> Result<Option<String>>;
         fn is_server_encrypted(&self) -> Result<Option<bool>>;
     }
-    pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
+    pub trait BlockBlobClientStageBlockResultHeaders {
         fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
         fn content_md5(&self) -> Result<Option<Vec<u8>>>;
         fn encryption_key_sha256(&self) -> Result<Option<String>>;

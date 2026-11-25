@@ -1492,35 +1492,42 @@ pub struct BlockBlobClientStageBlockFromUrlOptions<'a> {
     pub timeout: Option<i32>,
 }
 
-/// Options to be passed to `BlockBlobClient::stage_block()`
+/// Options to be passed to `BlockBlobClient::stage_block_internal()`
 #[derive(Clone, Default, SafeDebug)]
-pub struct BlockBlobClientStageBlockOptions<'a> {
+pub(crate) struct BlockBlobClientStageBlockInternalOptions<'a> {
     /// The algorithm used to produce the encryption key hash. Must be provided if the encryption key is provided.
-    pub encryption_algorithm: Option<EncryptionAlgorithmType>,
+    pub(crate) encryption_algorithm: Option<EncryptionAlgorithmType>,
 
     /// Specifies the encryption key to use to encrypt the data provided in the request.
-    pub encryption_key: Option<String>,
+    pub(crate) encryption_key: Option<String>,
 
     /// The SHA-256 hash of the provided encryption key. Must be provided if the encryption key is provided.
-    pub encryption_key_sha256: Option<String>,
+    pub(crate) encryption_key_sha256: Option<String>,
 
     /// Specifies the encryption scope used to encrypt the data.
-    pub encryption_scope: Option<String>,
+    pub(crate) encryption_scope: Option<String>,
 
     /// If specified, the operation only succeeds if the resource's lease is active and matches this ID.
-    pub lease_id: Option<String>,
+    pub(crate) lease_id: Option<String>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub(crate) method_options: ClientMethodOptions<'a>,
+
+    /// Required if the request body is a structured message. Specifies the message schema version and properties.
+    pub(crate) structured_body_type: Option<String>,
+
+    /// Required if the request body is a structured message. Specifies the length of the blob/file content inside the message
+    /// body. Will always be smaller than Content-Length.
+    pub(crate) structured_content_length: Option<u64>,
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
-    pub timeout: Option<i32>,
+    pub(crate) timeout: Option<i32>,
 
     /// Specifies the transactional CRC64 hash for the body.
-    pub transactional_content_crc64: Option<Vec<u8>>,
+    pub(crate) transactional_content_crc64: Option<Vec<u8>>,
 
     /// Specifies the transactional MD5 hash for the body.
-    pub transactional_content_md5: Option<Vec<u8>>,
+    pub(crate) transactional_content_md5: Option<Vec<u8>>,
 }
 
 /// Options to be passed to `BlockBlobClient::upload_blob_from_url()`
