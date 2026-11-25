@@ -38,11 +38,14 @@ We guarantee that all client instance methods are thread-safe and independent of
 [Client options](#configuring-service-clients-using-clientoptions) |
 [Sending an HTTP request body](#sending-an-http-request-body) |
 [Accessing the response](#accessing-http-response-details-using-responset) |
+[Deserializing a custom response model](#deserializing-a-custom-response-model) |
 [Handling errors](#handling-errors) |
 [Iterating through pages of resources](#consuming-service-methods-returning-pagert) |
 [Waiting on long-running operations](#consuming-service-methods-returning-pollert) |
+[Adding HTTP policies](#adding-http-policies) |
 [Replacing the HTTP client](#replacing-the-http-client) |
-[Replacing the async runtime](#replacing-the-async-runtime)
+[Replacing the async runtime](#replacing-the-async-runtime) |
+[Testing with fakes](#testing-with-fakes)
 
 <!-- CLIENT COMMON BAR -->
 
@@ -189,6 +192,22 @@ println!("Status: {}", status);
 for (header_name, header_value) in headers.iter() {
     println!("{}: {}", header_name.as_str(), header_value.as_str());
 }
+```
+
+### Deserializing a custom response model
+
+Add `serde` with the `derive` feature to your dependencies, then use `into_body().json()` to deserialize a response into your own model:
+
+```rust ignore custom-response-model
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct Secret {
+    value: Option<String>,
+}
+
+let response = client.get_secret("secret-name", None).await?;
+let secret: Secret = response.into_body().json()?;
 ```
 
 ### Handling errors
