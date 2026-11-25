@@ -19,7 +19,7 @@ const ENCRYPTION_SCOPE: HeaderName = HeaderName::from_static("x-ms-encryption-sc
 const REQUEST_SERVER_ENCRYPTED: HeaderName =
     HeaderName::from_static("x-ms-request-server-encrypted");
 
-/// Provides access to typed response headers for `BlockBlobClient::stage_block_internal()`
+/// Provides access to typed response headers for `BlockBlobClient::stage_block()`
 ///
 /// # Examples
 ///

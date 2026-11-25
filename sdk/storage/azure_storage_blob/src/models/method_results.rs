@@ -5,7 +5,7 @@ use azure_core::fmt::SafeDebug;
 
 use crate::models::BlockBlobClientStageBlockInternalResult;
 
-/// Contains results for `BlockBlobClient::stage_block_internal()`
+/// Contains results for `BlockBlobClient::stage_block()`
 #[derive(SafeDebug)]
 pub struct BlockBlobClientStageBlockResult;
 
