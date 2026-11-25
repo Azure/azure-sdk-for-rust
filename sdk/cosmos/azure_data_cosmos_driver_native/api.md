@@ -501,22 +501,17 @@ pub mod feed_range {
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
-    pub extern "C" fn cosmos_feed_range_inspect(range: *const FeedRangeHandle, out: *mut CosmosFeedRangeInfo) -> crate::error::CosmosStatusCode;
-    #[no_mangle]
     pub extern "C" fn cosmos_feed_range_list_free(list: *mut FeedRangeListHandle);
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_parse(serialized: crate::string::CosmosStringView, out: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_relate(range: *const FeedRangeHandle, other: *const FeedRangeHandle, out: *mut CosmosFeedRangeRelation) -> crate::error::CosmosStatusCode;
-    #[no_mangle]
-    pub extern "C" fn cosmos_feed_range_serialize(range: *const FeedRangeHandle, out: *mut *mut std::ffi::c_char) -> crate::error::CosmosStatusCode;
-    #[derive(Default)]
     #[repr(C)]
     pub struct CosmosFeedRangeInfo {
-        pub min_inclusive: *mut std::ffi::c_char,
-        pub max_exclusive: *mut std::ffi::c_char,
+        pub min_inclusive: *const std::ffi::c_char,
+        pub max_exclusive: *const std::ffi::c_char,
         pub is_logical_partition: u8,
-        pub serialized: *mut std::ffi::c_char,
+        pub serialized: *const std::ffi::c_char,
     }
     #[derive(Default)]
     #[repr(C)]
@@ -524,7 +519,9 @@ pub mod feed_range {
         pub is_subset: u8,
         pub overlaps: u8,
     }
+    #[repr(C)]
     pub struct FeedRangeHandle {
+        pub info: CosmosFeedRangeInfo,
     }
     #[repr(C)]
     pub struct FeedRangeListHandle {

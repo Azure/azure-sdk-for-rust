@@ -77,12 +77,21 @@ individual entries or their strings. An empty successful list has `count == 0`
 and `ranges == NULL`; a NULL list means no discovery result. Detached lists
 outlive their completions.
 
-For a query or change feed, parse the copied `serialized` text with
-`cosmos_feed_range_parse`, or construct a range with `cosmos_feed_range_from_epk`.
-Set `operation.feed_range` to that handle; submit copies it. Free handles with
-`cosmos_feed_range_free`. Standalone inspection returns three owned strings
-(bounds and serialization); free each with `cosmos_string_free`, as for
-standalone serialization.
+Every `cosmos_feed_range_t` handle exposes the same information directly as
+`range->info`, with no native call: NUL-terminated `min_inclusive` and
+`max_exclusive`, `is_logical_partition`, and canonical bounds-only `serialized`
+text. The strings are read-only, borrowed from the handle, and valid until
+`cosmos_feed_range_free`; copy what you need and never modify or free them.
+`info` bounds equal the bounds of `cosmos_feed_range_parse(info.serialized)`.
+Use only handle pointers returned by the library; never allocate or copy the
+struct by value. Bounds are uppercase hexadecimal with trailing `00` padding
+preserved, so `3A00` and `3A0000` are one EPK: compare ranges with
+`cosmos_feed_range_relate`, not string equality.
+
+For a query or change feed, parse a copied `serialized` text with
+`cosmos_feed_range_parse`, or construct a range with `cosmos_feed_range_from_epk`
+or `cosmos_feed_range_for_partition_key`. Set `operation.feed_range` to that
+handle; submit copies it. Free handles with `cosmos_feed_range_free`.
 Equal-bound ranges relate as single EPK points. Queries and change feeds reject
 explicit equal-bound EPK ranges, not ranges created from a complete logical
 partition key. Do not widen a rejected range. A serialized range preserves only

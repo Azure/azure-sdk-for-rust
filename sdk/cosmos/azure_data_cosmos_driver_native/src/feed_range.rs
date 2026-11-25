@@ -4,8 +4,9 @@
 //! C ABI surface for `cosmos_feed_range_t` — wraps the driver's
 //! [`azure_data_cosmos_driver::models::FeedRange`].
 //!
-//! Returned handles are independent owners. Serialized ranges preserve effective
-//! bounds, not logical partition-key identity or cursor continuation state.
+//! Returned handles are independent owners that expose their range information
+//! directly. Serialized ranges preserve effective bounds, not logical
+//! partition-key identity or cursor continuation state.
 
 use azure_data_cosmos_driver::models::{
     effective_partition_key::EffectivePartitionKey, FeedRange as DriverFeedRange,
@@ -18,16 +19,114 @@ use crate::partition_key::PartitionKeyHandle;
 use crate::string::{required_text, CosmosStringView};
 
 /// The C ABI handle for a feed range (`cosmos_feed_range_t`).
+///
+/// `info` and its strings are read-only and valid until [`cosmos_feed_range_free()`].
+/// Copy any needed string before freeing; never modify or free the strings.
+///
+/// Use only pointers returned by this library. The struct is the prefix of a larger
+/// allocation: never allocate it, copy it by value, or pass a copy to any API.
+#[repr(C)]
 pub struct FeedRangeHandle {
-    /// Consumed by the `query_items` request path.
-    #[allow(dead_code, reason = "consumed by the query_items request path")]
+    /// Bounds, logical partition-key identity, and canonical serialization.
+    pub info: CosmosFeedRangeInfo,
+}
+
+/// Private owner behind every public [`FeedRangeHandle`]; its view must stay first.
+#[repr(C)]
+pub(crate) struct OwnedFeedRange {
+    view: FeedRangeHandle,
     pub(crate) inner: DriverFeedRange,
+    text: RangeText,
+}
+
+impl OwnedFeedRange {
+    fn new(inner: DriverFeedRange) -> Result<Self, NulError> {
+        let text = RangeText::new(&inner)?;
+        Ok(Self {
+            view: FeedRangeHandle {
+                info: text.info(&inner),
+            },
+            inner,
+            text,
+        })
+    }
 }
 
 impl FeedRangeHandle {
-    pub(crate) fn into_raw(inner: DriverFeedRange) -> *mut Self {
-        Box::into_raw(Box::new(FeedRangeHandle { inner }))
+    pub(crate) fn into_raw(inner: DriverFeedRange) -> Result<*mut Self, NulError> {
+        // The repr(C) owner starts with its public view.
+        Ok(Box::into_raw(Box::new(OwnedFeedRange::new(inner)?)).cast())
     }
+
+    /// Borrows the owner for the duration of an FFI call without taking
+    /// ownership. Returns `None` for a NULL pointer.
+    pub(crate) fn from_ptr<'a>(p: *const FeedRangeHandle) -> Option<&'a OwnedFeedRange> {
+        if p.is_null() {
+            return None;
+        }
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and is
+        // not freed for the duration of the borrow.
+        Some(unsafe { &*p.cast::<OwnedFeedRange>() })
+    }
+
+    fn drop_raw(p: *mut FeedRangeHandle) {
+        if p.is_null() {
+            return;
+        }
+        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
+        // not already been freed.
+        unsafe {
+            drop(Box::from_raw(p.cast::<OwnedFeedRange>()));
+        }
+    }
+}
+
+/// NUL-terminated strings referenced by a [`CosmosFeedRangeInfo`].
+struct RangeText {
+    min: CString,
+    max: CString,
+    serialized: CString,
+}
+
+impl RangeText {
+    fn new(range: &DriverFeedRange) -> Result<Self, NulError> {
+        Ok(Self {
+            min: CString::new(range.min_inclusive().to_hex())?,
+            max: CString::new(range.max_exclusive().to_hex())?,
+            serialized: CString::new(range.to_string())?,
+        })
+    }
+
+    /// Heap buffers stay put when the text moves into its owner.
+    fn info(&self, range: &DriverFeedRange) -> CosmosFeedRangeInfo {
+        CosmosFeedRangeInfo {
+            min_inclusive: self.min.as_ptr(),
+            max_exclusive: self.max.as_ptr(),
+            is_logical_partition: u8::from(range.is_logical_partition()),
+            serialized: self.serialized.as_ptr(),
+        }
+    }
+}
+
+/// Feed-range bounds, logical partition-key identity, and bounds-only serialization.
+///
+/// Read directly from a feed-range handle's `info` field or a list entry.
+/// Strings are read-only and borrowed from their owner; copy them before it is freed.
+///
+/// Bounds are uppercase hexadecimal with trailing `00` padding preserved. Compare ranges
+/// with `cosmos_feed_range_relate()`, not string equality: `3A00` and `3A0000` are one EPK.
+#[repr(C)]
+pub struct CosmosFeedRangeInfo {
+    /// NUL-terminated hexadecimal inclusive minimum, including the empty minimum.
+    pub min_inclusive: *const c_char,
+    /// NUL-terminated hexadecimal exclusive maximum. Bounds equal after ignoring trailing
+    /// `00` bytes denote one EPK.
+    pub max_exclusive: *const c_char,
+    /// 1 if the handle retains logical partition-key identity; otherwise 0.
+    pub is_logical_partition: u8,
+    /// NUL-terminated canonical serialization for [`cosmos_feed_range_parse()`].
+    /// Preserves bounds only, not logical partition-key identity or continuation state.
+    pub serialized: *const c_char,
 }
 
 /// Rust-owned discovery result with a contiguous array of range information.
@@ -46,7 +145,7 @@ pub struct FeedRangeListHandle {
 pub(crate) struct OwnedFeedRangeList {
     view: FeedRangeListHandle,
     entries: Box<[CosmosFeedRangeInfo]>,
-    strings: Vec<[CString; 3]>,
+    text: Vec<RangeText>,
 }
 
 // SAFETY: all pointers reference this owner's heap allocations, which are read-only after construction.
@@ -55,19 +154,14 @@ unsafe impl Sync for OwnedFeedRangeList {}
 
 impl OwnedFeedRangeList {
     pub(crate) fn new(ranges: Vec<DriverFeedRange>) -> Result<Self, NulError> {
-        let strings = ranges
+        let text = ranges
             .iter()
-            .map(range_strings)
+            .map(RangeText::new)
             .collect::<Result<Vec<_>, _>>()?;
         let entries = ranges
             .iter()
-            .zip(&strings)
-            .map(|(range, [min, max, serialized])| CosmosFeedRangeInfo {
-                min_inclusive: min.as_ptr().cast_mut(),
-                max_exclusive: max.as_ptr().cast_mut(),
-                is_logical_partition: u8::from(range.is_logical_partition()),
-                serialized: serialized.as_ptr().cast_mut(),
-            })
+            .zip(&text)
+            .map(|(range, text)| text.info(range))
             .collect::<Box<[_]>>();
         Ok(Self {
             view: FeedRangeListHandle {
@@ -79,7 +173,7 @@ impl OwnedFeedRangeList {
                 count: entries.len(),
             },
             entries,
-            strings,
+            text,
         })
     }
 
@@ -101,12 +195,18 @@ pub extern "C" fn cosmos_feed_range_list_free(list: *mut FeedRangeListHandle) {
     }
 }
 
-fn range_strings(range: &DriverFeedRange) -> Result<[CString; 3], NulError> {
-    Ok([
-        CString::new(range.min_inclusive().to_hex())?,
-        CString::new(range.max_exclusive().to_hex())?,
-        CString::new(range.to_string())?,
-    ])
+fn publish(range: DriverFeedRange, out: *mut *mut FeedRangeHandle) -> CosmosStatusCode {
+    // SAFETY: callers verified that `out` is a writable output slot.
+    unsafe { *out = std::ptr::null_mut() };
+    match FeedRangeHandle::into_raw(range) {
+        Ok(handle) => {
+            // SAFETY: output slot was checked by the caller.
+            unsafe { *out = handle };
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        }
+        // Hexadecimal and base64 text never contains NUL.
+        Err(_) => CosmosErrorCode::CosmosErrorCodeInternalError.as_status_code(),
+    }
 }
 
 fn write_range(
@@ -119,11 +219,7 @@ fn write_range(
     // SAFETY: caller supplies a writable output slot.
     unsafe { *out = std::ptr::null_mut() };
     match build() {
-        Ok(range) => {
-            // SAFETY: output slot was checked above.
-            unsafe { *out = FeedRangeHandle::into_raw(range) };
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
-        }
+        Ok(range) => publish(range, out),
         Err(status) => status,
     }
 }
@@ -171,90 +267,6 @@ pub extern "C" fn cosmos_feed_range_parse(
     })
 }
 
-fn write_string(text: String, out: *mut *mut c_char) -> CosmosStatusCode {
-    if out.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
-    }
-    // All callers produce base64 or hexadecimal text.
-    match CString::new(text) {
-        Ok(text) => {
-            // SAFETY: caller supplies a writable output slot.
-            unsafe { *out = text.into_raw() };
-            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
-        }
-        Err(_) => CosmosErrorCode::CosmosErrorCodeInternalError.as_status_code(),
-    }
-}
-
-/// Serializes effective bounds as base64 JSON, setting `*out` to NULL on failure.
-/// Free the owned string with `cosmos_string_free`.
-#[no_mangle]
-pub extern "C" fn cosmos_feed_range_serialize(
-    range: *const FeedRangeHandle,
-    out: *mut *mut c_char,
-) -> CosmosStatusCode {
-    if !out.is_null() {
-        // SAFETY: caller supplies a writable output slot.
-        unsafe { *out = std::ptr::null_mut() };
-    }
-    let Some(range) = FeedRangeHandle::from_ptr(range) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
-    };
-    write_string(range.inner.to_string(), out)
-}
-
-/// Feed-range bounds, logical partition-key identity, and bounds-only serialization.
-///
-/// In a [`FeedRangeListHandle`], strings are borrowed and freed with the list.
-/// From [`cosmos_feed_range_inspect()`], all three strings are independently owned:
-/// free each with `cosmos_string_free`. Do not modify the strings.
-#[repr(C)]
-#[derive(Default)]
-pub struct CosmosFeedRangeInfo {
-    /// NUL-terminated hexadecimal inclusive minimum, including the empty minimum.
-    pub min_inclusive: *mut c_char,
-    /// NUL-terminated hexadecimal exclusive maximum; equal bounds denote one EPK.
-    pub max_exclusive: *mut c_char,
-    /// 1 if the handle retains logical partition-key identity; otherwise 0.
-    pub is_logical_partition: u8,
-    /// NUL-terminated canonical serialization for [`cosmos_feed_range_parse()`].
-    /// Preserves bounds only, not logical partition-key identity or continuation state.
-    pub serialized: *mut c_char,
-}
-
-/// Returns owned bounds, logical identity, and serialization. Zeroes the output on failure.
-///
-/// `out` must point to writable, aligned storage for one [`CosmosFeedRangeInfo`].
-/// All three strings outlive the range handle; free them with `cosmos_string_free`.
-/// Free any previous strings before reusing the output storage.
-#[no_mangle]
-pub extern "C" fn cosmos_feed_range_inspect(
-    range: *const FeedRangeHandle,
-    out: *mut CosmosFeedRangeInfo,
-) -> CosmosStatusCode {
-    if out.is_null() {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
-    }
-    // SAFETY: caller provides writable, aligned result storage.
-    unsafe { *out = CosmosFeedRangeInfo::default() };
-    let Some(range) = FeedRangeHandle::from_ptr(range) else {
-        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
-    };
-    let Ok([min, max, serialized]) = range_strings(&range.inner) else {
-        return CosmosErrorCode::CosmosErrorCodeInternalError.as_status_code();
-    };
-    // SAFETY: all three owned strings transfer to the caller's result storage.
-    unsafe {
-        *out = CosmosFeedRangeInfo {
-            min_inclusive: min.into_raw(),
-            max_exclusive: max.into_raw(),
-            is_logical_partition: u8::from(range.inner.is_logical_partition()),
-            serialized: serialized.into_raw(),
-        };
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
-}
-
 /// The driver's effective-bound subset and overlap results, encoded as 0 or 1.
 #[repr(C)]
 #[derive(Default)]
@@ -296,30 +308,6 @@ pub extern "C" fn cosmos_feed_range_relate(
     CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
 }
 
-impl FeedRangeHandle {
-    /// Borrows the handle for the duration of an FFI call without taking
-    /// ownership. Returns `None` for a NULL pointer.
-    pub(crate) fn from_ptr<'a>(p: *const FeedRangeHandle) -> Option<&'a FeedRangeHandle> {
-        if p.is_null() {
-            return None;
-        }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and is
-        // not freed for the duration of the borrow.
-        Some(unsafe { &*p })
-    }
-
-    fn drop_raw(p: *mut FeedRangeHandle) {
-        if p.is_null() {
-            return;
-        }
-        // SAFETY: caller guarantees `p` was obtained from `into_raw` and has
-        // not already been freed.
-        unsafe {
-            drop(Box::from_raw(p));
-        }
-    }
-}
-
 /// Constructs a feed range covering the entire EPK key space. Mirrors
 /// [`azure_data_cosmos_driver::models::FeedRange::full`].
 ///
@@ -335,12 +323,7 @@ pub extern "C" fn cosmos_feed_range_full(out_fr: *mut *mut FeedRangeHandle) -> C
     if out_fr.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
-    let handle = FeedRangeHandle::into_raw(DriverFeedRange::full());
-    // SAFETY: caller guarantees `out_fr` is writable.
-    unsafe {
-        *out_fr = handle;
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+    publish(DriverFeedRange::full(), out_fr)
 }
 
 /// Constructs a feed range that targets a single logical partition
@@ -375,12 +358,7 @@ pub extern "C" fn cosmos_feed_range_for_partition_key(
         pk_inner.inner.clone(),
         container_inner.inner.partition_key_definition(),
     );
-    let handle = FeedRangeHandle::into_raw(fr);
-    // SAFETY: caller guarantees `out_fr` is writable.
-    unsafe {
-        *out_fr = handle;
-    }
-    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+    publish(fr, out_fr)
 }
 
 /// Frees a feed-range handle. NULL is a no-op.
@@ -397,13 +375,14 @@ pub extern "C" fn cosmos_feed_range_free(fr: *mut FeedRangeHandle) {
 mod tests {
     use super::{
         cosmos_feed_range_for_partition_key, cosmos_feed_range_free, cosmos_feed_range_from_epk,
-        cosmos_feed_range_full, cosmos_feed_range_inspect, cosmos_feed_range_list_free,
-        cosmos_feed_range_parse, cosmos_feed_range_relate, cosmos_feed_range_serialize,
-        CosmosErrorCode, CosmosFeedRangeInfo, CosmosFeedRangeRelation, DriverFeedRange,
-        FeedRangeHandle, OwnedFeedRangeList,
+        cosmos_feed_range_full, cosmos_feed_range_list_free, cosmos_feed_range_parse,
+        cosmos_feed_range_relate, CosmosErrorCode, CosmosFeedRangeInfo, CosmosFeedRangeRelation,
+        DriverFeedRange, FeedRangeHandle, OwnedFeedRangeList,
     };
-    use crate::string::{cosmos_string_free, view};
-    use azure_data_cosmos_driver::models::{PartitionKey, PartitionKeyDefinition};
+    use crate::string::view;
+    use azure_data_cosmos_driver::models::{
+        PartitionKey, PartitionKeyDefinition, PartitionKeyValue,
+    };
     use std::ffi::CStr;
     use std::ptr;
 
@@ -468,41 +447,118 @@ mod tests {
         cosmos_feed_range_list_free(ptr::null_mut());
     }
 
+    /// Copies the strings readable from a live handle.
+    fn read_info(range: *const FeedRangeHandle) -> (String, String, u8, String) {
+        // SAFETY: callers pass a live handle; its strings are valid until free.
+        unsafe { copy_info(&(*range).info) }
+    }
+
+    /// SAFETY: `info` strings must be live NUL-terminated text.
+    unsafe fn copy_info(info: &CosmosFeedRangeInfo) -> (String, String, u8, String) {
+        let text = |p| CStr::from_ptr(p).to_str().unwrap().to_owned();
+        (
+            text(info.min_inclusive),
+            text(info.max_exclusive),
+            info.is_logical_partition,
+            text(info.serialized),
+        )
+    }
+
     #[test]
-    fn epk_roundtrip_owns_strings_and_rejects_malformed_inputs() {
-        let mut range = ptr::null_mut();
-        let mut text = ptr::null_mut();
-        let mut info = CosmosFeedRangeInfo::default();
+    fn epk_handle_exposes_info_that_matches_its_serialization() {
         let success = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
+        let mut range = ptr::null_mut();
         assert_eq!(
             cosmos_feed_range_from_epk(view(b"10"), view(b"80"), &mut range),
             success
         );
-        assert_eq!(cosmos_feed_range_serialize(range, &mut text), success);
-        assert_eq!(cosmos_feed_range_inspect(range, &mut info), success);
-        assert_eq!(info.is_logical_partition, 0);
+        let (min, max, logical, serialized) = read_info(range);
+        assert_eq!((min.as_str(), max.as_str(), logical), ("10", "80", 0));
+        let expected: DriverFeedRange = serialized.parse().unwrap();
+        assert_eq!(expected.to_string(), serialized);
         cosmos_feed_range_free(range);
-        // SAFETY: strings are independent live owned outputs.
-        unsafe {
-            assert_eq!(CStr::from_ptr(info.min_inclusive).to_bytes(), b"10");
-            assert_eq!(CStr::from_ptr(info.max_exclusive).to_bytes(), b"80");
-            assert_eq!(CStr::from_ptr(info.serialized), CStr::from_ptr(text));
+
+        let mut parsed = ptr::null_mut();
+        assert_eq!(
+            cosmos_feed_range_parse(view(serialized.as_bytes()), &mut parsed),
+            success
+        );
+        assert_eq!(read_info(parsed), (min, max, 0, serialized));
+        let mut full = ptr::null_mut();
+        assert_eq!(cosmos_feed_range_full(&mut full), success);
+        let mut result = CosmosFeedRangeRelation::default();
+        assert_eq!(cosmos_feed_range_relate(parsed, full, &mut result), success);
+        assert_eq!((result.is_subset, result.overlaps), (1, 1));
+        cosmos_feed_range_free(parsed);
+        cosmos_feed_range_free(full);
+    }
+
+    #[test]
+    fn info_bounds_equal_parsed_serialization_for_every_range_shape() {
+        let success = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
+        let multi: PartitionKeyDefinition = serde_json::from_value(
+            serde_json::json!({"paths":["/tenant","/pk"],"kind":"MultiHash","version":2}),
+        )
+        .unwrap();
+        let components = |n: usize| {
+            PartitionKey::try_from(
+                ["tenant", "user"][..n]
+                    .iter()
+                    .map(|v| PartitionKeyValue::from(*v))
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+        };
+        let single = DriverFeedRange::for_partition(
+            PartitionKey::from("tenant"),
+            &PartitionKeyDefinition::from("/pk"),
+        );
+        let prefix = DriverFeedRange::for_partition(components(1), &multi);
+        let full_key = DriverFeedRange::for_partition(components(2), &multi);
+        let epk = |min: &str, max: &str| {
+            let (min, max) = (min.try_into().unwrap(), max.try_into().unwrap());
+            DriverFeedRange::new(min, max).unwrap()
+        };
+        let cases = [
+            (single, true),
+            (prefix, true),
+            (full_key, true),
+            (DriverFeedRange::full(), false),
+            (epk("3a0000", "3a00ff"), false),
+            (epk("3A00", "3a0000"), false),
+            (epk("", "ff"), false),
+        ];
+        let mut kinds = Vec::new();
+        for (range, logical) in cases {
+            let (min, max) = (
+                range.min_inclusive().to_hex(),
+                range.max_exclusive().to_hex(),
+            );
+            kinds.push(min == max);
+            let handle = FeedRangeHandle::into_raw(range).unwrap();
+            let (info_min, info_max, flag, serialized) = read_info(handle);
+            cosmos_feed_range_free(handle);
             assert_eq!(
-                cosmos_feed_range_parse(view(CStr::from_ptr(text).to_bytes()), &mut range),
+                ((&info_min, &info_max), flag),
+                ((&min, &max), u8::from(logical))
+            );
+            assert_eq!(info_min, info_min.to_uppercase());
+            let mut parsed = ptr::null_mut();
+            assert_eq!(
+                cosmos_feed_range_parse(view(serialized.as_bytes()), &mut parsed),
                 success
             );
+            assert_eq!(read_info(parsed), (info_min, info_max, 0, serialized));
+            cosmos_feed_range_free(parsed);
         }
-        cosmos_string_free(text);
-        cosmos_string_free(info.min_inclusive);
-        cosmos_string_free(info.max_exclusive);
-        cosmos_string_free(info.serialized);
-        let mut full = ptr::null_mut();
-        cosmos_feed_range_full(&mut full);
-        let mut result = CosmosFeedRangeRelation::default();
-        assert_eq!(cosmos_feed_range_relate(range, full, &mut result), success);
-        assert_eq!((result.is_subset, result.overlaps), (1, 1));
-        cosmos_feed_range_free(range);
-        cosmos_feed_range_free(full);
+        // Both a prefix interval and equal-bound points were exercised.
+        assert!(kinds.contains(&true) && kinds.contains(&false));
+    }
+
+    #[test]
+    fn constructors_reject_malformed_inputs_without_a_handle() {
+        let success = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
+        let mut range = ptr::dangling_mut();
         for (min, max) in [
             (b"80".as_slice(), b"10".as_slice()),
             (b"0", b"FF"),
@@ -513,10 +569,12 @@ mod tests {
                 success
             );
             assert!(range.is_null());
+            range = ptr::dangling_mut();
         }
         for input in [b"not base64".as_slice(), b"e30="] {
             assert_ne!(cosmos_feed_range_parse(view(input), &mut range), success);
             assert!(range.is_null());
+            range = ptr::dangling_mut();
         }
     }
 
@@ -559,24 +617,21 @@ mod tests {
         }
     }
 
+    fn logical_handle() -> *mut FeedRangeHandle {
+        FeedRangeHandle::into_raw(DriverFeedRange::for_partition(
+            PartitionKey::from("tenant"),
+            &PartitionKeyDefinition::from("/pk"),
+        ))
+        .unwrap()
+    }
+
     #[test]
     fn logical_partition_points_relate_by_their_effective_key() {
         let success = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
-        let logical = FeedRangeHandle::into_raw(DriverFeedRange::for_partition(
-            PartitionKey::from("tenant"),
-            &PartitionKeyDefinition::from("/pk"),
-        ));
-        let mut info = CosmosFeedRangeInfo::default();
-        assert_eq!(cosmos_feed_range_inspect(logical, &mut info), success);
-        // SAFETY: inspection returns live owned strings.
-        let point = unsafe {
-            let min = CStr::from_ptr(info.min_inclusive).to_bytes().to_vec();
-            assert_eq!(min, CStr::from_ptr(info.max_exclusive).to_bytes());
-            min
-        };
-        cosmos_string_free(info.min_inclusive);
-        cosmos_string_free(info.max_exclusive);
-        cosmos_string_free(info.serialized);
+        let logical = logical_handle();
+        let (min, max, _, _) = read_info(logical);
+        assert_eq!(min, max);
+        let point = min.into_bytes();
         let relate = |other: *const FeedRangeHandle| {
             let mut result = CosmosFeedRangeRelation::default();
             assert_eq!(
@@ -603,69 +658,34 @@ mod tests {
     }
 
     #[test]
-    fn inspection_retains_logical_identity_but_serialization_does_not() {
-        let logical = FeedRangeHandle::into_raw(DriverFeedRange::for_partition(
-            PartitionKey::from("tenant"),
-            &PartitionKeyDefinition::from("/pk"),
-        ));
-        let mut info = CosmosFeedRangeInfo::default();
-        let mut serialized = ptr::null_mut();
+    fn logical_identity_is_in_info_but_not_in_serialization() {
         let success = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
-        assert_eq!(cosmos_feed_range_inspect(logical, &mut info), success);
-        assert_eq!(info.is_logical_partition, 1);
-        assert_eq!(
-            cosmos_feed_range_serialize(logical, &mut serialized),
-            success
-        );
+        let logical = logical_handle();
+        let (min, max, flag, serialized) = read_info(logical);
+        assert_eq!(flag, 1);
+        assert!(!min.is_empty());
         cosmos_feed_range_free(logical);
         let mut parsed = ptr::null_mut();
-        // SAFETY: serialization and inspection strings independently outlive the source.
-        unsafe {
-            assert!(!CStr::from_ptr(info.min_inclusive).to_bytes().is_empty());
-            assert_eq!(CStr::from_ptr(info.serialized), CStr::from_ptr(serialized));
-            assert_eq!(
-                cosmos_feed_range_parse(view(CStr::from_ptr(serialized).to_bytes()), &mut parsed),
-                success
-            );
-        }
-        cosmos_string_free(serialized);
-        cosmos_string_free(info.min_inclusive);
-        cosmos_string_free(info.max_exclusive);
-        cosmos_string_free(info.serialized);
-        assert_eq!(cosmos_feed_range_inspect(parsed, &mut info), success);
-        assert_eq!(info.is_logical_partition, 0);
-        cosmos_string_free(info.min_inclusive);
-        cosmos_string_free(info.max_exclusive);
-        cosmos_string_free(info.serialized);
+        assert_eq!(
+            cosmos_feed_range_parse(view(serialized.as_bytes()), &mut parsed),
+            success
+        );
+        assert_eq!(read_info(parsed), (min, max, 0, serialized));
         cosmos_feed_range_free(parsed);
     }
 
     #[test]
-    fn inspection_and_relation_failures_clear_outputs() {
-        let mut info = CosmosFeedRangeInfo {
-            min_inclusive: ptr::dangling_mut(),
-            max_exclusive: ptr::dangling_mut(),
-            is_logical_partition: 1,
-            serialized: ptr::dangling_mut(),
-        };
+    fn relation_failures_clear_outputs() {
         let mut relation = CosmosFeedRangeRelation {
             is_subset: 1,
             overlaps: 1,
         };
         let invalid = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
-        assert_eq!(cosmos_feed_range_inspect(ptr::null(), &mut info), invalid);
-        assert!(info.min_inclusive.is_null() && info.max_exclusive.is_null());
-        assert!(info.serialized.is_null());
-        assert_eq!(info.is_logical_partition, 0);
         assert_eq!(
             cosmos_feed_range_relate(ptr::null(), ptr::null(), &mut relation),
             invalid
         );
         assert_eq!((relation.is_subset, relation.overlaps), (0, 0));
-        assert_eq!(
-            cosmos_feed_range_inspect(ptr::null(), ptr::null_mut()),
-            invalid
-        );
         assert_eq!(
             cosmos_feed_range_relate(ptr::null(), ptr::null(), ptr::null_mut()),
             invalid
@@ -673,29 +693,16 @@ mod tests {
     }
 
     #[test]
-    fn empty_minimum_is_accepted_and_serialize_failure_clears_output() {
+    fn empty_minimum_is_accepted() {
         let success = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
-        let invalid = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
         let mut range = ptr::null_mut();
         assert_eq!(
             cosmos_feed_range_from_epk(view(b""), view(b"FF"), &mut range),
             success
         );
-        let mut info = CosmosFeedRangeInfo::default();
-        assert_eq!(cosmos_feed_range_inspect(range, &mut info), success);
-        // SAFETY: both strings are live owned outputs.
-        unsafe {
-            assert_eq!(CStr::from_ptr(info.min_inclusive).to_bytes(), b"");
-            assert_eq!(CStr::from_ptr(info.max_exclusive).to_bytes(), b"FF");
-        }
-        cosmos_string_free(info.min_inclusive);
-        cosmos_string_free(info.max_exclusive);
-        cosmos_string_free(info.serialized);
+        let (min, max, ..) = read_info(range);
+        assert_eq!((min.as_str(), max.as_str()), ("", "FF"));
         cosmos_feed_range_free(range);
-
-        let mut text = ptr::dangling_mut();
-        assert_eq!(cosmos_feed_range_serialize(ptr::null(), &mut text), invalid);
-        assert!(text.is_null());
     }
 
     #[test]

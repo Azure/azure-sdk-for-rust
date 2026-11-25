@@ -8,37 +8,103 @@
 extern cosmos_status_code_t cosmos_test_cursor_fixture(
     uint32_t scripted, cosmos_runtime_t **runtime, cosmos_driver_t **driver);
 
-static int test_range_ownership(void) {
+static int bounds_match_after_parse(const cosmos_feed_range_t *range) {
+    cosmos_feed_range_t *parsed = NULL;
+    int same = !cosmos_feed_range_parse(string_view(range->info.serialized), &parsed) &&
+        !strcmp(parsed->info.min_inclusive, range->info.min_inclusive) &&
+        !strcmp(parsed->info.max_exclusive, range->info.max_exclusive) &&
+        !strcmp(parsed->info.serialized, range->info.serialized) &&
+        parsed->info.is_logical_partition == 0;
+    cosmos_feed_range_free(parsed);
+    return same;
+}
+
+static int test_range_info(void) {
     int result = TEST_PASS;
-    cosmos_feed_range_t *range = NULL, *parsed = NULL, *full = NULL;
-    char *text = NULL;
-    cosmos_feed_range_info_t info = {0};
+    cosmos_feed_range_t *range = NULL, *parsed = NULL, *full = NULL, *padded = NULL;
+    char *min = NULL, *max = NULL, *serialized = NULL;
     cosmos_feed_range_relation_t relation = {0};
     REQUIRE(!cosmos_feed_range_from_epk(SV("10"), SV("80"), &range), "construct EPK range");
-    REQUIRE(!cosmos_feed_range_inspect(range, &info), "inspect range");
-    REQUIRE(!cosmos_feed_range_serialize(range, &text), "serialize range");
+    ASSERT(!strcmp(range->info.min_inclusive, "10") && !strcmp(range->info.max_exclusive, "80"),
+        "bounds are readable without a native call");
+    ASSERT(range->info.is_logical_partition == 0, "EPK range has no logical identity");
+    min = malloc(strlen(range->info.min_inclusive) + 1);
+    max = malloc(strlen(range->info.max_exclusive) + 1);
+    serialized = malloc(strlen(range->info.serialized) + 1);
+    REQUIRE(min && max && serialized, "allocate host-owned copies");
+    strcpy(min, range->info.min_inclusive);
+    strcpy(max, range->info.max_exclusive);
+    strcpy(serialized, range->info.serialized);
+    ASSERT(bounds_match_after_parse(range), "info bounds equal the parsed serialization");
     cosmos_feed_range_free(range);
     range = NULL;
-    ASSERT(!strcmp(info.min_inclusive, "10") && !strcmp(info.max_exclusive, "80"),
-        "bounds outlive source handle");
-    ASSERT(info.is_logical_partition == 0, "EPK range has no logical identity");
-    ASSERT(!strcmp(info.serialized, text), "inspection includes canonical serialization");
-    REQUIRE(!cosmos_feed_range_parse(string_view(text), &parsed), "parse owned text");
-    cosmos_string_free(text);
-    text = NULL;
+    REQUIRE(!cosmos_feed_range_parse(string_view(serialized), &parsed), "parse host copy");
+    ASSERT(!strcmp(parsed->info.min_inclusive, min) && !strcmp(parsed->info.max_exclusive, max),
+        "parsed handle reports the original bounds");
     REQUIRE(!cosmos_feed_range_full(&full), "full range");
+    ASSERT(!strcmp(full->info.min_inclusive, "") && !strcmp(full->info.max_exclusive, "FF"),
+        "full range exposes the empty minimum");
     REQUIRE(!cosmos_feed_range_relate(parsed, full, &relation), "compare independent handles");
     ASSERT(relation.is_subset == 1 && relation.overlaps == 1, "combined relation returns both results");
+    REQUIRE(!cosmos_feed_range_from_epk(SV("3a0000"), SV("3a00ff"), &padded), "lowercase padded bounds");
+    ASSERT(!strcmp(padded->info.min_inclusive, "3A0000") && !strcmp(padded->info.max_exclusive, "3A00FF"),
+        "case is normalized and trailing zeros are preserved");
+    ASSERT(bounds_match_after_parse(padded), "padded bounds survive serialization");
     ASSERT(cosmos_feed_range_from_epk(SV("80"), SV("10"), &range) != 0 && !range,
         "inverted range rejects without creating a handle");
 cleanup:
-    cosmos_string_free(text);
-    cosmos_string_free(info.min_inclusive);
-    cosmos_string_free(info.max_exclusive);
-    cosmos_string_free(info.serialized);
+    free(min);
+    free(max);
+    free(serialized);
     cosmos_feed_range_free(range);
     cosmos_feed_range_free(parsed);
     cosmos_feed_range_free(full);
+    cosmos_feed_range_free(padded);
+    return result;
+}
+
+static int test_logical_range_info(void) {
+    int result = TEST_PASS;
+    cosmos_runtime_t *runtime = NULL;
+    cosmos_driver_t *driver = NULL;
+    cosmos_container_ref_t *container = NULL;
+    cosmos_partition_key_t *key = NULL;
+    cosmos_feed_range_t *range = NULL, *other = NULL;
+    cosmos_feed_range_relation_t relation = {1, 1};
+    cosmos_partition_key_component_t components[3] = {0};
+    components[0].kind = components[1].kind = components[2].kind =
+        COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING;
+    components[0].value.string_value = SV("tenant");
+    components[1].value.string_value = SV("user");
+    components[2].value.string_value = SV("device");
+    REQUIRE(!cosmos_test_cursor_fixture(2, &runtime, &driver), "create hierarchical fixture");
+    REQUIRE(!cosmos_driver_resolve_container_blocking(runtime, driver, SV("testdb"),
+        SV("testcoll"), &container, NULL), "resolve container");
+    for (size_t levels = 1; levels <= 3; ++levels) {
+        REQUIRE(!cosmos_partition_key_create(components, levels, &key), "partition key");
+        REQUIRE(!cosmos_feed_range_for_partition_key(container, key, &range), "logical range");
+        ASSERT(range->info.is_logical_partition == 1, "logical identity is flagged");
+        ASSERT((strcmp(range->info.min_inclusive, range->info.max_exclusive) == 0) == (levels == 3),
+            "a full key has identical bounds and a prefix is an interval");
+        ASSERT(bounds_match_after_parse(range), "logical bounds equal the parsed serialization");
+        REQUIRE(!cosmos_feed_range_parse(string_view(range->info.serialized), &other), "parse logical range");
+        REQUIRE(!cosmos_feed_range_relate(range, other, &relation), "relate logical to its bounds");
+        ASSERT(relation.is_subset == 1 && relation.overlaps == 1, "logical range matches its own bounds");
+        cosmos_feed_range_free(other); other = NULL;
+        cosmos_feed_range_free(range); range = NULL;
+        cosmos_partition_key_free(key); key = NULL;
+    }
+    ASSERT(cosmos_feed_range_for_partition_key(NULL, NULL, &range) != 0 && !range,
+        "NULL inputs reject without a handle");
+    ASSERT(cosmos_feed_range_relate(NULL, NULL, &relation) != 0 &&
+        relation.is_subset == 0 && relation.overlaps == 0, "NULL relation clears output");
+cleanup:
+    cosmos_feed_range_free(other);
+    cosmos_feed_range_free(range);
+    cosmos_partition_key_free(key);
+    cosmos_container_ref_free(container);
+    cosmos_driver_free(driver);
+    cosmos_runtime_free(runtime);
     return result;
 }
 
@@ -134,6 +200,7 @@ cleanup:
 }
 
 TEST_SUITE_BEGIN("feed_ranges")
-    TEST_REGISTER(range_ownership)
+    TEST_REGISTER(range_info)
+    TEST_REGISTER(logical_range_info)
     TEST_REGISTER(discovery_and_scoped_cursor)
 TEST_SUITE_END("feed_ranges")
