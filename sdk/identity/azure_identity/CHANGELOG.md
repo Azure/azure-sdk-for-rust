@@ -4,8 +4,6 @@
 
 ### Features Added
 
-- Added `GitHubActionsCredential` and `GitHubActionsCredentialOptions` for GitHub Actions workload identity federation.
-
 ### Breaking Changes
 
 ### Bugs Fixed

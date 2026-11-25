@@ -1,21 +1,19 @@
 # Live binary ORDER BY validation
 
-This opt-in test creates an isolated database with two containers, each provisioned
-at **20,000 RU/s**. Obtain approval for the resulting **40,000 RU/s total** before
-running it. Replicated regions add provisioned-throughput charges. Use a test
-account, not production credentials.
+Each run creates an isolated database with two containers provisioned at
+**20,000 RU/s each (40,000 RU/s total)**. Replicated regions add
+provisioned-throughput charges. Use a test account, not production credentials.
 
 ## Running the test
 
-Load the connection string without printing it. The throughput variable is an
-explicit cost opt-in, not a configurable throughput setting; selecting live or
-ignored tests alone does not authorize provisioning these containers.
+Live CI runs this test when `test_category="live"` is enabled. Otherwise it is
+ignored by default. To run only this test locally without enabling the live
+category, load the connection string without printing it:
 
 ```powershell
 $env:AZURE_COSMOS_CONNECTION_STRING = (Get-Content -LiteralPath '<local-connection-string-file>' -Raw).Trim()
 $env:AZURE_COSMOS_TEST_MODE = 'required'
 $env:AZURE_COSMOS_AUTH_MODE = 'key'
-$env:AZURE_COSMOS_ORDER_BY_LIVE_THROUGHPUT = '20000'
 cargo test -p azure_data_cosmos --all-features --test live binary_order_by::live_binary_order_by_matches_text_across_physical_ranges -- --ignored --exact --nocapture --test-threads=1
 ```
 

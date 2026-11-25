@@ -40,7 +40,7 @@ function Start-CosmosVNext {
         throw 'Remove ACCOUNT_HOST before vNext setup; inherited AAD endpoints must not override the local emulator.'
     }
     $name = 'cosmosdb-emulator-vnext'
-    $image = 'mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:4489c4eb49d29ca203392a2dcdb5edfd4faee493610fe1d015d5f526bb5b80e7'
+    $image = 'mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator@sha256:c274ac17c19a5f74dbadbc99f259bc49a8640a03f6789f54d7f76cbfc33ff6b6'
     $endpoint = 'https://localhost:8081/'
     # Public emulator key, not a cloud credential.
     $key = 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=='
@@ -63,7 +63,7 @@ function Start-CosmosVNext {
             $container.Config.Image -ne $image -or -not $container.State.Running) {
             throw "Refusing to reuse stopped, unowned, or mismatched container '$name'."
         }
-        foreach ($entry in @('PROTOCOL=https', 'THIN_CLIENT_ENABLED=true', 'THIN_CLIENT_PROTOCOL=https', 'ENABLE_EXPLORER=false')) {
+        foreach ($entry in @('PROTOCOL=https', 'THIN_CLIENT_ENABLED=true', 'THIN_CLIENT_PROTOCOL=https', 'ENABLE_EXPLORER=false', 'ENABLE_PACKAGE_UPDATE=false')) {
             if ($entry -notin $container.Config.Env) {
                 throw "vNext container '$name' has incompatible configuration."
             }
@@ -82,7 +82,9 @@ function Start-CosmosVNext {
             'run', '-d', '--name', $name, '--label', "cosmos-vnext-owner=$owner",
             '-p', '127.0.0.1:8081:8081', '-p', '127.0.0.1:8080:8080', '-p', '127.0.0.1:10250:10250',
             '-e', 'PROTOCOL=https', '-e', 'THIN_CLIENT_ENABLED=true', '-e', 'THIN_CLIENT_PROTOCOL=https',
-            '-e', 'ENABLE_EXPLORER=false', '-e', 'ENABLE_TELEMETRY=false', $image
+            '-e', 'ENABLE_EXPLORER=false', '-e', 'ENABLE_TELEMETRY=false',
+            # Startup package updates replace PostgreSQL libraries (Azure/azure-cosmos-db-emulator-docker#390).
+            '-e', 'ENABLE_PACKAGE_UPDATE=false', $image
         ) | Write-Host
     }
 
