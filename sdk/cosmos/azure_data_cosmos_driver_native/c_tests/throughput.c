@@ -8,8 +8,8 @@
 extern cosmos_status_code_t cosmos_test_cursor_fixture(
     uint32_t scripted, cosmos_runtime_t **runtime, cosmos_driver_t **driver);
 
-_Static_assert(offsetof(cosmos_management_options_t, struct_size_bytes) == 0, "management size prefix");
-_Static_assert(offsetof(cosmos_management_options_t, abi_version) == 4, "management version prefix");
+_Static_assert(offsetof(cosmos_throughput_options_t, struct_size_bytes) == 0, "throughput size prefix");
+_Static_assert(offsetof(cosmos_throughput_options_t, abi_version) == 4, "throughput version prefix");
 
 static int body_contains(const cosmos_completion_t *completion, const char *text) {
     size_t len = strlen(text);
@@ -19,7 +19,7 @@ static int body_contains(const cosmos_completion_t *completion, const char *text
     return 0;
 }
 
-static int test_typed_management_headers(void) {
+static int test_typed_throughput_headers(void) {
     int result = TEST_PASS;
     cosmos_runtime_t *runtime = NULL;
     cosmos_driver_t *driver = NULL;
@@ -30,11 +30,15 @@ static int test_typed_management_headers(void) {
     cosmos_completion_t completion = {0};
     int has_completion = 0;
     cosmos_status_code_t status = 0;
-    REQUIRE(!cosmos_test_cursor_fixture(1, &runtime, &driver), "create management wire fixture");
+    const cosmos_throughput_options_t unset = {
+        .struct_size_bytes = sizeof(cosmos_throughput_options_t),
+        .abi_version = 1,
+    };
+    REQUIRE(!cosmos_test_cursor_fixture(1, &runtime, &driver), "create throughput wire fixture");
     REQUIRE(!cosmos_account_ref_with_master_key(SV("https://eastus.emulator.local"),
         SV("ZW11bGF0b3Ita2V5"), &account, NULL), "create account reference");
     queue = cosmos_completion_queue_create(runtime, NULL);
-    REQUIRE(queue, "create management completion queue");
+    REQUIRE(queue, "create throughput completion queue");
     cosmos_header_kv_t runtime_headers[] = {
         {SV("x-test-inherited"), SV("runtime")},
         {SV("x-ms-offer-throughput"), SV("111")}
@@ -70,21 +74,20 @@ static int test_typed_management_headers(void) {
             request.operation.options_snapshot = snapshot;
             request.operation.body = (const uint8_t *)"{\"id\":\"created\"}";
             request.operation.body_len = strlen((const char *)request.operation.body);
-            cosmos_management_options_t management;
-            cosmos_management_options_init(&management);
+            cosmos_throughput_options_t throughput = unset;
             if (mode == 1 || mode == 3 || mode == 4) {
-                management.throughput_kind = 1;
-                management.manual_throughput = 400;
+                throughput.throughput_kind = 1;
+                throughput.manual_throughput = 400;
             } else if (mode == 2 || mode == 5) {
-                management.throughput_kind = 2;
-                management.autoscale_max_throughput = 4000;
-                management.has_auto_upgrade_policy = 1;
-                management.has_throughput_policy = 1;
-                management.increment_percent = 25;
+                throughput.throughput_kind = 2;
+                throughput.autoscale_max_throughput = 4000;
+                throughput.has_auto_upgrade_policy = 1;
+                throughput.has_throughput_policy = 1;
+                throughput.increment_percent = 25;
             }
-            if (mode == 3) cosmos_management_options_init(&management);
+            if (mode == 3) throughput = unset;
             status = 0;
-            op = cosmos_submit_singleton_operation_v2(driver, &request.operation, &management,
+            op = cosmos_submit_singleton_operation_with_throughput(driver, &request.operation, &throughput,
                 queue, 99, &status);
             if (mode >= 4) {
                 ASSERT(!op && status != 0, "opposite-mode inherited headers reject before dispatch");
@@ -93,13 +96,13 @@ static int test_typed_management_headers(void) {
                 continue;
             }
             REQUIRE(op && !status, "submit typed or unset throughput");
-            cosmos_management_options_init(&management);
+            throughput = unset;
             cosmos_operation_options_snapshot_free(snapshot);
             snapshot = NULL;
             REQUIRE(cosmos_completion_queue_wait(queue, &completion, 1, 10000) == 1,
                 "receive actual wire response");
             has_completion = 1;
-            REQUIRE(!completion.status && completion.user_data == 99, "management succeeded");
+            REQUIRE(!completion.status && completion.user_data == 99, "throughput succeeded");
             ASSERT(body_contains(&completion, use_client ?
                 "\"inherited\":\"client\"" : "\"inherited\":\"runtime\""),
                 "native-resolved inherited headers survive");
@@ -116,7 +119,7 @@ static int test_typed_management_headers(void) {
             } else {
                 ASSERT(body_contains(&completion, use_client ?
                     "\"throughput\":\"222\"" : "\"throughput\":\"111\""),
-                    "init/unset/reset preserves inherited throughput");
+                    "unset/reset preserves inherited throughput");
             }
             cosmos_completion_queue_free_completions(&completion, 1);
             has_completion = 0;
@@ -124,12 +127,11 @@ static int test_typed_management_headers(void) {
             op = NULL;
         }
     }
-    cosmos_management_options_t invalid;
-    cosmos_management_options_init(&invalid);
+    cosmos_throughput_options_t invalid = unset;
     invalid.throughput_kind = 1;
     invalid.manual_throughput = 400;
     invalid.autoscale_max_throughput = 4000;
-    ASSERT(!cosmos_submit_singleton_operation_v2(driver, NULL, &invalid, queue, 0, &status)
+    ASSERT(!cosmos_submit_singleton_operation_with_throughput(driver, NULL, &invalid, queue, 0, &status)
         && status != 0, "manual/autoscale conflict rejects before async submission");
 cleanup:
     if (has_completion) cosmos_completion_queue_free_completions(&completion, 1);
@@ -142,6 +144,6 @@ cleanup:
     return result;
 }
 
-TEST_SUITE_BEGIN("management_throughput")
-    TEST_REGISTER(typed_management_headers)
-TEST_SUITE_END("management_throughput")
+TEST_SUITE_BEGIN("throughput")
+    TEST_REGISTER(typed_throughput_headers)
+TEST_SUITE_END("throughput")

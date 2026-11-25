@@ -65,11 +65,22 @@ for the full design.
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 | Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
-## Typed management throughput
+## Typed creation throughput
 
-For database and container creation, `cosmos_submit_singleton_operation_v2`
-accepts `cosmos_management_options_t`, initialized with
-`cosmos_management_options_init`. Throughput kind 0 is unset, 1 selects positive
+For database and container creation, `cosmos_submit_singleton_operation_with_throughput`
+accepts `cosmos_throughput_options_t`. No initializer function is needed:
+
+```c
+cosmos_throughput_options_t throughput = {
+    .struct_size_bytes = sizeof(cosmos_throughput_options_t),
+    .abi_version = 1,
+};
+```
+
+The size must cover at least the known record and must not exceed the actual
+readable allocation. Any extension bytes beyond the known record must be zero;
+the driver reads all declared extension bytes. The ABI version must be 1.
+Throughput kind 0 is unset, 1 selects positive
 `manual_throughput`, and 2 selects positive `autoscale_max_throughput`. Inactive
 payloads must be zero; manual and autoscale settings cannot be combined. Autoscale
 preserves absent or present-empty auto-upgrade policies, an optional nested
@@ -79,8 +90,9 @@ accept only 0 or 1; a nested policy requires its parent.
 These are native typed request headers: inherited runtime/client custom headers
 remain available, and typed throughput wins a conflicting header name. Do not
 inject typed throughput through the replacement `custom_headers` map. NULL or an
-initialized-unset record preserves v1 behavior. Reinitializing clears the typed
-override, not inherited custom headers. Inputs are copied before submit returns.
+size/version-stamped record with zero payload fields preserves the existing singleton
+behavior. Zeroing the payload fields clears the typed override, not inherited custom
+headers; keep the size/version fields valid. Inputs are copied before submit returns.
 An inherited opposite-mode throughput header is rejected before dispatch, so
 manual and autoscale headers are not sent together. Set options capture native
 configuration at admission when the request did not supply a snapshot.

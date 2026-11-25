@@ -1,34 +1,40 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use super::{cosmos_management_options_init, management_headers, CosmosManagementOptions};
-use std::{mem::MaybeUninit, ptr};
+use super::{throughput_headers, CosmosThroughputOptions};
+use std::{mem::size_of, ptr};
 
-fn initialized<T>(init: extern "C" fn(*mut T)) -> T {
-    let mut value = MaybeUninit::uninit();
-    init(value.as_mut_ptr());
-    // SAFETY: typed initializer wrote the complete record.
-    unsafe { value.assume_init() }
+fn unset() -> CosmosThroughputOptions {
+    CosmosThroughputOptions {
+        struct_size_bytes: size_of::<CosmosThroughputOptions>() as u32,
+        abi_version: 1,
+        throughput_kind: 0,
+        manual_throughput: 0,
+        autoscale_max_throughput: 0,
+        has_auto_upgrade_policy: 0,
+        has_throughput_policy: 0,
+        increment_percent: 0,
+    }
 }
 
 #[test]
-fn management_throughput_validates_records_conflicts_and_policy_presence() {
-    let mut input: CosmosManagementOptions = initialized(cosmos_management_options_init);
+fn throughput_validates_records_conflicts_and_policy_presence() {
+    let mut input = unset();
     // SAFETY: every input below is live, aligned, and fully initialized.
     unsafe {
-        assert!(management_headers(ptr::null()).unwrap().is_none());
-        assert!(management_headers(&input).unwrap().is_none());
+        assert!(throughput_headers(ptr::null()).unwrap().is_none());
+        assert!(throughput_headers(&input).unwrap().is_none());
         input.throughput_kind = 1;
         input.manual_throughput = u64::MAX;
         assert_eq!(
-            management_headers(&input)
+            throughput_headers(&input)
                 .unwrap()
                 .unwrap()
                 .offer_throughput,
             Some(u64::MAX)
         );
         input.autoscale_max_throughput = 4000;
-        assert!(management_headers(&input).is_err());
+        assert!(throughput_headers(&input).is_err());
         input.manual_throughput = 0;
         input.throughput_kind = 2;
         for (parent, child, expected) in [
@@ -46,7 +52,7 @@ fn management_throughput_validates_records_conflicts_and_policy_presence() {
         ] {
             input.has_auto_upgrade_policy = parent;
             input.has_throughput_policy = child;
-            let headers = management_headers(&input).unwrap().unwrap();
+            let headers = throughput_headers(&input).unwrap().unwrap();
             assert_eq!(
                 serde_json::to_value(headers.offer_autopilot_settings.unwrap()).unwrap(),
                 expected
@@ -54,7 +60,7 @@ fn management_throughput_validates_records_conflicts_and_policy_presence() {
         }
         input.increment_percent = u32::MAX;
         assert_eq!(
-            management_headers(&input)
+            throughput_headers(&input)
                 .unwrap()
                 .unwrap()
                 .offer_autopilot_settings
@@ -67,35 +73,39 @@ fn management_throughput_validates_records_conflicts_and_policy_presence() {
             u32::MAX
         );
         input.has_auto_upgrade_policy = 0;
-        assert!(management_headers(&input).is_err());
+        assert!(throughput_headers(&input).is_err());
         input.has_auto_upgrade_policy = 1;
         input.has_throughput_policy = 2;
-        assert!(management_headers(&input).is_err());
+        assert!(throughput_headers(&input).is_err());
         input.has_throughput_policy = 0;
-        assert!(management_headers(&input).is_err());
-        cosmos_management_options_init(&mut input);
-        assert!(management_headers(&input).unwrap().is_none());
+        assert!(throughput_headers(&input).is_err());
+        input = unset();
+        assert!(throughput_headers(&input).unwrap().is_none());
         input.throughput_kind = 3;
-        assert!(management_headers(&input).is_err());
+        assert!(throughput_headers(&input).is_err());
         input.throughput_kind = 1;
-        assert!(management_headers(&input).is_err());
+        assert!(throughput_headers(&input).is_err());
         input.throughput_kind = 2;
-        assert!(management_headers(&input).is_err());
-        cosmos_management_options_init(&mut input);
-        input.abi_version = 2;
-        assert!(management_headers(&input).is_err());
+        assert!(throughput_headers(&input).is_err());
+        input = unset();
+        for version in [0, 2] {
+            input.abi_version = version;
+            assert!(throughput_headers(&input).is_err());
+        }
         input.abi_version = 1;
-        input.struct_size_bytes -= 1;
-        assert!(management_headers(&input).is_err());
-        let misaligned = (&input as *const CosmosManagementOptions)
+        for size in [0, size_of::<CosmosThroughputOptions>() as u32 - 1] {
+            input.struct_size_bytes = size;
+            assert!(throughput_headers(&input).is_err());
+        }
+        let misaligned = (&input as *const CosmosThroughputOptions)
             .cast::<u8>()
             .add(1)
             .cast();
-        assert!(management_headers(misaligned).is_err());
-        cosmos_management_options_init(&mut input);
+        assert!(throughput_headers(misaligned).is_err());
+        input = unset();
         #[repr(C)]
         struct Extended {
-            options: CosmosManagementOptions,
+            options: CosmosThroughputOptions,
             extension: u64,
         }
         let mut extended = Extended {
@@ -103,8 +113,8 @@ fn management_throughput_validates_records_conflicts_and_policy_presence() {
             extension: 0,
         };
         extended.options.struct_size_bytes = std::mem::size_of::<Extended>() as u32;
-        assert!(management_headers(&extended.options).unwrap().is_none());
+        assert!(throughput_headers(&extended.options).unwrap().is_none());
         extended.extension = 1;
-        assert!(management_headers(&extended.options).is_err());
+        assert!(throughput_headers(&extended.options).is_err());
     }
 }

@@ -32,7 +32,6 @@ pub mod driver_options;
 pub mod error;
 pub mod fault_injection;
 pub mod feed_range;
-pub mod management;
 pub mod op_request;
 pub mod options_snapshot;
 pub mod partition_key;
@@ -44,6 +43,7 @@ pub(crate) mod safety;
 pub mod submit;
 #[cfg(feature = "test-abi")]
 mod test_abi;
+pub mod throughput;
 
 // We want this value to be present as a string in the compiled binary so that
 // build provenance can be recovered from a stripped library. Exposing it as a

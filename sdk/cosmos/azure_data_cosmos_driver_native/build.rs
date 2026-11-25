@@ -106,8 +106,8 @@ fn generate_c_header() {
     let rename = HashMap::from([
         ("CosmosCursorRequest".into(), "cursor_request_t".into()),
         (
-            "CosmosManagementOptions".into(),
-            "management_options_t".into(),
+            "CosmosThroughputOptions".into(),
+            "throughput_options_t".into(),
         ),
         (
             "CosmosCursorCompletion".into(),

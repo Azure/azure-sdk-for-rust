@@ -499,21 +499,6 @@ pub mod feed_range {
     pub struct FeedRangeHandle {
     }
 }
-pub mod management {
-    #[no_mangle]
-    pub extern "C" fn cosmos_management_options_init(out: *mut CosmosManagementOptions);
-    #[repr(C)]
-    pub struct CosmosManagementOptions {
-        pub struct_size_bytes: u32,
-        pub abi_version: u32,
-        pub throughput_kind: u32,
-        pub manual_throughput: u64,
-        pub autoscale_max_throughput: u64,
-        pub has_auto_upgrade_policy: u8,
-        pub has_throughput_policy: u8,
-        pub increment_percent: u32,
-    }
-}
 pub mod op_request {
     #[no_mangle]
     pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions;
@@ -834,6 +819,19 @@ pub mod submit {
     #[no_mangle]
     pub extern "C" fn cosmos_submit_singleton_operation(driver: *const crate::driver::DriverHandle, request: *const crate::op_request::CosmosOperationRequest, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
-    pub extern "C" fn cosmos_submit_singleton_operation_v2(driver: *const crate::driver::DriverHandle, request: *const crate::op_request::CosmosOperationRequest, management: *const crate::management::CosmosManagementOptions, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    pub extern "C" fn cosmos_submit_singleton_operation_with_throughput(driver: *const crate::driver::DriverHandle, request: *const crate::op_request::CosmosOperationRequest, throughput: *const crate::throughput::CosmosThroughputOptions, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+}
+pub mod throughput {
+    #[repr(C)]
+    pub struct CosmosThroughputOptions {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub throughput_kind: u32,
+        pub manual_throughput: u64,
+        pub autoscale_max_throughput: u64,
+        pub has_auto_upgrade_policy: u8,
+        pub has_throughput_policy: u8,
+        pub increment_percent: u32,
+    }
 }
 ```

@@ -26,7 +26,6 @@ use crate::{
     driver::{cosmos_driver_free, DriverHandle},
     error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
     feed_range::{cosmos_feed_range_for_partition_key, cosmos_feed_range_free},
-    management::{cosmos_management_options_init, CosmosManagementOptions},
     op_request::{cosmos_operation_options_default, CosmosHeaderKv, CosmosOperationRequest},
     options_snapshot::{
         cosmos_operation_options_snapshot_create, cosmos_operation_options_snapshot_free,
@@ -43,7 +42,10 @@ use crate::{
     response_header::{CosmosHeaderId, CosmosValueKind},
     runtime::{cosmos_runtime_free, RuntimeContext},
     string::view,
-    submit::{cosmos_submit_singleton_operation, cosmos_submit_singleton_operation_v2},
+    submit::{
+        cosmos_submit_singleton_operation, cosmos_submit_singleton_operation_with_throughput,
+    },
+    throughput::CosmosThroughputOptions,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use std::{
@@ -55,7 +57,7 @@ use std::{
 };
 
 #[test]
-fn typed_management_throughput_preserves_native_header_inheritance_and_copies_input() {
+fn typed_creation_throughput_preserves_native_header_inheritance_and_copies_input() {
     let fixture = Fixture::scripted();
     let queue = cosmos_completion_queue_create(fixture.runtime, ptr::null());
     let mut account = ptr::null_mut();
@@ -166,23 +168,16 @@ fn typed_management_throughput_preserves_native_header_inheritance_and_copies_in
                 let body = br#"{"id":"created","partitionKey":{"paths":["/pk"],"kind":"Hash","version":2}}"#;
                 request.body = body.as_ptr();
                 request.body_len = body.len();
-                let mut management = MaybeUninit::<CosmosManagementOptions>::uninit();
-                cosmos_management_options_init(management.as_mut_ptr());
-                // SAFETY: initializer wrote every field.
-                let mut management = unsafe { management.assume_init() };
+                let mut throughput = unset_throughput();
                 if mode == 1 || mode == 7 {
-                    management.throughput_kind = 1;
-                    management.manual_throughput = 400;
+                    throughput.throughput_kind = 1;
+                    throughput.manual_throughput = 400;
                 } else if (2..=4).contains(&mode) || mode == 8 {
-                    management.throughput_kind = 2;
-                    management.autoscale_max_throughput = 4000;
-                    management.has_auto_upgrade_policy = u8::from(mode >= 3);
-                    management.has_throughput_policy = u8::from(mode == 4);
-                    management.increment_percent = if mode == 4 { 25 } else { 0 };
-                } else if mode == 6 {
-                    management.throughput_kind = 1;
-                    management.manual_throughput = 400;
-                    cosmos_management_options_init(&mut management);
+                    throughput.throughput_kind = 2;
+                    throughput.autoscale_max_throughput = 4000;
+                    throughput.has_auto_upgrade_policy = u8::from(mode >= 3);
+                    throughput.has_throughput_policy = u8::from(mode == 4);
+                    throughput.increment_percent = if mode == 4 { 25 } else { 0 };
                 }
                 let mut status = COSMOS_STATUS_SUCCESS;
                 let op = if mode == 5 {
@@ -194,10 +189,10 @@ fn typed_management_throughput_preserves_native_header_inheritance_and_copies_in
                         &mut status,
                     )
                 } else {
-                    cosmos_submit_singleton_operation_v2(
+                    cosmos_submit_singleton_operation_with_throughput(
                         fixture.driver,
                         &request,
-                        if mode == 0 { ptr::null() } else { &management },
+                        if mode == 0 { ptr::null() } else { &throughput },
                         queue,
                         42,
                         &mut status,
@@ -229,7 +224,7 @@ fn typed_management_throughput_preserves_native_header_inheritance_and_copies_in
                         COSMOS_STATUS_SUCCESS
                     );
                 }
-                cosmos_management_options_init(&mut management);
+                *std::hint::black_box(&mut throughput) = unset_throughput();
                 // SAFETY: submit copied the snapshot; caller releases its owned handle.
                 unsafe { cosmos_operation_options_snapshot_free(snapshot) };
                 fixture.drive(op);
@@ -284,12 +279,9 @@ fn typed_management_throughput_preserves_native_header_inheritance_and_copies_in
         unsafe { cosmos_runtime_set_operation_options(fixture.runtime, &runtime_options) },
         COSMOS_STATUS_SUCCESS
     );
-    let mut management = MaybeUninit::<CosmosManagementOptions>::uninit();
-    cosmos_management_options_init(management.as_mut_ptr());
-    // SAFETY: initializer wrote every field.
-    let mut management = unsafe { management.assume_init() };
-    management.throughput_kind = 1;
-    management.manual_throughput = 400;
+    let mut throughput = unset_throughput();
+    throughput.throughput_kind = 1;
+    throughput.manual_throughput = 400;
     let body = br#"{"id":"created"}"#;
     let mut request = fixture.request().operation;
     request.account = account;
@@ -315,10 +307,10 @@ fn typed_management_throughput_preserves_native_header_inheritance_and_copies_in
     request.options = &request_options;
     let rejected = |request: &CosmosOperationRequest, out_pre_error: bool| {
         let mut status = COSMOS_STATUS_SUCCESS;
-        assert!(cosmos_submit_singleton_operation_v2(
+        assert!(cosmos_submit_singleton_operation_with_throughput(
             fixture.driver,
             request,
-            &management,
+            &throughput,
             queue,
             0,
             if out_pre_error {
@@ -359,10 +351,10 @@ fn typed_management_throughput_preserves_native_header_inheritance_and_copies_in
     request_options.custom_headers_len = request_headers.len();
     request.options = &request_options;
     let mut status = COSMOS_STATUS_SUCCESS;
-    let op = cosmos_submit_singleton_operation_v2(
+    let op = cosmos_submit_singleton_operation_with_throughput(
         fixture.driver,
         &request,
-        &management,
+        &throughput,
         queue,
         0,
         &mut status,
@@ -391,6 +383,19 @@ fn typed_management_throughput_preserves_native_header_inheritance_and_copies_in
     cosmos_completion_queue_free(queue);
     cosmos_database_ref_free(database);
     cosmos_account_ref_free(account);
+}
+
+fn unset_throughput() -> CosmosThroughputOptions {
+    CosmosThroughputOptions {
+        struct_size_bytes: std::mem::size_of::<CosmosThroughputOptions>() as u32,
+        abi_version: 1,
+        throughput_kind: 0,
+        manual_throughput: 0,
+        autoscale_max_throughput: 0,
+        has_auto_upgrade_policy: 0,
+        has_throughput_policy: 0,
+        increment_percent: 0,
+    }
 }
 
 fn assert_no_completion(queue: *mut CompletionQueue) {

@@ -37,10 +37,10 @@ use crate::completion::{
 use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
-use crate::management::{management_headers, CosmosManagementOptions};
 use crate::op_request::{build_request, CosmosOperationRequest};
 use crate::options_snapshot::OperationOptionsSnapshot;
 use crate::runtime::RuntimeContext;
+use crate::throughput::{throughput_headers, CosmosThroughputOptions};
 
 /// Send-safe encoding of the opaque `user_data` cookie round-tripped
 /// to the completion. It is a pointer-sized integer (`isize`/`intptr_t`),
@@ -485,7 +485,7 @@ pub extern "C" fn cosmos_submit_singleton_operation(
 
 /// Submits a singleton with typed database/container creation throughput.
 ///
-/// NULL or initialized-unset `management` preserves
+/// NULL or a valid size/version-stamped `throughput` with zero payload fields preserves
 /// [`cosmos_submit_singleton_operation()`] behavior. Set options require a
 /// CreateDatabase or CreateContainer request. Manual and autoscale settings
 /// are mutually exclusive. Typed headers take precedence over custom headers
@@ -493,22 +493,24 @@ pub extern "C" fn cosmos_submit_singleton_operation(
 /// opposite-mode throughput header is rejected rather than sending both modes.
 /// Set options capture native configuration at admission if no snapshot was supplied.
 ///
-/// Request, options, handles, and borrowed inputs must remain valid until this
-/// call returns; inputs are copied before asynchronous execution. Completion,
-/// cancellation, and ownership follow [`cosmos_submit_singleton_operation()`].
+/// `throughput` must be NULL or point to aligned storage readable for its declared
+/// size, following [`CosmosThroughputOptions`]. Request, options, handles, and borrowed
+/// inputs must remain valid until this call returns; inputs are copied before
+/// asynchronous execution. Completion, cancellation, and ownership follow
+/// [`cosmos_submit_singleton_operation()`].
 /// Invalid records or unsupported operation kinds fail before submission via
-/// `out_pre_error`. Other parameters have the same contracts as the v1 entry point.
+/// `out_pre_error`. Other parameters follow [`cosmos_submit_singleton_operation()`].
 #[no_mangle]
-pub extern "C" fn cosmos_submit_singleton_operation_v2(
+pub extern "C" fn cosmos_submit_singleton_operation_with_throughput(
     driver: *const DriverHandle,
     request: *const CosmosOperationRequest,
-    management: *const CosmosManagementOptions,
+    throughput: *const CosmosThroughputOptions,
     queue: *mut CompletionQueue,
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
     // SAFETY: caller keeps the versioned record readable until return.
-    let headers = match unsafe { management_headers(management) } {
+    let headers = match unsafe { throughput_headers(throughput) } {
         Ok(Some(headers)) => headers,
         Ok(None) => {
             return cosmos_submit_singleton_operation(

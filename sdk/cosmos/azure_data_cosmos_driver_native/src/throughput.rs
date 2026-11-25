@@ -3,9 +3,6 @@
 
 //! Typed throughput headers for database and container creation.
 
-#[cfg(test)]
-mod tests;
-
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use azure_data_cosmos_driver::models::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
@@ -17,12 +14,16 @@ const INVALID: CosmosErrorCode = CosmosErrorCode::CosmosErrorCodeInvalidOptionVa
 
 /// Typed throughput headers for database and container creation.
 ///
-/// Initialize or reset with [`cosmos_management_options_init()`]. Unset leaves
-/// inherited custom headers unchanged. Set values take precedence over conflicting
-/// custom headers without replacing their map. All inputs are copied during submit.
+/// Zero-initialize the payload fields and set the size/version fields below.
+/// Unset leaves inherited custom headers unchanged. Set values take precedence
+/// over conflicting custom headers without replacing their map. All inputs are
+/// copied during submit.
 #[repr(C)]
-pub struct CosmosManagementOptions {
+pub struct CosmosThroughputOptions {
+    /// Readable allocation size, at least the known record size, including any
+    /// zero-filled extension bytes. Must not exceed the actual readable storage.
     pub struct_size_bytes: u32,
+    /// Must be 1.
     pub abi_version: u32,
     /// 0 unset, 1 manual, 2 autoscale. Inactive payloads must be zero.
     pub throughput_kind: u32,
@@ -63,19 +64,8 @@ unsafe fn record<'a, T>(input: *const T) -> Result<&'a T, CosmosStatusCode> {
     }
 }
 
-unsafe fn initialize<T>(out: *mut T) {
-    if !out.is_null() {
-        // SAFETY: internal callers use zero-valid records with a two-u32 prefix.
-        unsafe {
-            out.write(std::mem::zeroed());
-            out.cast::<u32>().write(size_of::<T>() as u32);
-            out.cast::<u32>().add(1).write(1);
-        }
-    }
-}
-
-pub(crate) unsafe fn management_headers(
-    input: *const CosmosManagementOptions,
+pub(crate) unsafe fn throughput_headers(
+    input: *const CosmosThroughputOptions,
 ) -> Result<Option<CosmosRequestHeaders>, CosmosStatusCode> {
     if input.is_null() {
         return Ok(None);
@@ -115,12 +105,5 @@ pub(crate) unsafe fn management_headers(
     Ok(Some(headers))
 }
 
-/// Initializes or resets typed management overrides to unset.
-///
-/// Resetting removes only these typed overrides, not inherited custom headers.
-/// `out` must be NULL or point to complete, aligned, writable record storage.
-#[no_mangle]
-pub extern "C" fn cosmos_management_options_init(out: *mut CosmosManagementOptions) {
-    // SAFETY: caller provides full writable storage for this zero-valid record.
-    unsafe { initialize(out) };
-}
+#[cfg(test)]
+mod tests;
