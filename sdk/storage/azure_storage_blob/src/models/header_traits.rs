@@ -41,7 +41,7 @@ const REQUEST_SERVER_ENCRYPTED: HeaderName =
 ///     Ok(())
 /// }
 /// ```
-pub trait BlockBlobClientStageBlockResultHeaders {
+pub trait BlockBlobClientStageBlockResultHeaders: private::Sealed {
     fn content_md5(&self) -> Result<Option<Vec<u8>>>;
     fn content_crc64(&self) -> Result<Option<Vec<u8>>>;
     fn encryption_key_sha256(&self) -> Result<Option<String>>;
@@ -78,4 +78,13 @@ impl BlockBlobClientStageBlockResultHeaders
     fn is_server_encrypted(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &REQUEST_SERVER_ENCRYPTED)
     }
+}
+
+mod private {
+    use super::BlockBlobClientStageBlockResult;
+    use azure_core::http::{NoFormat, Response};
+
+    pub trait Sealed {}
+
+    impl Sealed for Response<BlockBlobClientStageBlockResult, NoFormat> {}
 }
