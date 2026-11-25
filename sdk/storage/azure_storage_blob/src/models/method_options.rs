@@ -14,14 +14,20 @@ use crate::models::{
     ImmutabilityPolicyMode,
 };
 
+/// Options for managed content validation on uploads.
 #[derive(Clone, Default, Debug)]
 pub enum UploadContentValidation {
+    /// Automatically choose an appropriate validation method.
     #[default]
     Auto,
+    /// Disable content validation.
     None,
+    /// Use CRC64 NVMe for content validation. Optionally, a pre-calculated value can be provided.
+    /// Use little-endianness when converting from integers to bytes.
     Crc64Nvme(Option<[u8; 8]>),
 }
 
+/// Options for managed content validation on downloads.
 #[derive(Clone, Default, Debug)]
 pub enum DownloadContentValidation {
     #[default]
