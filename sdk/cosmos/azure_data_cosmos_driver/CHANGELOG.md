@@ -17,6 +17,7 @@
 
 ### Bugs Fixed
 
+- Fixed container deletes failing with HTTP 500 by sending `Prefer: return=minimal` only for item writes, not for database, container, script, or offer operations. ([#5672](https://github.com/Azure/azure-sdk-for-rust/issues/5672))
 - Retain partition-key-range pages across 429 retries regardless of throttling caps, until success, a non-429 result, deadline, or cancellation; persistent throttling can wait indefinitely without a deadline or cancellation. ([#5595](https://github.com/Azure/azure-sdk-for-rust/pull/5595))
 - Preserve complete single-partition emulator aggregate, GROUP BY, and DISTINCT results across pages, and retain quoted aliases and floating-point literals in query rewrites. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))

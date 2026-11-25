@@ -2978,15 +2978,31 @@ fn apply_tentative_writes_header(
     }
 }
 
+/// Returns true when `content_response_on_write` governs the operation, i.e.
+/// it is a non-read item-level operation whose response body can be suppressed.
+fn suppresses_write_response_content(operation: &CosmosOperation) -> bool {
+    if operation.operation_type().is_read_only() {
+        return false;
+    }
+    match operation.resource_type() {
+        ResourceType::Document => true,
+        #[cfg(feature = "unstable_dtx")]
+        ResourceType::DistributedTransactionBatch => true,
+        _ => false,
+    }
+}
+
 /// Applies operation-options-driven request headers that are only known
 /// after the request has been built by `build_transport_request`.
 ///
 /// Two concerns are layered here, in this order:
 ///
-/// 1. **content-response-on-write**: For non-read operations whose
-///    `content_response_on_write` is `None` (default) or `Disabled`,
-///    inject `Prefer: return=minimal` so the service suppresses the
-///    response body. Reads always need the body and are unaffected.
+/// 1. **content-response-on-write**: For item-level writes (including
+///    batches) whose `content_response_on_write` is `None` (default) or
+///    `Disabled`, inject `Prefer: return=minimal` so the service suppresses
+///    the response body. Reads always need the body, and resource-management
+///    operations (databases, containers, scripts, offers) are unaffected;
+///    the service rejects `DELETE` of a container carrying this header.
 /// 2. **custom_headers**: Pass-through of caller-supplied headers, but
 ///    only when no SDK-set header with the same name already exists —
 ///    SDK headers always take precedence.
@@ -3000,7 +3016,7 @@ fn apply_optional_request_headers(
             options.content_response_on_write(),
             Some(&crate::options::ContentResponseOnWrite::Enabled)
         );
-    if !operation.operation_type().is_read_only() && !content_response_enabled {
+    if suppresses_write_response_content(operation) && !content_response_enabled {
         transport_request.headers.insert(
             request_header_names::PREFER,
             HeaderValue::from_static("return=minimal"),
@@ -7133,6 +7149,60 @@ mod tests {
                 .expect("request should build");
         super::apply_optional_request_headers(&mut request, &operation, &view);
         assert!(request.headers.get_optional_str(&session_header).is_none());
+    }
+
+    #[test]
+    fn prefer_minimal_applies_only_to_item_writes() {
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("prefer-minimal-scope".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let prefer_header = HeaderName::from_static(request_header_names::PREFER);
+        let view = crate::options::OperationOptionsView::new(None, None, None, None);
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let database = crate::models::DatabaseReference::from_name(test_account(), "testdb");
+
+        let cases = [
+            (
+                "create_item",
+                CosmosOperation::create_item(item),
+                Some("return=minimal"),
+            ),
+            (
+                "batch",
+                CosmosOperation::batch(test_container(), PartitionKey::from("pk1")),
+                Some("return=minimal"),
+            ),
+            (
+                "delete_container",
+                CosmosOperation::delete_container(test_container()),
+                None,
+            ),
+            (
+                "delete_database",
+                CosmosOperation::delete_database(database),
+                None,
+            ),
+        ];
+        for (name, operation, expected) in cases {
+            let mut request =
+                build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                    .expect("request should build");
+            super::apply_optional_request_headers(&mut request, &operation, &view);
+            assert_eq!(
+                request.headers.get_optional_str(&prefer_header),
+                expected,
+                "{name}"
+            );
+        }
     }
 
     #[test]
