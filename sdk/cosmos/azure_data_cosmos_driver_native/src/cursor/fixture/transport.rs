@@ -270,6 +270,13 @@ impl TransportClient for ScriptedTransport {
         let mut headers = Headers::new();
         let mut status = 200;
         let body = match request.url.path() {
+            "/dbs" | "/dbs/testdb/colls" => serde_json::json!({
+                "id":"created",
+                "inherited":header(request, "x-test-inherited"),
+                "throughput":header(request, "x-ms-offer-throughput"),
+                "autoscale":header(request, "x-ms-cosmos-offer-autopilot-settings"),
+                "ifMatch":header(request, "if-match")
+            }),
             "/" => serde_json::json!({
                 "id":"cursor-fixture", "_rid":"cursor-fixture", "_self":"",
                 "writableLocations":[{"name":"East US","databaseAccountEndpoint":"https://eastus.emulator.local/"}],

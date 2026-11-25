@@ -1,5 +1,17 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added `cosmos_submit_singleton_operation_with_throughput` and size/version-stamped `cosmos_throughput_options_t` for typed manual/autoscale database and container creation throughput with complete auto-upgrade policies, preserving inherited custom headers and native header precedence. ([#5663](https://github.com/Azure/azure-sdk-for-rust/pull/5663))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added

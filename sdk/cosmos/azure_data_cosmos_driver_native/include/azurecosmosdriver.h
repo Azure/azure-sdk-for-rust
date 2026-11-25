@@ -2223,6 +2223,50 @@ typedef struct cosmos_runtime_options_t {
   const struct cosmos_operation_options_t *operation_options;
 } cosmos_runtime_options_t;
 
+/**
+ * Typed throughput headers for database and container creation.
+ *
+ * Zero-initialize the payload fields and set the size/version fields below.
+ * Unset leaves inherited custom headers unchanged. Set values take precedence
+ * over conflicting custom headers without replacing their map. All inputs are
+ * copied during submit.
+ */
+typedef struct cosmos_throughput_options_t {
+  /**
+   * Readable allocation size, at least the known record size, including any
+   * zero-filled extension bytes. Must not exceed the actual readable storage.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * Must be 1.
+   */
+  uint32_t abi_version;
+  /**
+   * 0 unset, 1 manual, 2 autoscale. Inactive payloads must be zero.
+   */
+  uint32_t throughput_kind;
+  /**
+   * Positive RU/s when `throughput_kind` is 1; otherwise zero.
+   */
+  uint64_t manual_throughput;
+  /**
+   * Positive maximum RU/s when `throughput_kind` is 2; otherwise zero.
+   */
+  uint64_t autoscale_max_throughput;
+  /**
+   * 0 absent, 1 present. Only valid for autoscale.
+   */
+  uint8_t has_auto_upgrade_policy;
+  /**
+   * 0 absent, 1 present. Requires `has_auto_upgrade_policy` to be 1.
+   */
+  uint8_t has_throughput_policy;
+  /**
+   * Full unsigned percentage; zero when the throughput policy is absent.
+   */
+  uint32_t increment_percent;
+} cosmos_throughput_options_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -3182,6 +3226,32 @@ struct cosmos_operation_handle_t *cosmos_submit_singleton_operation(const struct
                                                                     struct cosmos_completion_queue_t *queue,
                                                                     intptr_t user_data,
                                                                     cosmos_status_code_t *out_pre_error);
+
+/**
+ * Submits a singleton with typed database/container creation throughput.
+ *
+ * NULL or a valid size/version-stamped `throughput` with zero payload fields preserves
+ * [`cosmos_submit_singleton_operation()`] behavior. Set options require a
+ * CreateDatabase or CreateContainer request. Manual and autoscale settings
+ * are mutually exclusive. Typed headers take precedence over custom headers
+ * without replacing the native-resolved custom-header map. An inherited
+ * opposite-mode throughput header is rejected rather than sending both modes.
+ * Set options capture native configuration at admission if no snapshot was supplied.
+ *
+ * `throughput` must be NULL or point to aligned storage readable for its declared
+ * size, following [`CosmosThroughputOptions`]. Request, options, handles, and borrowed
+ * inputs must remain valid until this call returns; inputs are copied before
+ * asynchronous execution. Completion, cancellation, and ownership follow
+ * [`cosmos_submit_singleton_operation()`].
+ * Invalid records or unsupported operation kinds fail before submission via
+ * `out_pre_error`. Other parameters follow [`cosmos_submit_singleton_operation()`].
+ */
+struct cosmos_operation_handle_t *cosmos_submit_singleton_operation_with_throughput(const struct cosmos_driver_t *driver,
+                                                                                    const struct cosmos_operation_request_t *request,
+                                                                                    const struct cosmos_throughput_options_t *throughput,
+                                                                                    struct cosmos_completion_queue_t *queue,
+                                                                                    intptr_t user_data,
+                                                                                    cosmos_status_code_t *out_pre_error);
 
 /**
  * Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].

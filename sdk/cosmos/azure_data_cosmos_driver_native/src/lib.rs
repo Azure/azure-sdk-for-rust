@@ -43,6 +43,7 @@ pub(crate) mod safety;
 pub mod submit;
 #[cfg(feature = "test-abi")]
 mod test_abi;
+pub mod throughput;
 
 // We want this value to be present as a string in the compiled binary so that
 // build provenance can be recovered from a stripped library. Exposing it as a
