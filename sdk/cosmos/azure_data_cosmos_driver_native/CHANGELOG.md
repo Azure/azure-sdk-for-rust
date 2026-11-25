@@ -1,5 +1,19 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added flat versioned runtime and client construction, with one initializer per record, for transport, diagnostics retention, topology/failover, ordered backup endpoints, per-client identity, and nanosecond-precision operation-duration defaults. ([#5658](https://github.com/Azure/azure-sdk-for-rust/pull/5658))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+- Fixed `cosmos_runtime_build` and `cosmos_runtime_build_v2` unwinding across the FFI boundary when driver runtime construction panics; they now fail with status 500 and sub-status `COSMOS_SUB_STATUS_CLIENT_FFI_RUNTIME_BUILD_FAILED` (20361). ([#5658](https://github.com/Azure/azure-sdk-for-rust/pull/5658))
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added

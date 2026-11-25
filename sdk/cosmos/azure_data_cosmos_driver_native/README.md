@@ -65,6 +65,38 @@ for the full design.
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 | Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
+## Runtime and client configuration
+
+Initialize one `cosmos_runtime_options_v2_t` with `cosmos_runtime_options_v2_init`,
+set its fields, and pass it to `cosmos_runtime_build_v2`. Initialize one
+`cosmos_driver_options_config_v3_t` with `cosmos_driver_options_config_v3_init`
+and pass it to `cosmos_driver_options_build_v3`. These self-contained records
+have no nested configuration records or initializers. Runtime fields expose
+identity, transport/pooling, and diagnostics defaults/retention. Client fields
+expose regions, fault-injection rules, resource-name validation, topology/failover,
+ordered bootstrap backups, and independent identity. Both accept the existing
+optional `cosmos_operation_options_t` pointer; NULL inherits.
+All borrowed strings, arrays, rules, and operation options are copied during
+construction. Initializers set the size/version prefix and unset sentinels;
+the client initializer also sets the fault-injection rule stride.
+Native builders retain environment/default precedence and validation.
+NULL/0 client identity inherits the runtime identity; non-NULL/0 omits the suffix for that client.
+Backup endpoint NULL/0 inherits the account list; non-NULL/0 clears it.
+
+Exact operation-duration defaults are inline fields on both construction records.
+When set, they override the matching values in the optional
+`cosmos_operation_options_t`. Seconds plus normalized nanoseconds preserve precision
+for endpoint cooldown, throttle wait, and a positive hedge threshold. Unset
+payloads must be zero. Monotonic-clock overflow and native option bounds are
+rejected. Legacy records and entry points keep their published layouts and meanings.
+
+These additive exports require a matching newly built native library and header;
+the published v0.3.0 platform modules do not contain them. A local build is not
+a published platform-module/header/checksum/provenance release.
+Use release builds for distribution. Debug driver builds can reject differing
+process-wide CPU sampling intervals with a runtime-construction error; release
+builds retain the first initialized interval, as in the published driver.
+
 ## Read-many cursors
 
 Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,

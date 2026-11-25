@@ -1460,61 +1460,6 @@ typedef struct cosmos_completion_queue_options_t {
 } cosmos_completion_queue_options_t;
 
 /**
- * Payload half of a [`CosmosPartitionKeyComponent`] — a C `union` whose
- * active field is selected by the sibling `kind` discriminant. Only the
- * field selected by `kind` may be read; the others are ignored (the
- * `Null` / `Undefined` kinds do not read any payload field at all).
- *
- * The boolean payload is exposed as a plain `u8` (rather than a Rust
- * `bool`) so any host-written byte is a defined value: zero encodes
- * `false`, any non-zero byte encodes `true`. This avoids the undefined
- * behavior that would arise if a caller wrote a byte other than `0x00`
- * or `0x01` into a `bool`-typed field.
- */
-typedef union cosmos_partition_key_component_value_t {
-  /**
-   * Borrowed counted UTF-8 payload. Read iff `kind` is `String`.
-   */
-  struct cosmos_string_view_t string_value;
-  /**
-   * Numeric payload. Read iff `kind` is `Number`. Must be finite.
-   */
-  double number_value;
-  /**
-   * Boolean payload as `u8`: `0` encodes `false`, any non-zero byte
-   * encodes `true`. Read iff `kind` is `Bool`. Typed as `u8` rather
-   * than a Rust `bool` so an arbitrary host-written byte is always a
-   * defined value.
-   */
-  uint8_t bool_value;
-} cosmos_partition_key_component_value_t;
-
-/**
- * One component of a hierarchical partition key, assembled inline by the host
- * (a C-style tagged union: a `kind` tag plus a value `union` sharing storage
- * across every possible payload).
- *
- * This lets a calling SDK assemble a whole partition key in a single array
- * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest)
- * or [`cosmos_partition_key_create`]. Only the union field selected by `kind`
- * is read; the others are ignored.
- */
-typedef struct cosmos_partition_key_component_t {
-  /**
-   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
-   * discriminant. Stored as `u8` so every host-written byte is a
-   * defined value — an out-of-range kind falls through to the wildcard
-   * branch of the reader's match and is rejected with
-   * `INVALID_OPTION_VALUE`.
-   */
-  uint8_t kind;
-  /**
-   * The union payload; read the field selected by `kind`.
-   */
-  union cosmos_partition_key_component_value_t value;
-} cosmos_partition_key_component_t;
-
-/**
  * A single custom request/operation header. Both views are
  * counted UTF-8 and borrowed for the duration of the submit call;
  * the wrapper copies them before returning.
@@ -1681,6 +1626,291 @@ typedef struct cosmos_operation_options_t {
    */
   int64_t hedge_threshold_ms;
 } cosmos_operation_options_t;
+
+/**
+ * Optional exact Rust duration: seconds plus nanoseconds less than 1,000,000,000.
+ *
+ * `is_set` is 0 or 1. Unset payloads must be zero. The full Rust Duration domain
+ * is represented, but durations that overflow the platform monotonic clock are
+ * rejected. Each consuming driver option also applies its own bounds.
+ */
+typedef struct cosmos_duration_t {
+  uint8_t is_set;
+  uint64_t seconds;
+  uint32_t nanoseconds;
+} cosmos_duration_t;
+
+/**
+ * Optional integer. `is_set` is 0 or 1; an unset value must be zero.
+ */
+typedef struct cosmos_optional_u64_t {
+  uint8_t is_set;
+  uint64_t value;
+} cosmos_optional_u64_t;
+
+/**
+ * Self-contained runtime construction options. Initialize with [`cosmos_runtime_options_v2_init()`].
+ *
+ * Boolean fields use 0 unset, 1 false, 2 true. Duration and numeric bounds are
+ * validated by the native builders. All borrowed strings, arrays, and operation
+ * options are copied during construction. Unset fields retain native defaults.
+ */
+typedef struct cosmos_runtime_options_v2_t {
+  uint32_t struct_size_bytes;
+  uint32_t abi_version;
+  /**
+   * 0 inherits; otherwise a workload identifier from 1 through 50.
+   */
+  uint8_t workload_id;
+  struct cosmos_string_view_t correlation_id;
+  struct cosmos_string_view_t user_agent_suffix;
+  struct cosmos_string_view_t wrapping_sdk_identifier;
+  /**
+   * 0 inherits; otherwise 1000 through 60000 milliseconds.
+   */
+  uint64_t cpu_refresh_interval_ms;
+  /**
+   * NULL inherits. Borrowed options and their inputs are copied during construction.
+   */
+  const struct cosmos_operation_options_t *operation_options;
+  struct cosmos_duration_t endpoint_unavailability_ttl;
+  struct cosmos_duration_t max_throttle_retry_wait_time;
+  /**
+   * A positive threshold enables hedging; explicit zero is rejected.
+   */
+  struct cosmos_duration_t hedge_threshold;
+  int8_t proxy_allowed;
+  int8_t is_http2_allowed;
+  int8_t gateway_v2_disabled;
+  /**
+   * 0 inherits, 1 requires validation, 2 requires validation except for the emulator.
+   */
+  uint32_t server_certificate_validation;
+  /**
+   * 0 inherits; 1 selects Rustls. Other values are rejected.
+   */
+  uint32_t tls_backend;
+  /**
+   * Optional IP address, copied before construction returns.
+   */
+  struct cosmos_string_view_t local_address;
+  struct cosmos_duration_t min_connect_timeout;
+  struct cosmos_duration_t max_connect_timeout;
+  struct cosmos_duration_t min_dataplane_request_timeout;
+  struct cosmos_duration_t max_dataplane_request_timeout;
+  struct cosmos_duration_t min_metadata_request_timeout;
+  struct cosmos_duration_t max_metadata_request_timeout;
+  struct cosmos_duration_t idle_connection_timeout;
+  struct cosmos_duration_t idle_http2_client_timeout;
+  struct cosmos_duration_t http2_health_check_interval;
+  struct cosmos_duration_t http2_eviction_grace_period;
+  struct cosmos_duration_t http2_keep_alive_interval;
+  struct cosmos_duration_t http2_keep_alive_timeout;
+  struct cosmos_duration_t tcp_keepalive_time;
+  struct cosmos_duration_t tcp_keepalive_interval;
+  struct cosmos_optional_u64_t max_idle_connections_per_endpoint;
+  struct cosmos_optional_u64_t max_http2_streams_per_client;
+  struct cosmos_optional_u64_t http2_fan_out_threshold_percent;
+  struct cosmos_optional_u64_t max_http2_connections_per_endpoint;
+  struct cosmos_optional_u64_t min_http2_connections_per_endpoint;
+  struct cosmos_optional_u64_t http2_consecutive_failure_threshold;
+  struct cosmos_optional_u64_t tcp_keepalive_retries;
+  /**
+   * 0 inherits; 1 selects summary; 2 selects detailed.
+   */
+  uint32_t diagnostics_verbosity;
+  struct cosmos_optional_u64_t max_summary_size_bytes;
+  struct cosmos_optional_u64_t max_request_diagnostics;
+} cosmos_runtime_options_v2_t;
+
+/**
+ * Size/version prefix shared by native fault-injection records.
+ */
+typedef struct cosmos_fault_injection_record_header_t {
+  uintptr_t struct_size;
+  uint32_t version;
+} cosmos_fault_injection_record_header_t;
+
+/**
+ * Match conditions for a native fault-injection rule.
+ */
+typedef struct cosmos_fault_injection_condition_t {
+  struct cosmos_fault_injection_record_header_t header;
+  int32_t operation_type;
+  struct cosmos_string_view_t region;
+  struct cosmos_string_view_t container_id;
+  int32_t transport_kind;
+} cosmos_fault_injection_condition_t;
+
+/**
+ * Injected result for a native fault-injection rule.
+ */
+typedef struct cosmos_fault_injection_result_t {
+  struct cosmos_fault_injection_record_header_t header;
+  int32_t error_type;
+  /**
+   * Delay before completing the injected result, in milliseconds.
+   *
+   * Use `-1` to leave unset. `0` is a configured zero-duration delay.
+   */
+  int64_t delay_ms;
+  float probability;
+  int32_t custom_status_code;
+  /**
+   * Injected Cosmos sub-status for a custom HTTP response.
+   *
+   * Use `-1` to leave unset. `0` is a configured sub-status value.
+   */
+  int32_t custom_sub_status;
+  /**
+   * Injected `x-ms-retry-after-ms` value for a custom HTTP response.
+   *
+   * Use `-1` to leave unset. `0` is a configured zero retry-after value.
+   */
+  int64_t retry_after_ms;
+  const struct cosmos_header_kv_t *custom_headers;
+  uintptr_t custom_headers_len;
+  const uint8_t *body;
+  uintptr_t body_len;
+} cosmos_fault_injection_result_t;
+
+/**
+ * Complete native fault-injection rule.
+ */
+typedef struct cosmos_fault_injection_rule_t {
+  struct cosmos_fault_injection_record_header_t header;
+  struct cosmos_string_view_t id;
+  const struct cosmos_fault_injection_condition_t *condition;
+  const struct cosmos_fault_injection_result_t *result;
+  /**
+   * Maximum number of matching requests to inject.
+   *
+   * Use `-1` to leave unset. `0` disables injection for this rule.
+   */
+  int64_t hit_limit;
+  /**
+   * Delay before the rule becomes active, in milliseconds.
+   *
+   * Use `-1` to leave unset. `0` makes the rule active immediately.
+   */
+  int64_t start_delay_ms;
+  /**
+   * Active duration after the computed start time, in milliseconds.
+   *
+   * Use `-1` to leave unset. `0` expires the rule at its start time. When
+   * `start_delay_ms` is set, expiration is measured from that delayed start,
+   * not from the options build call.
+   */
+  int64_t expire_after_ms;
+} cosmos_fault_injection_rule_t;
+
+/**
+ * Self-contained client configuration. Initialize with [`cosmos_driver_options_config_v3_init()`].
+ *
+ * Construction copies all strings, arrays, rules, and operation options. Unset
+ * fields retain native defaults; no runtime or sibling client is mutated.
+ */
+typedef struct cosmos_driver_options_config_v3_t {
+  uint32_t struct_size_bytes;
+  uint32_t abi_version;
+  const struct cosmos_string_view_t *preferred_regions;
+  uintptr_t preferred_regions_len;
+  /**
+   * NULL inherits. Borrowed options and their inputs are copied during construction.
+   */
+  const struct cosmos_operation_options_t *operation_options;
+  const struct cosmos_fault_injection_rule_t *fault_injection_rules;
+  uintptr_t fault_injection_rules_len;
+  uintptr_t fault_injection_rule_stride;
+  /**
+   * 0 inherits, 1 disables validation, 2 enables validation.
+   */
+  int8_t resource_name_validation_enabled;
+  /**
+   * NULL/0 inherits the account's backup endpoints; non-NULL/0 explicitly clears them.
+   */
+  const struct cosmos_string_view_t *backup_endpoints;
+  uintptr_t backup_endpoints_len;
+  /**
+   * NULL/0 inherits runtime identity; non-NULL/0 omits the suffix for this client.
+   */
+  struct cosmos_string_view_t user_agent_suffix;
+  /**
+   * 0 inherits; 1 eager; 2 lazy.
+   */
+  uint32_t topology_cache_mode;
+  /**
+   * 0 inherits, 1 disables, 2 enables; native environment kill switches retain precedence.
+   */
+  int8_t circuit_breaker_enabled;
+  struct cosmos_optional_u64_t read_failure_threshold;
+  struct cosmos_optional_u64_t write_failure_threshold;
+  struct cosmos_optional_u64_t consecutive_hedge_win_threshold;
+  struct cosmos_duration_t counter_reset_window;
+  struct cosmos_duration_t partition_unavailability_duration;
+  struct cosmos_duration_t failback_sweep_interval;
+  struct cosmos_duration_t endpoint_unavailability_ttl;
+  struct cosmos_duration_t max_throttle_retry_wait_time;
+  /**
+   * A positive threshold enables hedging; explicit zero is rejected.
+   */
+  struct cosmos_duration_t hedge_threshold;
+} cosmos_driver_options_config_v3_t;
+
+/**
+ * Payload half of a [`CosmosPartitionKeyComponent`] — a C `union` whose
+ * active field is selected by the sibling `kind` discriminant. Only the
+ * field selected by `kind` may be read; the others are ignored (the
+ * `Null` / `Undefined` kinds do not read any payload field at all).
+ *
+ * The boolean payload is exposed as a plain `u8` (rather than a Rust
+ * `bool`) so any host-written byte is a defined value: zero encodes
+ * `false`, any non-zero byte encodes `true`. This avoids the undefined
+ * behavior that would arise if a caller wrote a byte other than `0x00`
+ * or `0x01` into a `bool`-typed field.
+ */
+typedef union cosmos_partition_key_component_value_t {
+  /**
+   * Borrowed counted UTF-8 payload. Read iff `kind` is `String`.
+   */
+  struct cosmos_string_view_t string_value;
+  /**
+   * Numeric payload. Read iff `kind` is `Number`. Must be finite.
+   */
+  double number_value;
+  /**
+   * Boolean payload as `u8`: `0` encodes `false`, any non-zero byte
+   * encodes `true`. Read iff `kind` is `Bool`. Typed as `u8` rather
+   * than a Rust `bool` so an arbitrary host-written byte is always a
+   * defined value.
+   */
+  uint8_t bool_value;
+} cosmos_partition_key_component_value_t;
+
+/**
+ * One component of a hierarchical partition key, assembled inline by the host
+ * (a C-style tagged union: a `kind` tag plus a value `union` sharing storage
+ * across every possible payload).
+ *
+ * This lets a calling SDK assemble a whole partition key in a single array
+ * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest)
+ * or [`cosmos_partition_key_create`]. Only the union field selected by `kind`
+ * is read; the others are ignored.
+ */
+typedef struct cosmos_partition_key_component_t {
+  /**
+   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
+   * discriminant. Stored as `u8` so every host-written byte is a
+   * defined value — an out-of-range kind falls through to the wildcard
+   * branch of the reader's match and is rejected with
+   * `INVALID_OPTION_VALUE`.
+   */
+  uint8_t kind;
+  /**
+   * The union payload; read the field selected by `kind`.
+   */
+  union cosmos_partition_key_component_value_t value;
+} cosmos_partition_key_component_t;
 
 /**
  * Self-describing request passed to the two submit entry points. The host
@@ -1982,87 +2212,6 @@ typedef struct cosmos_driver_options_config_t {
    */
   const struct cosmos_operation_options_t *operation_options;
 } cosmos_driver_options_config_t;
-
-/**
- * Size/version prefix shared by native fault-injection records.
- */
-typedef struct cosmos_fault_injection_record_header_t {
-  uintptr_t struct_size;
-  uint32_t version;
-} cosmos_fault_injection_record_header_t;
-
-/**
- * Match conditions for a native fault-injection rule.
- */
-typedef struct cosmos_fault_injection_condition_t {
-  struct cosmos_fault_injection_record_header_t header;
-  int32_t operation_type;
-  struct cosmos_string_view_t region;
-  struct cosmos_string_view_t container_id;
-  int32_t transport_kind;
-} cosmos_fault_injection_condition_t;
-
-/**
- * Injected result for a native fault-injection rule.
- */
-typedef struct cosmos_fault_injection_result_t {
-  struct cosmos_fault_injection_record_header_t header;
-  int32_t error_type;
-  /**
-   * Delay before completing the injected result, in milliseconds.
-   *
-   * Use `-1` to leave unset. `0` is a configured zero-duration delay.
-   */
-  int64_t delay_ms;
-  float probability;
-  int32_t custom_status_code;
-  /**
-   * Injected Cosmos sub-status for a custom HTTP response.
-   *
-   * Use `-1` to leave unset. `0` is a configured sub-status value.
-   */
-  int32_t custom_sub_status;
-  /**
-   * Injected `x-ms-retry-after-ms` value for a custom HTTP response.
-   *
-   * Use `-1` to leave unset. `0` is a configured zero retry-after value.
-   */
-  int64_t retry_after_ms;
-  const struct cosmos_header_kv_t *custom_headers;
-  uintptr_t custom_headers_len;
-  const uint8_t *body;
-  uintptr_t body_len;
-} cosmos_fault_injection_result_t;
-
-/**
- * Complete native fault-injection rule.
- */
-typedef struct cosmos_fault_injection_rule_t {
-  struct cosmos_fault_injection_record_header_t header;
-  struct cosmos_string_view_t id;
-  const struct cosmos_fault_injection_condition_t *condition;
-  const struct cosmos_fault_injection_result_t *result;
-  /**
-   * Maximum number of matching requests to inject.
-   *
-   * Use `-1` to leave unset. `0` disables injection for this rule.
-   */
-  int64_t hit_limit;
-  /**
-   * Delay before the rule becomes active, in milliseconds.
-   *
-   * Use `-1` to leave unset. `0` makes the rule active immediately.
-   */
-  int64_t start_delay_ms;
-  /**
-   * Active duration after the computed start time, in milliseconds.
-   *
-   * Use `-1` to leave unset. `0` expires the rule at its start time. When
-   * `start_delay_ms` is set, expiration is measured from that delayed start,
-   * not from the options build call.
-   */
-  int64_t expire_after_ms;
-} cosmos_fault_injection_rule_t;
 
 /**
  * Versioned driver-options record with native fault-injection rules.
@@ -2447,6 +2596,32 @@ cosmos_operation_handle_state_t cosmos_operation_handle_state(const struct cosmo
  * its own reference, the inner operation state stays alive.
  */
 void cosmos_operation_handle_free(struct cosmos_operation_handle_t *op);
+
+/**
+ * Initializes runtime construction options to inherited defaults.
+ */
+void cosmos_runtime_options_v2_init(struct cosmos_runtime_options_v2_t *out);
+
+/**
+ * Initializes client construction options to inherited defaults.
+ */
+void cosmos_driver_options_config_v3_init(struct cosmos_driver_options_config_v3_t *out);
+
+/**
+ * Builds a runtime with typed transport, diagnostics, and precision-preserving defaults.
+ *
+ * No runtime or sibling client is mutated. All nested inputs are copied before return.
+ */
+cosmos_status_code_t cosmos_runtime_build_v2(const struct cosmos_runtime_options_v2_t *input,
+                                             struct cosmos_runtime_t **out,
+                                             struct cosmos_error_t **error);
+
+/**
+ * Builds independent client options with ordered backups, identity, and topology overrides.
+ */
+cosmos_status_code_t cosmos_driver_options_build_v3(const struct cosmos_account_ref_t *account,
+                                                    const struct cosmos_driver_options_config_v3_t *input,
+                                                    struct cosmos_driver_options_t **out);
 
 /**
  * Frees a container-reference handle. NULL is a no-op.
