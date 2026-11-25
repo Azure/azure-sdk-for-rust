@@ -54,8 +54,8 @@ implying everything already exists:
 - **[WS4c]** — the upstream span-backdating trait additions to `typespec_client_core` +
   `azure_core_opentelemetry`, shipped as the **separate** core-crate PR #4784 (not in this PR).
 - **[WS7]** — the deferred, OFF-by-default append-only **capture engine** (salvaged from the
-  closed PR #4619): the `event.rs` `Span`/`Attr` model, the encode path, and the per-op /
-  per-attempt wall-clock capture optimization. Not in this PR.
+  closed PR #4619): the `event.rs` `Span`/`Attr` model and the encode path. The UTC timestamp
+  contract below is implemented independently of this deferred engine.
 - **[design]** — a surface this contract sketches that is **not yet implemented** (e.g. the
   SDK-facing `DiagnosticsLevel { Minimal, Standard, Full }`, which maps onto the [main]
   `DiagnosticsVerbosity`).
@@ -239,6 +239,41 @@ logged/traced and peg the CPU:
 
 Materialization is **explicit, lazy, and per-representation**: each is paid only when a handler
 asks for it, so the expensive JSON step is never paid on a metrics-only or span-only path.
+
+### 6.1 UTC timestamps
+
+The string representation emits RFC 3339 UTC timestamps with fixed millisecond precision:
+
+| Record | Timestamp fields |
+| --- | --- |
+| Operation, including Summary and size-truncated Summary | `start_time_utc` |
+| Detailed attempt and Summary region first/last attempt | `start_time_utc` |
+| Detailed request event | `timestamp_utc` |
+| Compacted retry-run rollup | `first_start_time_utc`, `last_start_time_utc` |
+
+`DiagnosticsContext::start_time()`, `RequestDiagnostics::start_time()`, and
+`RequestEvent::timestamp_utc()` return the captured `SystemTime` without the JSON precision
+reduction. Existing `Instant` getters and monotonic duration measurements remain unchanged.
+
+The driver captures one `(Instant, SystemTime)` anchor per operation and derives attempt
+and event times from their monotonic offsets. Hedge legs share the parent's anchor.
+Standalone public event constructors capture their own wall-clock time. Timestamps are
+stored before emission; formatting remains lazy and serialization never reads the clock.
+
+UTC accuracy depends on the host's clock synchronization. Later clock adjustments don't
+change captured timestamps, but separately captured operations can observe different clock
+adjustments. Aggregates preserve each source's timestamps and use the start of the earliest
+source by monotonic time. Their duration remains the sum of source durations, not the
+wall-clock interval from first start to final completion.
+
+Compacted runs retain the minimum and maximum captured UTC attempt starts, including
+attempts omitted from the retained record list. Merged rollups preserve these extrema.
+Timestamp fields don't participate in grouping keys. Existing byte/record caps and
+omission markers still apply; the truncated Summary keeps the operation start without
+reintroducing run arrays. Summary doesn't expand to include every attempt or event.
+
+OTel span construction retains its separate emission-time clock anchor. Exact alignment
+between JSON timestamps and spans isn't guaranteed by this change.
 
 ## 7. Where the level / threshold applies
 

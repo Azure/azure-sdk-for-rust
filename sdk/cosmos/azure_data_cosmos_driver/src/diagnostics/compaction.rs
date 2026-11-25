@@ -33,11 +33,13 @@
 //! out while the operation is in flight. The bound is on the finalized serialized
 //! artifact, not on live mid-operation memory.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::SystemTime};
 
 use serde::Serialize;
 
-use super::diagnostics_context::{percentile_sorted, ExecutionContext, RequestDiagnostics};
+use super::diagnostics_context::{
+    percentile_sorted, serialize_utc, ExecutionContext, RequestDiagnostics,
+};
 use crate::models::{CosmosStatus, RequestCharge};
 use crate::options::Region;
 
@@ -112,6 +114,12 @@ pub struct CompactedRun {
     pub execution_context: ExecutionContext,
     /// Number of attempts in the run.
     pub count: usize,
+    /// Earliest captured UTC start time among the attempts represented by this run.
+    #[serde(serialize_with = "serialize_utc")]
+    pub first_start_time_utc: SystemTime,
+    /// Latest captured UTC start time among the attempts represented by this run.
+    #[serde(serialize_with = "serialize_utc")]
+    pub last_start_time_utc: SystemTime,
     /// Total request charge (RU) across the run.
     pub total_request_charge: RequestCharge,
     /// Minimum per-attempt duration in the run, in milliseconds.
@@ -280,6 +288,8 @@ fn combine_runs(into: &mut CompactedRun, from: CompactedRun) {
             / total as u128) as u64;
     }
     into.count = total;
+    into.first_start_time_utc = into.first_start_time_utc.min(from.first_start_time_utc);
+    into.last_start_time_utc = into.last_start_time_utc.max(from.last_start_time_utc);
     into.total_request_charge = into.total_request_charge + from.total_request_charge;
     into.min_duration_ms = into.min_duration_ms.min(from.min_duration_ms);
     into.max_duration_ms = into.max_duration_ms.max(from.max_duration_ms);
@@ -292,12 +302,19 @@ fn compacted_run(reqs: &[&RequestDiagnostics]) -> CompactedRun {
     durations.sort_unstable();
     let total_request_charge: RequestCharge = reqs.iter().map(|r| r.request_charge()).sum();
     let first = reqs[0];
+    let (first_start_time_utc, last_start_time_utc) =
+        reqs.iter().map(|request| request.start_time()).fold(
+            (first.start_time(), first.start_time()),
+            |(first, last), time| (first.min(time), last.max(time)),
+        );
     CompactedRun {
         region: first.region().map(|r| r.as_str().to_string()),
         endpoint: first.endpoint().to_string(),
         status: *first.status(),
         execution_context: first.execution_context(),
         count,
+        first_start_time_utc,
+        last_start_time_utc,
         total_request_charge,
         min_duration_ms: durations.first().copied().unwrap_or(0),
         max_duration_ms: durations.last().copied().unwrap_or(0),

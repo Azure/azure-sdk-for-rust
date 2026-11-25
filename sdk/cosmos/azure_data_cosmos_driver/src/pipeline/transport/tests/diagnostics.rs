@@ -183,6 +183,16 @@ async fn completion_records_events_in_wire_order() {
         assert_eq!(completed.requests().len(), 1);
         let record = &completed.requests()[0];
         assert!(record.is_completed());
+        assert!(record.start_time() >= completed.start_time());
+        for event in record.events() {
+            let wall_elapsed = event
+                .timestamp_utc()
+                .duration_since(record.start_time())
+                .unwrap();
+            let monotonic_elapsed = event.timestamp().duration_since(record.started_at());
+            // Windows SystemTime arithmetic has 100 ns precision.
+            assert!(wall_elapsed.abs_diff(monotonic_elapsed) <= Duration::from_nanos(100));
+        }
         assert_eq!(
             record
                 .events()

@@ -5,8 +5,8 @@
 use crate::fault_injection::FaultInjectionEvaluation;
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, FailedTransportShardDiagnostics, RequestEvent, RequestHandle,
-        RequestSentStatus, TransportShardDiagnostics,
+        DiagnosticsContextBuilder, FailedTransportShardDiagnostics, RequestEventType,
+        RequestHandle, RequestSentStatus, TransportShardDiagnostics,
     },
     models::{CosmosResponseHeaders, CosmosStatus},
 };
@@ -25,8 +25,8 @@ impl<'a> RequestDiagnosticsBuilder<'a> {
     }
 
     /// Appends an event to this request's timeline.
-    pub fn add_event(&mut self, event: RequestEvent) {
-        self.context.add_event(self.handle, event);
+    pub fn record_event(&mut self, event_type: RequestEventType, details: Option<String>) {
+        self.context.record_event(self.handle, event_type, details);
     }
 
     /// Records response metadata and completes this request.

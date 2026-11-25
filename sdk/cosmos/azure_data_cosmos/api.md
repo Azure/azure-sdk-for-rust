@@ -599,6 +599,7 @@ pub mod diagnostics {
         pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>>;
         pub fn responded_regions(&self) -> Vec<&Region>;
         pub fn retained_request_count(&self) -> usize;
+        pub fn start_time(&self) -> SystemTime;
         pub fn status(&self) -> Option<&CosmosStatus>;
         pub fn threshold_breach_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> Option<ThresholdBreach>;
         pub fn to_json_string(&self, verbosity: Option<DiagnosticsVerbosity>) -> &str;

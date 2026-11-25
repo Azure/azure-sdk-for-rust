@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added UTC timestamps to diagnostics JSON and `DiagnosticsContext::start_time()` for correlating operations with service incidents. ([#5630](https://github.com/Azure/azure-sdk-for-rust/pull/5630))
 - Added cross-partition `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, and distinct-count queries using `COUNT` over a `DISTINCT` subquery; grouped results support live paging, but aggregates and groups do not support external continuation tokens. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))
 - Added SQL filter predicates to unstable PATCH instruction payloads for atomic conditional server-side PATCH execution. ([#5572](https://github.com/Azure/azure-sdk-for-rust/pull/5572))
 - Added `DiagnosticsContext::clone_with_status` to copy diagnostics with an updated operation status while preserving request history. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
