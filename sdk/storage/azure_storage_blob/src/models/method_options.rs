@@ -21,7 +21,7 @@ pub enum UploadContentValidation {
     #[default]
     Auto,
     /// Disable content validation.
-    None,
+    Disabled,
     /// Use CRC64 NVMe for content validation. Optionally, a pre-calculated value can be provided.
     /// Use little-endianness when converting from integers to bytes.
     Crc64Nvme(Option<[u8; 8]>),
@@ -32,7 +32,7 @@ pub enum UploadContentValidation {
 pub enum DownloadContentValidation {
     #[default]
     Auto,
-    None,
+    Disabled,
     Crc64Nvme,
 }
 
@@ -134,7 +134,8 @@ impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptio
 #[derive(Clone, Default, SafeDebug)]
 pub struct BlockBlobClientStageBlockOptions<'a> {
     /// Content validation options. Specifies how block content is validated during the transfer.
-    /// If `None`, the SDK will select a default strategy, which may change across versions.
+    /// None is equivalent to Some([UploadContentValidation::Auto]). Set value to
+    /// Some([UploadContentValidation::Disabled]) to disable validation.
     pub content_validation: Option<UploadContentValidation>,
 
     /// The algorithm used to produce the encryption key hash. Must be provided if the encryption key is provided.

@@ -82,8 +82,8 @@ pub(crate) fn apply_upload_content_validation(
     ) {
         (Some(validation), None, None) => validation,
         (None, None, None) => Default::default(),
-        (None, Some(_), _) => UploadContentValidation::None,
-        (None, _, Some(_)) => UploadContentValidation::None,
+        (None, Some(_), _) => UploadContentValidation::Disabled,
+        (None, _, Some(_)) => UploadContentValidation::Disabled,
         (Some(_), Some(_), _) => {
             return Err(Error::with_message(
                 ErrorKind::Other,
@@ -128,7 +128,7 @@ pub(crate) fn apply_upload_content_validation(
             *transactional_crc_header = Some(precalculated_checksum.into());
             StorageUploadBody::RawContent(body)
         }
-        (UploadContentValidation::None, body) => StorageUploadBody::RawContent(body),
+        (UploadContentValidation::Disabled, body) => StorageUploadBody::RawContent(body),
     })
 }
 
@@ -282,7 +282,7 @@ mod tests {
         let mut structured_body_type_header = None;
         let mut structured_body_length_header = None;
 
-        let content_validation_options = Some(UploadContentValidation::None);
+        let content_validation_options = Some(UploadContentValidation::Disabled);
         let input_body = Body::Bytes(Bytes::from(DATA));
 
         let output_body = apply_upload_content_validation(
@@ -510,7 +510,7 @@ mod tests {
         let mut structured_body_type_header = None;
         let mut structured_body_length_header = None;
 
-        let content_validation_options = Some(UploadContentValidation::None);
+        let content_validation_options = Some(UploadContentValidation::Disabled);
         let input_body = Body::SeekableStream(Box::new(BytesStream::new(DATA.as_bytes())));
 
         let output_body = apply_upload_content_validation(

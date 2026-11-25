@@ -129,7 +129,7 @@ async fn test_stage_block_disable_validation(ctx: TestContext) -> Result<()> {
                 content.len() as u64,
                 content.clone().into(),
                 Some(BlockBlobClientStageBlockOptions {
-                    content_validation: Some(UploadContentValidation::None),
+                    content_validation: Some(UploadContentValidation::Disabled),
                     ..Default::default()
                 }),
             )
