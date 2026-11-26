@@ -10,7 +10,7 @@ A subset of the C++ query engine has been ported to Rust, enabling:
 
 The implementation lives entirely inside the `azure_data_cosmos_driver` crate. In normal builds the query subsystem remains crate-private; test builds and the `__internal_testing` feature expose temporary validation entry points (`query` and `__test_only_generate_query_plan_for_pk_paths`) so parity tests can exercise the local planner without making it part of the supported surface.
 
-The supported SDK query path now integrates the local planner as a pre-Gateway optimization in `CosmosDriver::resolve_query_plan`. The local planner covers every query family backed by the current dataflow pipeline: plain queries (including JOIN, subquery, and UDF shapes), TOP, OFFSET/LIMIT, streaming ORDER BY, and DISTINCT compositions. It reproduces the service rewrites those stages require and falls back for unsupported aggregate, GROUP BY, DCOUNT, non-streaming ORDER BY, and hybrid-search metadata. Contradictory partition key filters (provably empty results) short-circuit to an empty `DrainedLeaf` pipeline, skipping both the Gateway and backend. See `src/query/local_plan_adapter.rs` for the production adapter and shared emulator conversion.
+The supported SDK query path integrates the local planner as a pre-Gateway optimization in `CosmosDriver::resolve_query_plan`. It plans plain queries with simple container roots, validated array JOINs, scalar subqueries, UDFs, TOP, OFFSET/LIMIT, streaming ORDER BY, DISTINCT compositions, ordinary aggregates, and dotted-path GROUP BY. It reproduces the required service rewrites and falls back for derived-table or nested document sources, source-less aggregates, unsupported projection shapes, computed/indexed grouping keys, non-streaming ORDER BY, and hybrid-search metadata. Contradictory partition key filters short-circuit ordinary feeds to `DrainedLeaf`; aggregate queries keep a backend source so empty-input reductions still produce the required result.
 
 ---
 
@@ -211,33 +211,52 @@ When `__internal_native_query_plan` is enabled, the existing native-first behavi
 3. Gateway query-plan endpoint.
 
 The local provider accepts plain `SELECT`/`WHERE`, projections, `SELECT VALUE`,
-JOINs, subqueries, UDFs, partition-key equality/`IN`, TOP, OFFSET/LIMIT,
+validated array JOINs, scalar subqueries, UDFs, partition-key equality/`IN`, TOP, OFFSET/LIMIT,
 streaming ORDER BY, and DISTINCT combinations. ORDER BY and result-window
 rewrites follow the service's ordering: ORDER BY first, then OFFSET/LIMIT, then
 TOP, with partial DISTINCT results kept below the global window. It declines
-aggregates, GROUP BY, DCOUNT, non-streaming ORDER BY, hybrid search, and any
-projection whose required rewrite cannot be generated safely.
+composite aggregates, computed/indexed grouping keys, non-streaming ORDER BY, hybrid search, and any
+projection whose required rewrite cannot be generated safely. Ordinary
+`COUNT`, `SUM`, `AVG`, `MIN`, and `MAX` use local partial-result rewrites for
+VALUE and SELECT-list projections. GROUP BY supports dotted-path keys,
+including multiple keys and grouping without aggregates.
 
-Declining local generation does not mean these shapes are unsupported by the
-production driver. Native and Gateway plans supply the rewritten partials and
-metadata for cross-partition ordinary aggregates, GROUP BY, and distinct counts.
-The driver combines those partials; it does not evaluate their SQL locally.
-COUNT over a DISTINCT subquery must continue to fall back rather than being
-misclassified as an ordinary locally executable aggregate. See
+Every FROM clause must have a bare container-document source with an optional
+bare alias. Array JOINs may iterate paths rooted in an already bound variable;
+their aliases must be unique. Derived-table sources, nested document sources,
+and standalone array iterators fall back, including inside nested queries.
+Consequently, COUNT over a DISTINCT subquery requires native or Gateway planning.
+Aggregate queries without FROM also fall back. For JOIN queries, partition-key
+extraction requires the container-document alias explicitly; iterator bindings
+are never interpreted as container partition keys.
+
+Unescaped keyword aliases are rejected by the parser. Quoted SELECT aliases
+remain supported, while collection aliases must be bare identifiers. SQL
+rewrites use parser-recorded clause spans to distinguish an outer OFFSET clause
+from nested windows, aliases, property names, comments, and strings.
+
+Declining local generation does not mean a shape is unsupported by the
+production driver. Native and Gateway providers remain available for shapes
+the local adapter cannot reproduce. The driver combines backend-produced
+partials; it does not evaluate their SQL locally. AVG uses sum/count partials,
+MIN/MAX preserve empty-partial metadata, and SELECT-list projections carry
+ordered aliases and scalar/aggregate slot mappings. See
 `specs/0012-feed-operations-and-dataflow.md` for execution, retained-state, and
 continuation behavior.
 
 The in-memory emulator separately synthesizes service-style aggregate/GROUP BY
 rewrites and canonical COUNT-over-DISTINCT metadata. Its backend evaluates
 partition-local partials, including AVG sum/count state, so tests exercise these
-production stages without an account. This does not make those shapes eligible
-for production local planning. Emulator partial paging and limitations are
+production stages without an account. These test-only rewrites remain separate
+from production local planning. Emulator partial paging and limitations are
 documented in `specs/0021-in-memory-emulator.md`.
 
 Local equality and `IN` filters are converted to canonical EPK ranges with the
 container's partition-key definition. This includes hierarchical partition-key
 prefix ranges. Unconstrained queries use the full EPK range; contradictory
-filters produce a drained plan before topology or backend I/O.
+filters produce a drained plan before topology or backend I/O for ordinary
+feeds. Aggregate and distinct-count queries retain their empty-input result
+semantics rather than returning an empty public feed.
 
 Fallback occurs only while selecting a provider. After the local plan is
 accepted, topology, pipeline, transport, and service errors retain their
@@ -261,6 +280,11 @@ a future PR can close the gap without re-discovering it from scratch.
 | `LIKE … ESCAPE 'xy'` (multi-char) | Local evaluator returns `Undefined` (row does not match); the Gateway rejects the query. Plan-level shape is unaffected.                                                                          | F15.                         |
 | `~` on fractional `Number`        | Local evaluator returns `Undefined`; the Gateway rejects non-integral bitwise input.                                                                                                              | F22.                         |
 
+Grouping-only `ORDER BY` execution is an existing execution gap on the available
+emulator: the Gateway rejects its own rewritten `c._rid` projection with SC2102
+when `_rid` is not a grouping key. Local and Gateway-only execution fail alike;
+plan metadata and rewrites are still compared. No new execution stage is introduced.
+
 ## What Is Explicitly Not Implemented
 
 | Component                                    | Reason                                                                   |
@@ -270,7 +294,9 @@ a future PR can close the gap without re-discovering it from scratch.
 | Index plans / physical plans                 | Backend-only concern                                                     |
 | Distributed query coordination               | Gateway's responsibility                                                 |
 | KQL / JavaScript query support               | Not needed                                                               |
-| Production local aggregate rewrites          | Native/Gateway production plans; separate emulator test rewrites         |
+
+Composite aggregates and computed/indexed grouping keys fall back to another
+planner. Disabled aggregate features remain unadvertised.
 
 ## Alternatives considered
 

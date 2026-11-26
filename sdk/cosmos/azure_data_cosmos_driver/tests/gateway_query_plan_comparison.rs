@@ -30,14 +30,17 @@ use tokio::sync::OnceCell;
 
 use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosOperation, FeedRange, PartitionKeyDefinition,
+    ContainerReference, CosmosOperation, CosmosRequestHeaders, FeedRange, ItemReference,
+    MaxItemCountHint, PartitionKey, PartitionKeyDefinition, ResponseBody,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PlanOptions};
+use azure_data_cosmos_driver::options::{
+    BinaryEncodingOptions, DriverOptions, OperationOptions, PlanOptions, QueryPlanMode,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 
 use framework::{
     probe_driver_data_plane_ready, resolve_driver_container_ready, resolve_test_env,
-    resource_manager_from_env, CosmosResourceManager, ResourceManager,
+    resource_manager_from_env, CosmosResourceManager, ResourceManager, ResourceThroughput,
 };
 
 // ─── Test infrastructure ─────────────────────────────────────────────────────
@@ -113,6 +116,15 @@ async fn ensure_container(
     container_name: &str,
     pk_def: PartitionKeyDefinition,
 ) -> ContainerReference {
+    ensure_container_with_throughput(driver, container_name, pk_def, None).await
+}
+
+async fn ensure_container_with_throughput(
+    driver: &CosmosDriver,
+    container_name: &str,
+    pk_def: PartitionKeyDefinition,
+    throughput: Option<u64>,
+) -> ContainerReference {
     ensure_database(driver).await;
     let partition_key_component_count = pk_def.paths().len();
 
@@ -125,7 +137,7 @@ async fn ensure_container(
                     "id": container_name,
                     "partitionKey": pk_def,
                 }),
-                None,
+                throughput.map(ResourceThroughput::Manual),
             )
             .await
             .expect("failed to ensure query-plan test container");
@@ -148,7 +160,10 @@ async fn ensure_container(
         driver.account().clone(),
         DB_NAME.to_string(),
     );
-    let op = CosmosOperation::create_container(db_ref).with_body(body);
+    let mut op = CosmosOperation::create_container(db_ref).with_body(body);
+    let mut headers = CosmosRequestHeaders::default();
+    headers.offer_throughput = throughput;
+    op = op.with_request_headers(headers);
     if let Err(e) = driver.execute_operation(op, Default::default()).await {
         // Same rationale as ensure_database: only 409 Conflict is expected (re-runs);
         // other errors must not be silently dropped.
@@ -170,6 +185,7 @@ async fn fetch_gateway_plan_once(
     container: &ContainerReference,
     sql: &str,
     parameters: &[(&str, serde_json::Value)],
+    features: &str,
 ) -> Result<serde_json::Value, azure_data_cosmos_driver::CosmosError> {
     // Build {"query": ..., "parameters": [{"name":..., "value":...}, ...]}.
     let params_json: Vec<serde_json::Value> = parameters
@@ -198,11 +214,8 @@ async fn fetch_gateway_plan_once(
             .build()
     })?;
 
-    let operation = CosmosOperation::query_plan(
-        container.clone(),
-        azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES.into(),
-    )
-    .with_body(body);
+    let operation =
+        CosmosOperation::query_plan(container.clone(), features.to_owned().into()).with_body(body);
     driver
         .execute_operation(operation, OperationOptions::default())
         .await?
@@ -224,11 +237,28 @@ async fn fetch_gateway_plan(
     sql: &str,
     parameters: &[(&str, serde_json::Value)],
 ) -> Result<serde_json::Value, azure_data_cosmos_driver::CosmosError> {
+    fetch_gateway_plan_with_features(
+        driver,
+        container,
+        sql,
+        parameters,
+        azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES,
+    )
+    .await
+}
+
+async fn fetch_gateway_plan_with_features(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    sql: &str,
+    parameters: &[(&str, serde_json::Value)],
+    features: &str,
+) -> Result<serde_json::Value, azure_data_cosmos_driver::CosmosError> {
     const MAX_ATTEMPTS: u32 = 6;
     let mut delay = std::time::Duration::from_millis(250);
 
     for attempt in 1..=MAX_ATTEMPTS {
-        match fetch_gateway_plan_once(driver, container, sql, parameters).await {
+        match fetch_gateway_plan_once(driver, container, sql, parameters, features).await {
             Ok(plan) => return Ok(plan),
             Err(error) if error.status().is_transport_generated_503() && attempt < MAX_ATTEMPTS => {
                 eprintln!(
@@ -1103,11 +1133,367 @@ async fn gw_production_local_plan_supported_surface() {
         "SELECT VALUE t FROM c JOIN t IN c.tags",
         "SELECT (SELECT VALUE 1) AS x FROM c",
         "SELECT * FROM c WHERE c.pk = 'production-local-plan'",
+        "SELECT * FROM qp_pk p WHERE p.pk = 'production-local-plan'",
+        r#"SELECT c.name AS "OFFSET" FROM c OFFSET 1 LIMIT 2"#,
+        r#"SELECT c.name AS "OFFSET" FROM c ORDER BY c.name OFFSET 1 LIMIT 2"#,
     ] {
         validate_production_local_plan(sql, &[], Some(PlanOptions::default())).await;
     }
 
     validate_production_local_plan("SELECT VALUE udf.transform(c.data) FROM c", &[], None).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+async fn gw_production_source_fallback() {
+    let (driver, container) = require_driver_and(get_driver().await, c_pk().await);
+    for sql in [
+        "SELECT VALUE x FROM c.child x WHERE x.pk = 'a'",
+        "SELECT VALUE COUNT(1) FROM (SELECT c.category AS pk FROM c) t WHERE t.pk = 'a'",
+        "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE 1) t",
+        "SELECT VALUE COUNT(1)",
+    ] {
+        assert!(
+            azure_data_cosmos_driver::query::__test_only_generate_production_query_plan(
+                &query_spec_body(sql, &[]),
+                container.partition_key_definition()
+            )
+            .is_err(),
+            "{sql}"
+        );
+        fetch_gateway_plan_with_features(
+            driver,
+            container,
+            sql,
+            &[],
+            azure_data_cosmos_driver::query::SUPPORTED_QUERY_FEATURES,
+        )
+        .await
+        .unwrap_or_else(|error| panic!("Gateway must plan {sql}: {error}"));
+    }
+}
+
+async fn validate_aggregate_plan(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    sql: &str,
+    parameters: &[(&str, serde_json::Value)],
+) {
+    let local = azure_data_cosmos_driver::query::__test_only_generate_production_query_plan(
+        &query_spec_body(sql, parameters),
+        container.partition_key_definition(),
+    )
+    .unwrap_or_else(|reason| panic!("local aggregate plan declined '{sql}': {reason}"));
+    let gateway = fetch_gateway_plan_with_features(
+        driver,
+        container,
+        sql,
+        parameters,
+        azure_data_cosmos_driver::query::SUPPORTED_QUERY_FEATURES,
+    )
+    .await
+    .unwrap_or_else(|error| panic!("Gateway aggregate plan failed for '{sql}': {error}"));
+    let mut local_info = local["queryInfo"].clone();
+    let mut gateway_info = gateway["queryInfo"].clone();
+    let local_rewrite = local_info
+        .as_object_mut()
+        .unwrap()
+        .remove("rewrittenQuery")
+        .unwrap();
+    let gateway_rewrite = gateway_info
+        .as_object_mut()
+        .unwrap()
+        .remove("rewrittenQuery")
+        .unwrap();
+    assert_eq!(
+        local_info, gateway_info,
+        "executable metadata differs for '{sql}'"
+    );
+    assert_eq!(
+        local["queryRanges"], gateway["queryRanges"],
+        "ranges differ for '{sql}'"
+    );
+    assert!(
+        azure_data_cosmos_driver::query::__test_only_query_rewrites_match(
+            local_rewrite.as_str().expect("local aggregate rewrite"),
+            gateway_rewrite.as_str().expect("Gateway aggregate rewrite"),
+        )
+        .unwrap(),
+        "rewrites differ for '{sql}':\nlocal={local_rewrite}\nGateway={gateway_rewrite}"
+    );
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+async fn gw_production_aggregate_plans() {
+    let (driver, container) = require_driver_and(get_driver().await, c_pk().await);
+    for sql in [
+        "SELECT VALUE COUNT(1) FROM c",
+        "SELECT TOP 1 VALUE COUNT(1) FROM c",
+        "SELECT DISTINCT VALUE COUNT(1) FROM c",
+        "SELECT VALUE SUM(c.price) FROM c",
+        "SELECT VALUE AVG(c.price) FROM c",
+        "SELECT VALUE MIN(c.price) FROM c",
+        "SELECT VALUE MAX(c.price) FROM c",
+        "SELECT COUNT(1), COUNT(c.price), AVG(c.price), MIN(c.price), MAX(c.price) FROM c",
+        "SELECT COUNT(1) n, SUM(c.price) AS total, AVG(c.price) AS mean FROM c",
+        r#"SELECT COUNT(1) AS "OFFSET" FROM c"#,
+        r#"SELECT COUNT(1) AS "OFFSET" FROM c OFFSET 1 LIMIT 2"#,
+        "SELECT VALUE AVG(c.price + 1) FROM c",
+        "SELECT VALUE AVG(ABS(c.price)) FROM c",
+        "SELECT VALUE COUNT(1) FROM c JOIN tag IN c.tags",
+        "SELECT VALUE COUNT(1) FROM c WHERE c.pk = 'x'",
+        "SELECT c.city, COUNT(1), AVG(c.price) AS mean FROM c GROUP BY c.city",
+        "SELECT c.city FROM c GROUP BY c.city",
+        "SELECT c.city FROM c GROUP BY c.city ORDER BY c.city",
+        "SELECT VALUE c.city FROM c GROUP BY c.city ORDER BY c.city",
+        "SELECT DISTINCT VALUE c.city FROM c GROUP BY c.city, c.state ORDER BY c.city",
+        "SELECT VALUE c.city FROM c GROUP BY c.city",
+        "SELECT VALUE COUNT(1) FROM c GROUP BY c.city",
+        "SELECT DISTINCT c.city, COUNT(1) AS n FROM c GROUP BY c.city",
+        "SELECT c.city, c.state, SUM(c.price) AS total FROM c GROUP BY c.city, c.state",
+        "SELECT COUNT(1) AS n FROM c GROUP BY c.address.city",
+        "SELECT TOP 2 c.city, COUNT(1) AS n FROM c GROUP BY c.city",
+        "SELECT c.city, COUNT(1) AS n FROM c GROUP BY c.city OFFSET 1 LIMIT 2",
+        "SELECT c.city, COUNT(1) AS n FROM c GROUP BY c.city ORDER BY c.city",
+    ] {
+        validate_aggregate_plan(driver, container, sql, &[]).await;
+    }
+    validate_aggregate_plan(
+        driver,
+        container,
+        "SELECT VALUE SUM(c.price) FROM c WHERE c.pk = @pk",
+        &[("@pk", serde_json::json!("x"))],
+    )
+    .await;
+    let (_, hierarchical) = require_driver_and(get_driver().await, c_hpk().await);
+    for sql in [
+        "SELECT VALUE SUM(c.price) FROM c WHERE c.tenant = @tenant",
+        "SELECT c.city, COUNT(1) AS n FROM c WHERE c.tenant = @tenant AND c.userId IN (@first, @second) GROUP BY c.city",
+    ] {
+        validate_aggregate_plan(
+            driver,
+            hierarchical,
+            sql,
+            &[
+                ("@tenant", serde_json::json!("acme")),
+                ("@first", serde_json::json!("u1")),
+                ("@second", serde_json::json!("u2")),
+            ],
+        )
+        .await;
+    }
+}
+
+async fn collect_aggregate_results(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+    sql: &str,
+    mode: QueryPlanMode,
+    binary: bool,
+) -> Vec<serde_json::Value> {
+    let mut options = OperationOptions::default();
+    options.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(binary));
+    let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+        .with_body(query_spec_body(sql, &[]))
+        .with_max_item_count(MaxItemCountHint::Limit(
+            std::num::NonZeroU32::new(1).unwrap(),
+        ));
+    let mut plan = driver
+        .plan_operation(
+            operation,
+            &options,
+            None,
+            &PlanOptions::default().with_query_plan_mode(mode),
+        )
+        .await
+        .unwrap_or_else(|error| panic!("planning '{sql}' with {mode:?} failed: {error}"));
+    let mut results = Vec::new();
+    while let Some(response) = driver
+        .execute_plan(&mut plan, Some(container.clone()), options.clone())
+        .await
+        .unwrap_or_else(|error| panic!("executing '{sql}' with {mode:?} failed: {error}"))
+    {
+        match response.into_body() {
+            ResponseBody::Bytes(bytes) => {
+                let page: serde_json::Value = ResponseBody::Bytes(bytes).into_single().unwrap();
+                results.extend(
+                    page["Documents"]
+                        .as_array()
+                        .expect("query feed envelope")
+                        .iter()
+                        .cloned(),
+                );
+            }
+            body => results.extend(body.into_items::<serde_json::Value>().unwrap()),
+        }
+    }
+    results
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+async fn gw_production_aggregate_results() {
+    let driver = get_driver()
+        .await
+        .expect("Gateway result tests require an account");
+    let emulator = driver.account().endpoint().host_str().is_some_and(|host| {
+        host == "localhost"
+            || host
+                .parse::<std::net::IpAddr>()
+                .is_ok_and(|ip| ip.is_loopback())
+    });
+    let name = format!("qp_aggregate_{}", uuid::Uuid::new_v4().simple());
+    let container =
+        ensure_container_with_throughput(driver, &name, "/pk".into(), (!emulator).then_some(11000))
+            .await;
+    let ranges = driver
+        .resolve_all_partition_key_ranges(&container, false)
+        .await
+        .unwrap()
+        .unwrap();
+    let mut keys = vec![
+        "a".to_owned(),
+        "b".to_owned(),
+        "c".to_owned(),
+        "d".to_owned(),
+    ];
+    if !emulator {
+        assert!(
+            ranges.len() >= 2,
+            "live aggregate tests require multiple physical partitions"
+        );
+        keys.clear();
+        for range in ranges.iter().take(2) {
+            let candidates: Vec<_> = (0..4096)
+                .map(|index| format!("tenant-{index}"))
+                .filter(|key| {
+                    let point = FeedRange::for_partition(
+                        PartitionKey::from(key.clone()),
+                        container.partition_key_definition(),
+                    );
+                    &range.min_inclusive <= point.min_inclusive()
+                        && point.min_inclusive() < &range.max_exclusive
+                })
+                .take(2)
+                .collect();
+            assert_eq!(candidates.len(), 2);
+            keys.extend(candidates);
+        }
+    }
+    for (index, (category, amount)) in [
+        ("a", 10),
+        ("a", 20),
+        ("a", 30),
+        ("b", 5),
+        ("b", 15),
+        ("c", 100),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let pk = &keys[index % keys.len()];
+        let id = index.to_string();
+        let item = ItemReference::from_name(&container, PartitionKey::from(pk.clone()), id.clone());
+        let mut document = serde_json::json!({"id":id,"pk":pk,"category":category,"amount":amount,"tags":[category]});
+        if index > 0 {
+            document["optional"] = if index == 1 {
+                serde_json::Value::Null
+            } else {
+                serde_json::json!("present")
+            };
+        }
+        let operation =
+            CosmosOperation::create_item(item).with_body(serde_json::to_vec(&document).unwrap());
+        driver
+            .execute_singleton_operation(operation, OperationOptions::default())
+            .await
+            .unwrap();
+    }
+    let cases = [
+        ("SELECT VALUE COUNT(1)", serde_json::json!([1])),
+        ("SELECT VALUE COUNT(1) FROM c", serde_json::json!([6])),
+        (r#"SELECT COUNT(1) AS "OFFSET" FROM c"#, serde_json::json!([{"OFFSET":6}])),
+        (r#"SELECT COUNT(1) AS "OFFSET" FROM c OFFSET 1 LIMIT 2"#, serde_json::json!([])),
+        ("SELECT VALUE COUNT(1) FROM c JOIN pk IN c.tags WHERE pk = 'a'", serde_json::json!([3])),
+        ("SELECT TOP 1 VALUE COUNT(1) FROM c", serde_json::json!([6])),
+        ("SELECT VALUE COUNT(1) FROM c OFFSET 1 LIMIT 1", serde_json::json!([])),
+        ("SELECT VALUE SUM(c.amount) FROM c", serde_json::json!([180])),
+        ("SELECT VALUE AVG(c.amount) FROM c", serde_json::json!([30])),
+        ("SELECT VALUE MIN(c.amount) FROM c", serde_json::json!([5])),
+        ("SELECT VALUE MAX(c.amount) FROM c", serde_json::json!([100])),
+        ("SELECT COUNT(1) AS n, SUM(c.amount) AS total, AVG(c.amount) AS mean, MIN(c.amount) AS low, MAX(c.amount) AS high FROM c",
+            serde_json::json!([{"n":6,"total":180,"mean":30,"low":5,"high":100}])),
+        ("SELECT c.category, COUNT(1) AS n, SUM(c.amount) AS total, AVG(c.amount) AS mean FROM c GROUP BY c.category",
+            serde_json::json!([{"category":"a","n":3,"total":60,"mean":20},{"category":"b","n":2,"total":20,"mean":10},{"category":"c","n":1,"total":100,"mean":100}])),
+        ("SELECT VALUE c.category FROM c GROUP BY c.category", serde_json::json!(["a","b","c"])),
+        ("SELECT VALUE COUNT(1) FROM c GROUP BY c.category", serde_json::json!([3,2,1])),
+        ("SELECT c.optional, COUNT(1) AS n FROM c GROUP BY c.optional", serde_json::json!([{"n":1},{"optional":null,"n":1},{"optional":"present","n":4}])),
+        ("SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t", serde_json::json!([3])),
+        ("SELECT COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c) AS t", serde_json::json!([{"$1":3}])),
+        ("SELECT COUNT(1) AS n FROM (SELECT DISTINCT VALUE c.category FROM c) AS t", serde_json::json!([{"n":3}])),
+        ("SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.category FROM c WHERE false) AS t", serde_json::json!([0])),
+        ("SELECT VALUE COUNT(1) FROM c WHERE false", serde_json::json!([0])),
+        ("SELECT VALUE SUM(c.amount) FROM c WHERE false", serde_json::json!([0])),
+        ("SELECT VALUE AVG(c.amount) FROM c WHERE false", serde_json::json!([])),
+        ("SELECT VALUE MIN(c.amount) FROM c WHERE false", serde_json::json!([])),
+        ("SELECT VALUE MAX(c.amount) FROM c WHERE false", serde_json::json!([])),
+        ("SELECT VALUE COUNT(1) FROM c WHERE c.pk = 'a' AND c.pk = 'b'", serde_json::json!([0])),
+        ("SELECT c.category, COUNT(1) FROM c WHERE false GROUP BY c.category", serde_json::json!([])),
+    ];
+    let normalize = |values: &[serde_json::Value], ordered: bool| {
+        let mut values: Vec<_> = values.iter().map(serde_json::Value::to_string).collect();
+        if !ordered {
+            values.sort();
+        }
+        values
+    };
+    for (sql, expected) in cases {
+        // The Gateway constant-folds impossible predicates into a first-range
+        // request with no aggregate metadata. Compare those by results below.
+        if sql.contains("FROM (") || sql == "SELECT VALUE COUNT(1)" {
+            assert!(
+                azure_data_cosmos_driver::query::__test_only_generate_production_query_plan(
+                    &query_spec_body(sql, &[]),
+                    container.partition_key_definition()
+                )
+                .is_err(),
+                "{sql}"
+            );
+        } else if !sql.contains("WHERE false") && !sql.contains("AND c.pk = 'b'") {
+            validate_aggregate_plan(driver, &container, sql, &[]).await;
+        }
+        for mode in [QueryPlanMode::GatewayOnly, QueryPlanMode::LocalPreferred] {
+            for binary in [false, true] {
+                let actual = collect_aggregate_results(driver, &container, sql, mode, binary).await;
+                assert_eq!(
+                    normalize(&actual, sql.contains("ORDER BY")),
+                    normalize(expected.as_array().unwrap(), sql.contains("ORDER BY")),
+                    "{sql}, {mode:?}, binary={binary}"
+                );
+            }
+        }
+    }
+    if let Some(manager) = resource_manager() {
+        manager.delete_container(DB_NAME, &name).await.unwrap();
+    } else {
+        driver
+            .execute_singleton_operation(
+                CosmosOperation::delete_container(container),
+                OperationOptions::default(),
+            )
+            .await
+            .unwrap();
+    }
 }
 
 #[tokio::test]
@@ -1401,24 +1787,8 @@ async fn gw_pk_parameter_substitution() {
 
 #[test]
 fn internal_testing_supported_features_constant_is_reachable() {
-    // Cross-crate visibility sanity check for the supported-features constant.
-    //
-    // The driver crate keeps `SUPPORTED_QUERY_FEATURES` `pub(crate)` so
-    // production callers cannot reach it; only the `__internal_testing`-gated
-    // alias `__TEST_ONLY_SUPPORTED_QUERY_FEATURES` is reachable from this
-    // integration test. This test makes the contract explicit so accidental
-    // visibility changes (or constant edits) do not silently desync the
-    // local plan generator from what is advertised to the Gateway in
-    // `x-ms-cosmos-supported-query-features`.
-    //
-    // Must stay in lockstep with `query::SUPPORTED_QUERY_FEATURES` in
-    // `src/query/mod.rs`. The advertised set matches what the Java and
-    // .NET SDKs send today so the Gateway returns the same plan shape across
-    // SDKs and cross-SDK plan-parity tests stay meaningful. The query
-    // execution pipeline does not yet support every feature in this list
-    // (e.g. NonStreamingOrderBy, HybridSearch); the integration PR that
-    // wires the local plan generator into production is expected to
-    // narrow the production-side header to a pipeline-aware subset.
+    // Broad plan-shape comparisons intentionally advertise more features than
+    // production. Production-equivalence tests use SUPPORTED_QUERY_FEATURES.
     assert_eq!(
         azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES,
         "Aggregate,CompositeAggregate,CountIf,DCount,Distinct,GroupBy,HybridSearch,MultipleAggregates,MultipleOrderBy,NonStreamingOrderBy,NonValueAggregate,OffsetAndLimit,OrderBy,Top,WeightedRankFusion",

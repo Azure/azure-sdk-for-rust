@@ -305,22 +305,22 @@ async fn advanced_families_plan_natively_or_fall_back_once() {
     // (name, query, expected outcome, handled by native planner)
     let scenarios = [
         (
-            "aggregate",
-            "SELECT VALUE COUNT(1) FROM c",
-            FallbackOutcome::Plan,
-            true,
-        ),
-        (
-            "group_by",
-            "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
-            FallbackOutcome::Plan,
-            true,
-        ),
-        (
-            "canonical_dcount",
+            "distinct_count",
             "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE c.pk FROM c) AS t",
             FallbackOutcome::Plan,
             true,
+        ),
+        (
+            "subroot",
+            "SELECT VALUE x FROM c.child x",
+            FallbackOutcome::Plan,
+            true,
+        ),
+        (
+            "reserved_alias",
+            "SELECT COUNT(1) AS OFFSET FROM c",
+            FallbackOutcome::Error,
+            false,
         ),
         (
             "dcount",
@@ -372,6 +372,33 @@ async fn advanced_families_plan_natively_or_fall_back_once() {
                 assert!(result.is_err(), "{name} should surface a planning error");
             }
         }
+    }
+}
+
+#[tokio::test]
+async fn aggregate_and_group_by_skip_gateway_planning() {
+    let (_emulator, recorder, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+    for sql in [
+        "SELECT VALUE COUNT(1) FROM c",
+        "SELECT AVG(c.price) AS mean FROM c",
+        "SELECT c.pk, COUNT(1) FROM c GROUP BY c.pk",
+        "SELECT VALUE COUNT(1) FROM c JOIN t IN c.tags",
+    ] {
+        recorder.clear();
+        driver
+            .plan_operation(
+                query(&container, sql),
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(recorder.query_plan_count(), 0, "{sql}");
     }
 }
 

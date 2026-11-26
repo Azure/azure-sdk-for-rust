@@ -377,19 +377,19 @@ async fn quoted_aliases_and_float_predicates_execute_in_both_formats() {
         for size in [1, 100] {
             for (query, expected) in [
                 (
-                    r#"SELECT VALUE COUNT(1) FROM c AS "my alias""#,
+                    "SELECT VALUE COUNT(1) FROM c AS my_alias",
                     vec![json!(3)],
                 ),
                 (
-                    r#"SELECT VALUE COUNT(1) FROM c AS "my alias" WHERE "my alias".v >= 1e20"#,
+                    "SELECT VALUE COUNT(1) FROM c AS my_alias WHERE my_alias.v >= 1e20",
                     vec![json!(2)],
                 ),
                 (
-                    r#"SELECT "my alias".key, COUNT(1) AS n FROM c AS "my alias" WHERE "my alias".v >= 1e20 GROUP BY "my alias".key"#,
-                    vec![json!({"key":"shared","n":2})],
+                    r#"SELECT my_alias.key, COUNT(1) AS "OFFSET" FROM c AS my_alias WHERE my_alias.v >= 1e20 GROUP BY my_alias.key"#,
+                    vec![json!({"key":"shared","OFFSET":2})],
                 ),
                 (
-                    r#"SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE "my alias".key FROM c AS "my alias" WHERE "my alias".v >= 1e20) AS t"#,
+                    "SELECT VALUE COUNT(1) FROM (SELECT DISTINCT VALUE my_alias.key FROM c AS my_alias WHERE my_alias.v >= 1e20) AS t",
                     vec![json!(1)],
                 ),
                 (
