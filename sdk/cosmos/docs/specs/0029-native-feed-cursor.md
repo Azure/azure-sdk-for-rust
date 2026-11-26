@@ -104,6 +104,8 @@ stride. Results use the matching cursor completion-free API.
 | --- | --- |
 | `cosmos_cursor_queue_create` | Creates a format-isolated queue with a capacity limit. |
 | `cosmos_cursor_open_submit` | Copies/validates inputs and asynchronously creates the plan; returns Opened without consuming a data page. |
+| `cosmos_cursor_open_submit_v2` | Same as Open, plus optional `cosmos_feed_options_t`; NULL options preserve Open behavior. |
+| `cosmos_feed_options_init` | Initializes `cosmos_feed_options_t` (version 1) to inherited defaults. |
 | `cosmos_cursor_next_submit` | Advances the retained plan; returns Page or End. |
 | `cosmos_cursor_checkpoint_submit` | Returns a token for delivered progress or a driver error. |
 | `cosmos_cursor_queue_wait` | Transfers owned completion pointers; errors are distinct from timeout/empty. |
@@ -181,6 +183,29 @@ Wrapper-managed prefetch can request the next page after transfer while retainin
 earlier completions. The wrapper bounds buffering, captures supported checkpoints
 at page boundaries before advancing, and persists only progress corresponding to
 consumed pages. There is no exactly-once or application-acknowledgement guarantee.
+
+### 4.4 Feed options
+
+`cosmos_feed_options_t` follows the record rules in section 3.1 and is copied
+before submit returns. It applies to fresh and resumed opens alike.
+
+| Page-hint kind | Behavior |
+| --- | --- |
+| 0 | Preserves the legacy `max_item_count` field; the limit must be zero. |
+| 1 | ServerDecides (`x-ms-max-item-count: -1`); the limit must be zero. |
+| 2 | Explicit limit, any nonzero `uint32_t`, sent as a decimal header. |
+
+Kinds 1 and 2 require a negative legacy hint. The full `uint32_t` range is
+accepted and forwarded unchanged, but values above `INT32_MAX` are not portable:
+Gateway 2.0 encodes `UINT32_MAX` as its `-1` server-decides page-size sentinel,
+and the in-memory emulator parses the header as a signed 32-bit value, paging
+larger limits as unset. Gateway 1.0 forwards the header verbatim.
+
+A set buffered window replaces the default of 1000, including zero, for both
+fresh and resumed planning. Buffered queries exceeding it fail with `400/20125`;
+a resumed buffered query within the window passes this check and then reaches
+the planner's buffered-resume rejection (`400/20124`). The window does not
+affect paging or checkpoint eligibility.
 
 ## 5. Concurrency and failure
 

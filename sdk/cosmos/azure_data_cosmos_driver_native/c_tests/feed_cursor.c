@@ -11,6 +11,8 @@ extern cosmos_status_code_t cosmos_test_cursor_fixture(
 _Static_assert(offsetof(cosmos_cursor_request_t, struct_size_bytes) == 0, "size prefix");
 _Static_assert(offsetof(cosmos_cursor_request_t, abi_version) == 4, "version prefix");
 _Static_assert(offsetof(cosmos_cursor_completion_t, abi_version) == 4, "result prefix");
+_Static_assert(offsetof(cosmos_feed_options_t, struct_size_bytes) == 0, "options size prefix");
+_Static_assert(offsetof(cosmos_feed_options_t, abi_version) == 4, "options version prefix");
 
 typedef struct {
     cosmos_runtime_t *runtime;
@@ -178,6 +180,48 @@ cleanup:
     cosmos_cursor_completion_free(checkpoint);
     cosmos_cursor_completion_free(page);
     cosmos_cursor_completion_free(held);
+    cosmos_cursor_free(cursor);
+    fixture_free(&f);
+    return result;
+}
+
+static int test_additive_feed_options(void) {
+    int result = TEST_PASS;
+    fixture f = {0};
+    cosmos_cursor_t *cursor = NULL;
+    cosmos_cursor_completion_t *opened = NULL;
+    cosmos_operation_handle_t *op = NULL;
+    cosmos_status_code_t status = 0;
+    REQUIRE(fixture_create(&f, 1), "populated scripted fixture");
+    cosmos_cursor_request_t request;
+    cosmos_cursor_request_init(&request);
+    request.operation.kind = 17;
+    request.operation.container = f.container;
+    request.operation.max_item_count = -1;
+    const char *sql = "{\"query\":\"SELECT TOP 6 * FROM c ORDER BY c.rank\"}";
+    request.operation.body = (const uint8_t *)sql;
+    request.operation.body_len = strlen(sql);
+    cosmos_operation_options_t legacy = cosmos_operation_options_default();
+    legacy.query_plan_mode = 2;
+    request.operation.options = &legacy;
+    cosmos_feed_options_t options;
+    cosmos_feed_options_init(&options);
+    options.has_max_buffered_query_window = 1;
+    options.max_buffered_query_window = 6;
+    options.max_item_count_kind = 1;
+    op = cosmos_cursor_open_submit_v2(f.driver, &request, &options, f.queue, 43, &status);
+    REQUIRE(op && !status, "submit additive retained query");
+    options.abi_version = 99;
+    opened = receive(&f, op); op = NULL;
+    REQUIRE(opened && !opened->common.status && opened->result_kind == 1,
+        "options copied before submit returns");
+    cursor = cosmos_cursor_completion_take_cursor(opened);
+    REQUIRE(cursor, "cursor is owned by caller");
+    op = cosmos_cursor_open_submit_v2(f.driver, &request, &options, f.queue, 0, &status);
+    REQUIRE(!op && status, "unknown options version rejected");
+cleanup:
+    cosmos_operation_handle_free(op);
+    cosmos_cursor_completion_free(opened);
     cosmos_cursor_free(cursor);
     fixture_free(&f);
     return result;
@@ -515,6 +559,7 @@ cleanup:
 }
 
 TEST_SUITE_BEGIN("feed_cursor")
+TEST_REGISTER(additive_feed_options)
 TEST_REGISTER(populated_queries)
 TEST_REGISTER(read_feeds)
 TEST_REGISTER(change_feeds)

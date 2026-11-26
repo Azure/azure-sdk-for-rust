@@ -1,5 +1,17 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added retained-feed options for exact buffered-window limits and distinct unset, server-decided, and full-width positive page hints without changing legacy layouts. ([#5661](https://github.com/Azure/azure-sdk-for-rust/pull/5661))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added
