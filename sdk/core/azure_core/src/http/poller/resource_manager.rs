@@ -101,9 +101,8 @@ pub enum FinalStateVia<M: StatusMonitor> {
     Location,
     /// Uses the original request URL for `azure-asyncoperation` POST, PUT, and PATCH operations.
     ///
-    /// With `operation-location`, PUT and PATCH operations fetch the original resource unless
-    /// the terminal response contains `resourceLocation`. POST operations use `resourceLocation`,
-    /// `location`, or the terminal response instead.
+    /// With `operation-location`, this selector always fetches the original URL, taking precedence
+    /// over `resourceLocation` and `location`.
     OriginalUrl,
     /// Extracts a result from the terminal `operation-location` response.
     ///
@@ -227,14 +226,17 @@ impl<M: StatusMonitor> Copy for FinalStateVia<M> {}
 /// Passing `None` follows the polling protocol's method- and response-based rules; it does not
 /// select [`FinalStateVia::Location`]. For `azure-asyncoperation`, PUT and PATCH fetch the original
 /// resource, POST uses `location` when available, and otherwise the terminal response supplies the
-/// result. For `operation-location`, `resourceLocation` takes precedence over those fallbacks.
+/// result. For `operation-location`, `resourceLocation` takes precedence over method-based defaults.
+/// Explicit [`FinalStateVia::OriginalUrl`] and [`FinalStateVia::Location`] selectors take
+/// precedence over fallback final-resource links.
 ///
 /// Explicit strategies also follow the original request method:
 /// `azure-asyncoperation` PUT and PATCH operations fetch the original resource; POST operations
 /// can use the terminal response, the original URL, or `location`. For `operation-location`,
-/// [`FinalStateVia::Location`] takes precedence when available, followed by the terminal body's
-/// `resourceLocation`, the original URL for PUT or PATCH, and `location` for POST. Otherwise,
-/// the terminal response supplies the result.
+/// [`FinalStateVia::OriginalUrl`] fetches the original URL, and [`FinalStateVia::Location`] fetches
+/// the `location` header when available. Otherwise, the terminal body's `resourceLocation` takes
+/// precedence over the original URL for PUT or PATCH and `location` for POST. The terminal response
+/// supplies the result when none of these links apply.
 ///
 /// Final GET requests preserve the original request's `accept` header, if present.
 ///
@@ -489,10 +491,14 @@ impl PollingInfo {
     ) -> crate::Result<PollerStatus> {
         if self.method == PollingMethod::Nop {
             return if response.status() == StatusCode::Accepted {
-                Err(crate::Error::new(
-                    ErrorKind::DataConversion,
-                    "Resource Manager long-running operation response is missing a polling URL",
-                ))
+                if original_method == Method::Get {
+                    Ok(PollerStatus::InProgress)
+                } else {
+                    Err(crate::Error::new(
+                        ErrorKind::DataConversion,
+                        "Resource Manager long-running operation response is missing a polling URL",
+                    ))
+                }
             } else {
                 Ok(PollerStatus::Succeeded)
             };
@@ -627,6 +633,9 @@ impl PollingInfo {
             });
         }
 
+        if matches!(final_state_via, Some(FinalStateVia::OriginalUrl)) {
+            return Ok(Some(resource_url.clone()));
+        }
         if matches!(final_state_via, Some(FinalStateVia::Location)) && self.location.is_some() {
             return Ok(self.location.clone());
         }
