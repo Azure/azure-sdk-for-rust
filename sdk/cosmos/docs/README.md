@@ -65,6 +65,7 @@ directly by Rust source remain with their crates.
 | 0030 | Binary-aware ORDER BY envelopes (`specs/0030-binary-order-by-envelopes.md`) |
 | 0031 | Query routing and backend filtering (`specs/0031-query-routing.md`) |
 | 0032 | Query routing E2E test plan (`specs/0032-query-routing-e2e-test-plan.md`) |
+| 0033 | Refresh reason header (`specs/0033-refresh-reason-header.md`) |
 
 ## Architecture decision records
 
