@@ -260,11 +260,12 @@ impl OperationOptions {
 /// operation can spend on retries, configure
 /// [`OperationOptions::end_to_end_latency_policy`].
 ///
-/// Partition-key-range metadata page reads ignore both budgets, including zero.
-/// They retain the current page and retry 429 responses until success, a non-429
-/// result, the operation's absolute deadline, or cancellation by dropping the
-/// operation future. Without a deadline or cancellation, persistent throttling
-/// can wait indefinitely. Incomplete routing maps are never published.
+/// Partition-key-range metadata reads are not bounded by these retry budgets.
+/// The SDK retains successful pages and continues retrying throttled pages even
+/// after a caller stops waiting. Retries stop when the metadata request succeeds,
+/// fails for another reason, or the client/cache is invalidated or disposed.
+/// Throttling and credential acquisition may wait indefinitely while the client
+/// remains active; transport timeouts still apply.
 #[derive(CosmosOptions, Clone, Debug)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]

@@ -428,6 +428,8 @@ pub(crate) struct RegionPin {
 /// constrains hedging and the STAGE 2 routing decision.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct OperationOverrides {
+    /// Cache-owned PK-range fills do not inherit an initiating caller's deadline.
+    pub independent_metadata_fill: bool,
     /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
     pub feed_range: Option<crate::models::FeedRange>,
 
@@ -831,9 +833,13 @@ pub(crate) async fn execute_operation_pipeline(
     // duration) into `evaluate_hedge_eligibility` / `maybe_upgrade_to_hedge`
     // below so the threshold stays stable across retry-driven upgrades.
     let configured_request_timeout = options.end_to_end_latency_policy().map(|p| p.timeout());
-    let deadline = operation
-        .absolute_deadline()
-        .or_else(|| configured_request_timeout.map(|t| Instant::now() + t));
+    let deadline = if overrides.independent_metadata_fill {
+        None
+    } else {
+        operation
+            .absolute_deadline()
+            .or_else(|| configured_request_timeout.map(|t| Instant::now() + t))
+    };
 
     loop {
         diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;

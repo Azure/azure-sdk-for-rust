@@ -17,6 +17,7 @@
 
 ### Bugs Fixed
 
+- Keep shared partition-key-range fills running when an initiating caller times out or cancels, preserving pagination progress for other callers. Dropping the final external driver owner aborts pending fills, including overlapping fills for different containers. Token acquisition remains unbounded while the driver is owned. ([#5603](https://github.com/Azure/azure-sdk-for-rust/pull/5603))
 - Retain partition-key-range pages across 429 retries regardless of throttling caps, until success, a non-429 result, deadline, or cancellation; persistent throttling can wait indefinitely without a deadline or cancellation. ([#5595](https://github.com/Azure/azure-sdk-for-rust/pull/5595))
 - Preserve complete single-partition emulator aggregate, GROUP BY, and DISTINCT results across pages, and retain quoted aliases and floating-point literals in query rewrites. ([#5552](https://github.com/Azure/azure-sdk-for-rust/pull/5552))
 - Apply `DISTINCT` to completed `GROUP BY` projections before result windows, preserving identical partition-local aggregate contributions and deduplicating equal final projections. ([#5541](https://github.com/Azure/azure-sdk-for-rust/pull/5541))

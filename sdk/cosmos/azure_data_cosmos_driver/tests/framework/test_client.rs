@@ -66,6 +66,7 @@ pub fn is_regional_readiness_error(error: &CosmosError) -> bool {
         return true;
     }
     match status.status_code() {
+        StatusCode::Forbidden => status.sub_status() == Some(SubStatusCode::new(5302)),
         StatusCode::Unauthorized => error.to_string().contains(
             "The MAC signature found in the HTTP request is not the same as the computed signature",
         ),
@@ -1828,6 +1829,28 @@ mod tests {
         assert_eq!(start.elapsed(), Duration::from_millis(500));
     }
 
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_waits_for_read_permission_propagation() {
+        let start = tokio::time::Instant::now();
+        let mut attempts = 0;
+        wait_for_region_readiness(&Region::EAST_US_2, || {
+            attempts += 1;
+            let result = if attempts == 1 {
+                Err(CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::Forbidden).with_sub_status(5302))
+                    .with_message("items/read permission has not propagated")
+                    .build())
+            } else {
+                Ok(())
+            };
+            async move { result }
+        })
+        .await
+        .unwrap();
+        assert_eq!(attempts, 2);
+        assert_eq!(start.elapsed(), Duration::from_millis(500));
+    }
+
     #[tokio::test]
     #[cfg(all(feature = "fault_injection", feature = "__internal_in_memory_emulator"))]
     async fn regional_readiness_session_lag_does_not_fall_back_to_hub() {
@@ -1944,6 +1967,24 @@ mod tests {
         assert_eq!(start.elapsed(), Duration::from_secs(30));
         assert!(error.to_string().contains("not replicated"));
         assert!(error.to_string().contains("westus3"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn regional_readiness_reports_missing_read_permission_after_deadline() {
+        let start = tokio::time::Instant::now();
+        let error = wait_for_region_readiness::<(), _, _>(&Region::EAST_US_2, || async {
+            Err(CosmosError::builder()
+                .with_status(CosmosStatus::new(StatusCode::Forbidden).with_sub_status(5302))
+                .with_message("items/read permission is missing")
+                .build())
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(start.elapsed(), Duration::from_secs(30));
+        assert!(error
+            .to_string()
+            .contains("items/read permission is missing"));
+        assert!(error.to_string().contains("5302"));
     }
 
     #[tokio::test(start_paused = true)]
