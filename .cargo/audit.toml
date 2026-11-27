@@ -5,5 +5,8 @@ ignore = [
   "RUSTSEC-2026-0368", # https://github.com/Azure/azure-sdk-for-rust/issues/5513
   "RUSTSEC-2026-0369", # https://github.com/Azure/azure-sdk-for-rust/issues/5513
   "RUSTSEC-2026-0548", # https://github.com/Azure/azure-sdk-for-rust/issues/5513
+  "RUSTSEC-2026-0543", # https://github.com/Azure/azure-sdk-for-rust/issues/5670
+  "RUSTSEC-2026-0542", # `humantime` is a transitive dependency of non-production crates
+  "RUSTSEC-2026-0441", # `pin-utils` via `wasmtime` is currently not a supported target
 ]
 severity_threshold = "critical"
