@@ -1,5 +1,17 @@
 # Release History
 
+## 0.4.0 (Unreleased)
+
+### Features Added
+
+- Added `CosmosOperationKindDeleteByPartitionKey` through the existing operation submission and completion APIs. ([#5620](https://github.com/Azure/azure-sdk-for-rust/pull/5620))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.3.0 (2026-11-11)
 
 ### Features Added

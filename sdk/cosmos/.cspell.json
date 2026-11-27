@@ -337,6 +337,7 @@
     "otherdb",
     "parseable",
     "partitionkey",
+    "partitionkeydelete",
     "partitionkeyrangeid",
     "passlist",
     "perfcontainer",

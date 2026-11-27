@@ -32,13 +32,14 @@ use super::http_client_factory::DefaultHttpClientFactory;
 /// Determines whether the dataplane pipeline should be used for a given operation.
 ///
 /// The dataplane pipeline is optimized for document operations and stored procedure
-/// execution. All other operations use the metadata pipeline.
+/// execution.
 ///
 /// # Returns
 ///
 /// Returns `true` for:
 /// - Any operation on `ResourceType::Document`
 /// - `OperationType::Execute` on `ResourceType::StoredProcedure`
+/// - `OperationType::DeleteByPartitionKey` on `ResourceType::DocumentCollection`
 ///
 /// Returns `false` for all other combinations.
 pub(crate) fn uses_dataplane_pipeline(
@@ -47,6 +48,7 @@ pub(crate) fn uses_dataplane_pipeline(
 ) -> bool {
     match resource_type {
         ResourceType::Document => true,
+        ResourceType::DocumentCollection => operation_type == OperationType::DeleteByPartitionKey,
         ResourceType::StoredProcedure => matches!(operation_type, OperationType::Execute),
         #[cfg(feature = "unstable_dtx")]
         ResourceType::DistributedTransactionBatch => true,

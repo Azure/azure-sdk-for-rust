@@ -123,8 +123,11 @@ fn replication_back_pressure_response(
     start: Instant,
 ) -> Option<AsyncRawResponse> {
     let (target, retry_ms) = store.find_overflowed_replication_target(region_name)?;
-    Some(
-        error_response(
+    Some(replication_capacity_response(&target, retry_ms, start))
+}
+
+fn replication_capacity_response(target: &str, retry_ms: u64, start: Instant) -> AsyncRawResponse {
+    error_response(
             StatusCode::TooManyRequests,
             Some(3075),
             "TooManyRequests",
@@ -137,8 +140,7 @@ fn replication_back_pressure_response(
             start,
         )
         .with_retry_after_ms(retry_ms)
-        .build(),
-    )
+        .build()
 }
 
 /// Post-processes a dispatched response to stamp the per-request `x-ms-activity-id`
@@ -310,6 +312,12 @@ pub(crate) async fn handle_operation(
                 return write_forbidden_response(start);
             }
             handle_delete(store, region_name, parsed, start).await
+        }
+        OperationType::DeleteByPartitionKey => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_delete_by_partition_key(store, region_name, parsed, start).await
         }
         OperationType::QueryDatabases => {
             handle_query_databases(store, region_name, parsed, request_body, start)
@@ -1765,6 +1773,7 @@ fn intended_collection_rid_mismatch(
         | OperationType::Replace
         | OperationType::Upsert
         | OperationType::Delete
+        | OperationType::DeleteByPartitionKey
         | OperationType::QueryItems
         | OperationType::QueryPlan
         | OperationType::Batch
@@ -6373,6 +6382,129 @@ async fn handle_upsert_locked(
     }
 }
 
+async fn handle_delete_by_partition_key(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    parsed: &ParsedRequest,
+    start: Instant,
+) -> AsyncRawResponse {
+    #[cfg(feature = "unstable_dtx")]
+    let write_lock = store.document_write_lock();
+    #[cfg(feature = "unstable_dtx")]
+    let _write_guard = write_lock.lock().await;
+    let replication_barrier = store.replication_barrier();
+    let _replication_guard = replication_barrier.write().await;
+    let mut reservation = store.replication_batch_reservation(region_name);
+
+    if let Some(response) = replication_back_pressure_response(store, region_name, start) {
+        return response;
+    }
+    let Some(region) = store.region(region_name) else {
+        return not_found_region(start);
+    };
+    let db_id = parsed.db_id.as_deref().unwrap_or("");
+    let coll_id = parsed.coll_id.as_deref().unwrap_or("");
+    let result = region.with_container(db_id, coll_id, |state| {
+        let (components, epk) =
+            resolve_partition_key(parsed, &serde_json::Value::Null, &state.metadata)
+                .map_err(|error| bad_partition_key_response(error, start))?;
+        if components.len() != state.metadata.partition_key.paths().len() {
+            return Err(invalid_input_response(
+                "deleting by partition key requires a complete logical partition key",
+                start,
+            ));
+        }
+        let Some(partition) = state.find_partition(&epk) else {
+            return Err(invalid_input_response(
+                "no partition found for partition key",
+                start,
+            ));
+        };
+        if let Some(response) = check_partition_lock(partition, start) {
+            return Err(response);
+        }
+        let tombstones;
+        let charge;
+        {
+            let mut documents = partition.documents.write().unwrap();
+            let deletion_charge = documents.get(&epk).map_or(0.0, |logical| {
+                logical
+                    .values()
+                    .map(|document| {
+                        store.config().ru_model().compute_replace_or_delete_ru(
+                            document.body_size_bytes,
+                            RequestUnitChargingModel::count_properties(&document.body),
+                        )
+                    })
+                    .sum()
+            });
+            reservation
+                .try_reserve(documents.get(&epk).map_or(0, |logical| logical.len()))
+                .map_err(|target| replication_capacity_response(&target, 100, start))?;
+            charge = 1.0;
+            if let Some(response) = check_throttle(
+                partition,
+                charge,
+                store.config().throttling_enabled(),
+                start,
+            ) {
+                return Err(response);
+            }
+            // Remove one logical partition atomically; later writes aren't in scope.
+            tombstones = documents
+                .remove(&epk)
+                .unwrap_or_default()
+                .into_values()
+                .map(|mut document| {
+                    document.body = serde_json::Value::Null;
+                    document.body_size_bytes = 0;
+                    document.lsn = partition.advance_lsn();
+                    partition.advance_local_lsn();
+                    document.ts = current_timestamp();
+                    document.source_region = region_name.to_owned();
+                    document
+                })
+                .collect::<Vec<_>>();
+            if store.config().throttling_enabled() {
+                if let Some(tracker) = &partition.throughput_tracker {
+                    tracker.queue_background_charge(deletion_charge);
+                }
+            }
+        }
+        let token = session_token_for(
+            partition,
+            store.config().region_id_for(region_name),
+            incoming_session_for(parsed, partition.id).as_ref(),
+        );
+        let headers =
+            PointResponseHeaders::from_partition(partition, store.next_transport_request_id());
+        Ok((tombstones, token, charge, headers))
+    });
+    match result {
+        Some(Ok((tombstones, token, charge, headers))) => {
+            for tombstone in tombstones {
+                store.replicate_reserved_delete(
+                    region_name,
+                    db_id,
+                    coll_id,
+                    &tombstone,
+                    &mut reservation,
+                );
+            }
+            decorate_point_response(
+                ResponseBuilder::new(StatusCode::Ok, start)
+                    .with_request_charge(charge)
+                    .with_session_token(&token),
+                Some(headers),
+                None,
+            )
+            .build()
+        }
+        Some(Err(response)) => response,
+        None => container_not_found(db_id, coll_id, start),
+    }
+}
+
 async fn handle_delete(
     store: &Arc<EmulatorStore>,
     region_name: &str,
@@ -6725,6 +6857,73 @@ mod tests {
     };
     use azure_core::http::{Method, Request};
     use url::Url;
+
+    #[tokio::test]
+    async fn delete_by_partition_key_validates_request_and_accepts_empty_partition(
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let endpoint = Url::parse("https://east.local")?;
+        let store = Arc::new(EmulatorStore::new(VirtualAccountConfig::new(vec![
+            VirtualRegion::new("East", endpoint.clone()),
+            VirtualRegion::new("West", Url::parse("https://west.local")?),
+        ])?));
+        store.create_database("db");
+        store.create_container("db", "coll", ("/tenant", "/user").into());
+        for (region, container, key, status) in [
+            ("East", "coll", None, StatusCode::BadRequest),
+            ("East", "coll", Some("not-json"), StatusCode::BadRequest),
+            ("East", "coll", Some("[\"tenant\"]"), StatusCode::BadRequest),
+            (
+                "East",
+                "coll",
+                Some("[\"tenant\",\"user\",\"extra\"]"),
+                StatusCode::BadRequest,
+            ),
+            (
+                "East",
+                "missing",
+                Some("[\"tenant\",\"user\"]"),
+                StatusCode::NotFound,
+            ),
+            (
+                "West",
+                "coll",
+                Some("[\"tenant\",\"user\"]"),
+                StatusCode::Forbidden,
+            ),
+            (
+                "East",
+                "coll",
+                Some("[\"tenant\",\"user\"]"),
+                StatusCode::Ok,
+            ),
+        ] {
+            let mut request = Request::new(
+                endpoint.join(&format!(
+                    "/dbs/db/colls/{container}/operations/partitionkeydelete"
+                ))?,
+                Method::Post,
+            );
+            if let Some(key) = key {
+                request.insert_header("x-ms-documentdb-partitionkey", key);
+            }
+            let response = handle_operation(
+                &store,
+                region,
+                &parse_request(&request),
+                request.headers(),
+                &[],
+            )
+            .await
+            .try_into_raw_response()
+            .await?;
+            assert_eq!(
+                response.status(),
+                status,
+                "region={region}, container={container}, key={key:?}"
+            );
+        }
+        Ok(())
+    }
 
     #[test]
     fn document_feed_rejects_malformed_epk_headers() -> Result<(), Box<dyn std::error::Error>> {

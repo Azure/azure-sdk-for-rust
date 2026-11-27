@@ -5658,6 +5658,49 @@ mod tests {
     }
 
     #[test]
+    fn delete_by_partition_key_transport_uses_post_and_container_authorization() {
+        let operation = CosmosOperation::delete_by_partition_key(
+            test_container(),
+            PartitionKey::from("tenant"),
+        );
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::OperationRetry,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let overrides = OperationOverrides {
+            partition_key: operation.partition_key().cloned(),
+            ..Default::default()
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx).unwrap();
+        assert_eq!(request.method, azure_core::http::Method::Post);
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/operations/partitionkeydelete"
+        );
+        assert_eq!(request.auth_context.resource_type.path_segment(), "colls");
+        assert_eq!(
+            request.auth_context.resource_link.as_str(),
+            "dbs/testdb/colls/testcontainer"
+        );
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY
+            )),
+            Some("[\"tenant\"]"),
+        );
+        assert!(request.body.is_none());
+        assert_eq!(request.transport_mode, TransportMode::Gateway);
+    }
+
+    #[test]
     fn resolved_logical_partition_identity_is_not_emitted_as_range_header() {
         let overrides = OperationOverrides {
             resolved_partition_key_range_id: Some("7".to_string()),

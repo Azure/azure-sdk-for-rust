@@ -379,6 +379,13 @@ enum cosmos_CosmosOperationKind
    * `CosmosOperation::patch_item` — requires `container` + `partition_key` + `item_id` + body.
    */
   COSMOS_OPERATION_KIND_PATCH_ITEM = 24,
+  /**
+   * [`CosmosOperation::delete_by_partition_key`] requires `container` and a
+   * complete partition key, without an item ID or request body.
+   *
+   * Completion reports initiation, not completed background deletion.
+   */
+  COSMOS_OPERATION_KIND_DELETE_BY_PARTITION_KEY = 25,
 };
 #ifndef __cplusplus
 #if __STDC_VERSION__ >= 202311L
@@ -1720,9 +1727,9 @@ typedef struct cosmos_operation_request_t {
    */
   struct cosmos_string_view_t resource_link;
   /**
-   * Partition key handle. Required for item-scope, `read_all_items`, and
-   * `batch` (unless the inline `partition_key_components` array is supplied
-   * instead); otherwise NULL.
+   * Partition key handle. Required for item-scope, `read_all_items`, `batch`,
+   * and `delete_by_partition_key` (unless the inline `partition_key_components`
+   * array is supplied instead); otherwise NULL.
    */
   const struct cosmos_partition_key_t *partition_key;
   /**

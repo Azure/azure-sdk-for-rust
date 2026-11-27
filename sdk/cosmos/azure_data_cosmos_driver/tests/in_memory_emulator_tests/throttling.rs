@@ -8,6 +8,65 @@ use super::*;
 static RETRY_AFTER: azure_core::http::headers::HeaderName =
     azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms");
 
+#[tokio::test]
+async fn delete_by_partition_key_accepts_work_larger_than_one_ru_window() {
+    let ctx = setup_throttled(400).await;
+    for i in 0..100 {
+        let request = create_item_request(
+            &ctx.gateway_url,
+            "testdb",
+            "testcoll",
+            &serde_json::json!({"id": i.to_string(), "pk": "target", "value": "x".repeat(1024)}),
+            r#"["target"]"#,
+            false,
+        );
+        let mut created = false;
+        for _ in 0..10 {
+            let response = ctx.emulator.execute_request(&request).await.unwrap();
+            if response.status() == StatusCode::Created {
+                created = true;
+                break;
+            }
+            assert_eq!(response.status(), StatusCode::TooManyRequests);
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        }
+        assert!(created);
+    }
+    let delete = delete_by_partition_key_request(&ctx.gateway_url, r#"["target"]"#);
+    let read = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "0", r#"["target"]"#);
+    let mut initiated = false;
+    for _ in 0..5 {
+        let response = ctx.emulator.execute_request(&delete).await.unwrap();
+        if response.status() == StatusCode::Ok {
+            assert!(
+                response
+                    .headers()
+                    .get_optional_str(&REQUEST_CHARGE)
+                    .unwrap()
+                    .parse::<f64>()
+                    .unwrap()
+                    < 400.0
+            );
+            initiated = true;
+            break;
+        }
+        assert_eq!(response.status(), StatusCode::TooManyRequests);
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        assert_eq!(
+            ctx.emulator.execute_request(&read).await.unwrap().status(),
+            StatusCode::Ok
+        );
+    }
+    assert!(
+        initiated,
+        "deletion must not require its full RU charge in one window"
+    );
+    assert_eq!(
+        ctx.emulator.execute_request(&read).await.unwrap().status(),
+        StatusCode::NotFound
+    );
+}
+
 /// Helper to set up a single-region emulator with throttling enabled and a
 /// container provisioned at the given RU/s.
 async fn setup_throttled(throughput_ru: u64) -> TestContext {
