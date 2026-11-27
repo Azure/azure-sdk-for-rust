@@ -41,6 +41,10 @@ const ACCESS_TIER_CHANGE_TIME: HeaderName = HeaderName::from_static("x-ms-access
 const ACCESS_TIER_INFERRED: HeaderName = HeaderName::from_static("x-ms-access-tier-inferred");
 const ACCOUNT_KIND: HeaderName = HeaderName::from_static("x-ms-account-kind");
 const ARCHIVE_STATUS: HeaderName = HeaderName::from_static("x-ms-archive-status");
+const BLOB_ACCESS_POINT_CONFIGURATION_NAME: HeaderName =
+    HeaderName::from_static("x-ms-blob-access-point-configuration-name");
+const BLOB_ACCESS_POINT_CONFIGURATION_UNIQUE_ID: HeaderName =
+    HeaderName::from_static("x-ms-blob-access-point-configuration-unique-id");
 const BLOB_APPEND_OFFSET: HeaderName = HeaderName::from_static("x-ms-blob-append-offset");
 const BLOB_COMMITTED_BLOCK_COUNT: HeaderName =
     HeaderName::from_static("x-ms-blob-committed-block-count");
@@ -89,6 +93,8 @@ const IMMUTABILITY_POLICY_UNTIL_DATE: HeaderName =
 const IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED: HeaderName =
     HeaderName::from_static("x-ms-immutable-storage-with-versioning-enabled");
 const INCREMENTAL_COPY: HeaderName = HeaderName::from_static("x-ms-incremental-copy");
+const IS_BLOB_ACCESS_POINT_CONTAINER: HeaderName =
+    HeaderName::from_static("x-ms-is-blob-access-point-container");
 const IS_CURRENT_VERSION: HeaderName = HeaderName::from_static("x-ms-is-current-version");
 const IS_HNS_ENABLED: HeaderName = HeaderName::from_static("x-ms-is-hns-enabled");
 const LAST_ACCESS_TIME: HeaderName = HeaderName::from_static("x-ms-last-access-time");
@@ -1644,8 +1650,8 @@ impl BlobContainerClientGetAccountInfoResultHeaders
 ///     if let Some(last_modified) = response.last_modified()? {
 ///         println!("last-modified: {:?}", last_modified);
 ///     }
-///     if let Some(access) = response.access()? {
-///         println!("x-ms-blob-public-access: {:?}", access);
+///     if let Some(blob_access_point_configuration_name) = response.blob_access_point_configuration_name()? {
+///         println!("x-ms-blob-access-point-configuration-name: {:?}", blob_access_point_configuration_name);
 ///     }
 ///     Ok(())
 /// }
@@ -1653,12 +1659,15 @@ impl BlobContainerClientGetAccountInfoResultHeaders
 pub trait BlobContainerClientGetPropertiesResultHeaders: private::Sealed {
     fn etag(&self) -> Result<Option<Etag>>;
     fn last_modified(&self) -> Result<Option<OffsetDateTime>>;
+    fn blob_access_point_configuration_name(&self) -> Result<Option<String>>;
+    fn blob_access_point_configuration_unique_id(&self) -> Result<Option<String>>;
     fn access(&self) -> Result<Option<PublicAccessType>>;
     fn default_encryption_scope(&self) -> Result<Option<String>>;
     fn prevent_encryption_scope_override(&self) -> Result<Option<bool>>;
     fn has_immutability_policy(&self) -> Result<Option<bool>>;
     fn has_legal_hold(&self) -> Result<Option<bool>>;
     fn is_immutable_storage_with_versioning_enabled(&self) -> Result<Option<bool>>;
+    fn is_blob_access_point_container(&self) -> Result<Option<bool>>;
     fn duration(&self) -> Result<Option<LeaseDuration>>;
     fn lease_state(&self) -> Result<Option<LeaseState>>;
     fn lease_status(&self) -> Result<Option<LeaseStatus>>;
@@ -1678,6 +1687,16 @@ impl BlobContainerClientGetPropertiesResultHeaders
         Headers::get_optional_with(self.headers(), &LAST_MODIFIED, |h| {
             parse_rfc7231(h.as_str())
         })
+    }
+
+    /// The name of the Blob Access Point configuration bound to the container. Omitted for ordinary containers.
+    fn blob_access_point_configuration_name(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &BLOB_ACCESS_POINT_CONFIGURATION_NAME)
+    }
+
+    /// The unique ID of the Blob Access Point configuration bound to the container. Omitted for ordinary containers.
+    fn blob_access_point_configuration_unique_id(&self) -> Result<Option<String>> {
+        Headers::get_optional_as(self.headers(), &BLOB_ACCESS_POINT_CONFIGURATION_UNIQUE_ID)
     }
 
     /// The public access setting for the container.
@@ -1708,6 +1727,11 @@ impl BlobContainerClientGetPropertiesResultHeaders
     /// Indicates whether version level WORM (Write Once, Read Many) is enabled on a container.
     fn is_immutable_storage_with_versioning_enabled(&self) -> Result<Option<bool>> {
         Headers::get_optional_as(self.headers(), &IMMUTABLE_STORAGE_WITH_VERSIONING_ENABLED)
+    }
+
+    /// Indicates whether this is a Blob Access Point container. Omitted for ordinary containers.
+    fn is_blob_access_point_container(&self) -> Result<Option<bool>> {
+        Headers::get_optional_as(self.headers(), &IS_BLOB_ACCESS_POINT_CONTAINER)
     }
 
     /// Specifies the duration of the lease.

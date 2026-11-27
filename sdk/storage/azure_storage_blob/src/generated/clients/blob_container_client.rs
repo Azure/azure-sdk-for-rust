@@ -320,6 +320,22 @@ impl BlobContainerClient {
         }
         query_builder.build();
         let mut request = Request::new(url, Method::Put);
+        if let Some(blob_access_point_configuration_name) =
+            options.blob_access_point_configuration_name.as_ref()
+        {
+            request.insert_header(
+                "x-ms-blob-access-point-configuration-name",
+                blob_access_point_configuration_name,
+            );
+        }
+        if let Some(blob_access_point_configuration_unique_id) =
+            options.blob_access_point_configuration_unique_id.as_ref()
+        {
+            request.insert_header(
+                "x-ms-blob-access-point-configuration-unique-id",
+                blob_access_point_configuration_unique_id,
+            );
+        }
         if let Some(access) = options.access.as_ref() {
             request.insert_header("x-ms-blob-public-access", access.to_string());
         }
@@ -707,8 +723,8 @@ impl BlobContainerClient {
     ///     if let Some(last_modified) = response.last_modified()? {
     ///         println!("last-modified: {:?}", last_modified);
     ///     }
-    ///     if let Some(access) = response.access()? {
-    ///         println!("x-ms-blob-public-access: {:?}", access);
+    ///     if let Some(blob_access_point_configuration_name) = response.blob_access_point_configuration_name()? {
+    ///         println!("x-ms-blob-access-point-configuration-name: {:?}", blob_access_point_configuration_name);
     ///     }
     ///     Ok(())
     /// }
@@ -717,12 +733,15 @@ impl BlobContainerClient {
     /// ### Available headers
     /// * [`etag`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::etag) - etag
     /// * [`last_modified`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::last_modified) - last-modified
+    /// * [`blob_access_point_configuration_name`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::blob_access_point_configuration_name) - x-ms-blob-access-point-configuration-name
+    /// * [`blob_access_point_configuration_unique_id`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::blob_access_point_configuration_unique_id) - x-ms-blob-access-point-configuration-unique-id
     /// * [`access`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::access) - x-ms-blob-public-access
     /// * [`default_encryption_scope`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::default_encryption_scope) - x-ms-default-encryption-scope
     /// * [`prevent_encryption_scope_override`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::prevent_encryption_scope_override) - x-ms-deny-encryption-scope-override
     /// * [`has_immutability_policy`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::has_immutability_policy) - x-ms-has-immutability-policy
     /// * [`has_legal_hold`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::has_legal_hold) - x-ms-has-legal-hold
     /// * [`is_immutable_storage_with_versioning_enabled`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::is_immutable_storage_with_versioning_enabled) - x-ms-immutable-storage-with-versioning-enabled
+    /// * [`is_blob_access_point_container`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::is_blob_access_point_container) - x-ms-is-blob-access-point-container
     /// * [`duration`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::duration) - x-ms-lease-duration
     /// * [`lease_state`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::lease_state) - x-ms-lease-state
     /// * [`lease_status`()](crate::generated::models::BlobContainerClientGetPropertiesResultHeaders::lease_status) - x-ms-lease-status
@@ -1402,7 +1421,7 @@ impl BlobContainerClient {
 }
 
 /// Default value for [`BlobContainerClientOptions::version`].
-pub(crate) const DEFAULT_VERSION: &str = "2027-03-07";
+pub(crate) const DEFAULT_VERSION: &str = "2027-05-07";
 
 impl Default for BlobContainerClientOptions {
     fn default() -> Self {
